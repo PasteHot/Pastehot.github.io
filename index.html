@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PasteHot | Saborea tu tiempo</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+body{
+    font-family:Arial,Helvetica,sans-serif;
+    background:#f7f3ee;
+    color:#222;
+    padding-bottom:90px;
+}
+
+header{
+    background:#a90000;
+    color:white;
+    text-align:center;
+    padding:28px 15px 24px;
+    position:sticky;
+    top:0;
+    z-index:20;
+    box-shadow:0 3px 12px rgba(0,0,0,.18);
+}
+
+.logo{
+    font-size:36px;
+    font-weight:900;
+    letter-spacing:-1px;
+}
+
+.slogan{
+    font-size:14px;
+    margin-top:5px;
+}
+
+.container{
+    max-width:700px;
+    margin:auto;
+    padding:18px 14px;
+}
+
+.categories{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding:5px 0 15px;
+}
+
+.categories button{
+    border:0;
+    background:white;
+    padding:10px 15px;
+    border-radius:25px;
+    white-space:nowrap;
+    font-weight:bold;
+    box-shadow:0 2px 7px rgba(0,0,0,.1);
+    cursor:pointer;
+}
+
+.categories button.active{
+    background:#a90000;
+    color:white;
+}
+
+.section-title{
+    font-size:25px;
+    font-weight:900;
+    margin:18px 0 12px;
+}
+
+.product{
+    background:white;
+    border-radius:16px;
+    overflow:hidden;
+    margin-bottom:14px;
+    box-shadow:0 3px 12px rgba(0,0,0,.10);
+}
+
+.product-image{
+    width:100%;
+    height:190px;
+    background:#ddd;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#777;
+    font-size:15px;
+}
+
+.product-info{
+    padding:15px;
+}
+
+.product-name{
+    font-size:20px;
+    font-weight:800;
+}
+
+.product-description{
+    color:#666;
+    font-size:14px;
+    margin:6px 0 12px;
+    line-height:1.4;
+}
+
+.product-bottom{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+}
+
+.price{
+    font-size:21px;
+    font-weight:900;
+    color:#a90000;
+}
+
+.add{
+    background:#a90000;
+    color:white;
+    border:0;
+    border-radius:10px;
+    padding:11px 17px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.cart-button{
+    position:fixed;
+    bottom:15px;
+    left:50%;
+    transform:translateX(-50%);
+    width:calc(100% - 28px);
+    max-width:670px;
+    background:#a90000;
+    color:white;
+    border:0;
+    border-radius:15px;
+    padding:16px;
+    font-size:17px;
+    font-weight:900;
+    box-shadow:0 5px 20px rgba(0,0,0,.3);
+    z-index:30;
+    cursor:pointer;
+}
+
+.cart-count{
+    background:white;
+    color:#a90000;
+    border-radius:50%;
+    padding:3px 8px;
+    margin-left:5px;
+}
+
+.modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.65);
+    z-index:50;
+    align-items:flex-end;
+    justify-content:center;
+}
+
+.modal-content{
+    background:#f7f3ee;
+    width:100%;
+    max-width:700px;
+    max-height:92vh;
+    overflow-y:auto;
+    border-radius:22px 22px 0 0;
+    padding:22px;
+}
+
+.modal-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:18px;
+}
+
+.modal-header h2{
+    font-size:25px;
+}
+
+.close{
+    border:0;
+    background:#ddd;
+    width:38px;
+    height:38px;
+    border-radius:50%;
+    font-size:20px;
+}
+
+.cart-item{
+    background:white;
+    padding:13px;
+    border-radius:12px;
+    margin-bottom:9px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.cart-item-name{
+    font-weight:bold;
+}
+
+.qty{
+    display:flex;
+    align-items:center;
+    gap:9px;
+}
+
+.qty button{
+    width:30px;
+    height:30px;
+    border:0;
+    border-radius:8px;
+    background:#a90000;
+    color:white;
+    font-weight:bold;
+}
+
+.total{
+    font-size:22px;
+    font-weight:900;
+    text-align:right;
+    margin:18px 0;
+}
+
+.form-title{
+    font-size:20px;
+    font-weight:900;
+    margin:22px 0 10px;
+}
+
+input,textarea{
+    width:100%;
+    border:1px solid #ccc;
+    background:white;
+    border-radius:10px;
+    padding:13px;
+    margin-bottom:10px;
+    font-size:16px;
+}
+
+textarea{
+    min-height:80px;
+}
+
+.option{
+    background:white;
+    padding:13px;
+    border-radius:10px;
+    margin-bottom:8px;
+}
+
+.option label{
+    display:flex;
+    gap:10px;
+    align-items:center;
+}
+
+.option input{
+    width:auto;
+    margin:0;
+}
+
+.whatsapp{
+    width:100%;
+    background:#168c3b;
+    color:white;
+    border:0;
+    padding:16px;
+    border-radius:12px;
+    font-size:17px;
+    font-weight:900;
+    cursor:pointer;
+    margin-top:8px;
+}
+
+.empty{
+    text-align:center;
+    padding:30px 10px;
+    color:#777;
+}
+
+footer{
+    text-align:center;
+    padding:25px 10px;
+    color:#777;
+    font-size:13px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">PASTEHOT</div>
+    <div class="slogan">Saborea tu tiempo</div>
+</header>
+
+<div class="container">
+
+    <div class="categories">
+        <button class="active" onclick="showCategory('pastes',this)">Pastes</button>
+        <button onclick="showCategory('dulces',this)">Dulces</button>
+        <button onclick="showCategory('bebidas',this)">Bebidas</button>
+        <button onclick="showCategory('promos',this)">Promociones</button>
+    </div>
+
+    <div id="products"></div>
+
+    <footer>
+        PasteHot · San Antonio Hool, Yucatán
+    </footer>
+
+</div>
+
+<button class="cart-button" onclick="openCart()">
+    🛒 Ver mi pedido
+    <span class="cart-count" id="cartCount">0</span>
+</button>
+
+<div class="modal" id="cartModal">
+    <div class="modal-content">
+
+        <div class="modal-header">
+            <h2>Mi pedido</h2>
+            <button class="close" onclick="closeCart()">×</button>
+        </div>
+
+        <div id="cartItems"></div>
+
+        <div class="total">
+            Total: $<span id="cartTotal">0</span>
+        </div>
+
+        <div class="form-title">Tus datos</div>
+
+        <input id="customerName" type="text" placeholder="Nombre">
+
+        <input id="customerPhone" type="tel" placeholder="Teléfono">
+
+        <div class="form-title">¿Cómo recibirás tu pedido?</div>
+
+        <div class="option">
+            <label>
+                <input type="radio" name="delivery" value="Envío a domicilio" checked>
+                🚚 Envío a domicilio
+            </label>
+        </div>
+
+        <div class="option">
+            <label>
+                <input type="radio" name="delivery" value="Recoger en PasteHot">
+                🏠 Recoger en PasteHot
+            </label>
+        </div>
+
+        <textarea id="address" placeholder="Dirección y referencias"></textarea>
+
+        <div class="form-title">Forma de pago</div>
+
+        <div class="option">
+            <label>
+                <input type="radio" name="payment" value="Efectivo" checked>
+                💵 Efectivo
+            </label>
+        </div>
+
+        <div class="option">
+            <label>
+                <input type="radio" name="payment" value="Transferencia">
+                🏦 Transferencia
+            </label>
+        </div>
+
+        <div class="option">
+            <label>
+                <input type="radio" name="payment" value="Tarjeta">
+                💳 Tarjeta
+            </label>
+        </div>
+
+        <button class="whatsapp" onclick="sendWhatsApp()">
+            📲 Enviar pedido por WhatsApp
+        </button>
+
+    </div>
+</div>
+
+<script>
+
+const products = {
+
+pastes:[
+{
+name:"Papa con carne",
+price:35,
+description:"Paste relleno de papa con carne."
+},
+{
+name:"Frijol con chorizo",
+price:35,
+description:"Paste relleno de frijol con chorizo."
+},
+{
+name:"Hawaiano",
+price:35,
+description:"Una combinación de sabores dulce y salado."
+},
+{
+name:"Mole rojo almendrado",
+price:35,
+description:"Mole rojo almendrado con pechuga de pollo y ajonjolí."
+},
+{
+name:"Choriqueso",
+price:35,
+description:"Chorizo y queso en nuestro paste."
+},
+{
+name:"Cheesepot",
+price:35,
+description:"Nuestra combinación especial de queso."
+}
+],
+
+dulces:[
+{
+name:"Arroz con leche",
+price:35,
+description:"Paste dulce relleno de arroz con leche."
+},
+{
+name:"Zarzamora con Philadelphia",
+price:35,
+description:"Zarzamora y queso Philadelphia."
+},
+{
+name:"Guayaba con Philadelphia",
+price:35,
+description:"Guayaba y queso Philadelphia."
+}
+],
+
+bebidas:[],
+promos:[]
+};
+
+let currentCategory="pastes";
+let cart=[];
+
+function showCategory(category,button){
+
+    currentCategory=category;
+
+    document.querySelectorAll(".categories button")
+    .forEach(b=>b.classList.remove("active"));
+
+    button.classList.add("active");
+
+    renderProducts();
+}
+
+function renderProducts(){
+
+    const container=document.getElementById("products");
+
+    container.innerHTML="";
+
+    let list=products[currentCategory];
+
+    let title={
+        pastes:"Pastes",
+        dulces:"Dulces",
+        bebidas:"Bebidas",
+        promos:"Promociones"
+    }[currentCategory];
+
+    const heading=document.createElement("div");
+    heading.className="section-title";
+    heading.textContent=title;
+
+    container.appendChild(heading);
+
+    if(list.length===0){
+
+        const empty=document.createElement("div");
+        empty.className="empty";
+        empty.textContent="Próximamente...";
+        container.appendChild(empty);
+        return;
+    }
+
+    list.forEach((product,index)=>{
+
+        const card=document.createElement("div");
+        card.className="product";
+
+        card.innerHTML=`
+
+        <div class="product-image">
+            Foto del producto
+        </div>
+
+        <div class="product-info">
+
+            <div class="product-name">
+                ${product.name}
+            </div>
+
+            <div class="product-description">
+                ${product.description}
+            </div>
+
+            <div class="product-bottom">
+
+                <div class="price">
+                    $${product.price}
+                </div>
+
+                <button class="add"
+                onclick="addToCart('${currentCategory}',${index})">
+                    Agregar
+                </button>
+
+            </div>
+
+        </div>
+        `;
+
+        container.appendChild(card);
+    });
+}
+
+function addToCart(category,index){
+
+    const product=products[category][index];
+
+    const existing=cart.find(
+        item=>item.name===product.name
+    );
+
+    if(existing){
+        existing.quantity++;
+    }else{
+        cart.push({
+            ...product,
+            quantity:1
+        });
+    }
+
+    updateCart();
+}
+
+function updateCart(){
+
+    let count=0;
+    let total=0;
+
+    cart.forEach(item=>{
+        count+=item.quantity;
+        total+=item.price*item.quantity;
+    });
+
+    document.getElementById("cartCount").textContent=count;
+    document.getElementById("cartTotal").textContent=total;
+}
+
+function openCart(){
+
+    renderCart();
+
+    document.getElementById("cartModal").style.display="flex";
+}
+
+function closeCart(){
+
+    document.getElementById("cartModal").style.display="none";
+}
+
+function renderCart(){
+
+    const container=document.getElementById("cartItems");
+
+    container.innerHTML="";
+
+    if(cart.length===0){
+
+        container.innerHTML=
+        '<div class="empty">Tu carrito está vacío.</div>';
+
+        return;
+    }
+
+    cart.forEach((item,index)=>{
+
+        const div=document.createElement("div");
+
+        div.className="cart-item";
+
+        div.innerHTML=`
+
+        <div>
+            <div class="cart-item-name">
+                ${item.name}
+            </div>
+            <div>
+                $${item.price} c/u
+            </div>
+        </div>
+
+        <div class="qty">
+
+            <button onclick="changeQuantity(${index},-1)">
+                −
+            </button>
+
+            <strong>${item.quantity}</strong>
+
+            <button onclick="changeQuantity(${index},1)">
+                +
+            </button>
+
+        </div>
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+function changeQuantity(index,change){
+
+    cart[index].quantity+=change;
+
+    if(cart[index].quantity<=0){
+        cart.splice(index,1);
+    }
+
+    updateCart();
+    renderCart();
+}
+
+function sendWhatsApp(){
+
+    if(cart.length===0){
+
+        alert("Tu pedido está vacío.");
+        return;
+    }
+
+    const name=
+    document.getElementById("customerName").value.trim();
+
+    const phone=
+    document.getElementById("customerPhone").value.trim();
+
+    const address=
+    document.getElementById("address").value.trim();
+
+    const delivery=
+    document.querySelector(
+        'input[name="delivery"]:checked'
+    ).value;
+
+    const payment=
+    document.querySelector(
+        'input[name="payment"]:checked'
+    ).value;
+
+    if(!name){
+        alert("Escribe tu nombre.");
+        return;
+    }
+
+    if(!phone){
+        alert("Escribe tu teléfono.");
+        return;
+    }
+
+    if(delivery==="Envío a domicilio" && !address){
+        alert("Escribe tu dirección.");
+        return;
+    }
+
+    let message="🔥 *NUEVO PEDIDO PASTEHOT* 🔥\n\n";
+
+    message+="*Cliente:* "+name+"\n";
+    message+="*Teléfono:* "+phone+"\n";
+    message+="*Entrega:* "+delivery+"\n";
+
+    if(address){
+        message+="*Dirección:* "+address+"\n";
+    }
+
+    message+="*Pago:* "+payment+"\n\n";
+    message+="*PEDIDO:*\n";
+
+    let total=0;
+
+    cart.forEach(item=>{
+
+        const subtotal=item.price*item.quantity;
+
+        total+=subtotal;
+
+        message+=
+        item.quantity+
+        " × "+
+        item.name+
+        " — $"+
+        subtotal+
+        "\n";
+    });
+
+    message+="\n*TOTAL: $"+total+"*";
+
+    /*
+    CAMBIA ÚNICAMENTE EL NÚMERO DE ABAJO
+    POR TU NÚMERO DE WHATSAPP BUSINESS.
+    */
+
+    const whatsappNumber="529902317606";
+
+    const url=
+    "https://wa.me/"+
+    whatsappNumber+
+    "?text="+
+    encodeURIComponent(message);
+
+    window.open(url,"_blank");
+}
+
+renderProducts();
+updateCart();
+
+</script>
+
+</body>
+</html>
