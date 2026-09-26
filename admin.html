@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>PasteHot - Administración</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    font-family:Arial,Helvetica,sans-serif;
+    background:#f3f3f3;
+    color:#222;
+}
+
+header{
+    background:#c90000;
+    color:white;
+    padding:20px;
+    text-align:center;
+}
+
+header h1{
+    margin:0;
+    font-size:28px;
+}
+
+.container{
+    width:94%;
+    max-width:1200px;
+    margin:25px auto;
+}
+
+.card{
+    background:white;
+    border-radius:12px;
+    padding:20px;
+    margin-bottom:20px;
+    box-shadow:0 3px 12px rgba(0,0,0,.10);
+}
+
+input,
+textarea,
+select{
+    width:100%;
+    padding:11px;
+    margin-top:6px;
+    margin-bottom:14px;
+    border:1px solid #ccc;
+    border-radius:7px;
+    font-size:16px;
+}
+
+button{
+    border:0;
+    border-radius:7px;
+    padding:11px 16px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.login-button{
+    width:100%;
+    background:#c90000;
+    color:white;
+}
+
+.logout-button{
+    background:#333;
+    color:white;
+}
+
+.save-button{
+    background:#c90000;
+    color:white;
+}
+
+.product{
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:15px;
+    margin-bottom:15px;
+}
+
+.product-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+}
+
+.product-name{
+    font-size:19px;
+    font-weight:bold;
+}
+
+.status{
+    padding:6px 10px;
+    border-radius:20px;
+    font-size:13px;
+    font-weight:bold;
+}
+
+.available{
+    background:#d9f7df;
+    color:#176b2c;
+}
+
+.unavailable{
+    background:#ffdcdc;
+    color:#9b0000;
+}
+
+img.preview{
+    width:120px;
+    height:120px;
+    object-fit:cover;
+    border-radius:8px;
+    margin:10px 0;
+}
+
+.hidden{
+    display:none;
+}
+
+.message{
+    padding:12px;
+    border-radius:7px;
+    margin-bottom:15px;
+    background:#eee;
+}
+
+.order{
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:15px;
+    margin-bottom:15px;
+}
+
+.order-total{
+    font-size:20px;
+    font-weight:bold;
+}
+
+nav{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:20px;
+}
+
+nav button{
+    background:#ddd;
+}
+
+nav button.active{
+    background:#c90000;
+    color:white;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<h1>PASTEHOT - ADMINISTRACIÓN</h1>
+
+</header>
+
+
+<div class="container">
+
+
+<!-- LOGIN -->
+
+<div id="loginScreen" class="card">
+
+<h2>Iniciar sesión</h2>
+
+<label>Correo</label>
+
+<input
+id="loginEmail"
+type="email"
+placeholder="Tu correo"
+>
+
+<label>Contraseña</label>
+
+<input
+id="loginPassword"
+type="password"
+placeholder="Tu contraseña"
+>
+
+<button
+class="login-button"
+onclick="login()"
+>
+ENTRAR
+</button>
+
+<div
+id="loginMessage"
+class="message hidden"
+></div>
+
+</div>
+
+
+<!-- PANEL -->
+
+<div id="adminPanel" class="hidden">
+
+<div class="card">
+
+<button
+class="logout-button"
+onclick="logout()"
+>
+CERRAR SESIÓN
+</button>
+
+</div>
+
+
+<nav>
+
+<button
+id="productsTab"
+class="active"
+onclick="showSection('productsSection',this)"
+>
+PRODUCTOS
+</button>
+
+<button
+id="ordersTab"
+onclick="showSection('ordersSection',this)"
+>
+PEDIDOS
+</button>
+
+<button
+id="customersTab"
+onclick="showSection('customersSection',this)"
+>
+CLIENTES
+</button>
+
+<button
+id="settingsTab"
+onclick="showSection('settingsSection',this)"
+>
+CONFIGURACIÓN
+</button>
+
+</nav>
+
+
+<!-- PRODUCTOS -->
+
+<div
+id="productsSection"
+class="section"
+>
+
+<div class="card">
+
+<h2>Productos</h2>
+
+<button
+class="save-button"
+onclick="showNewProductForm()"
+>
++ AGREGAR PRODUCTO
+</button>
+
+</div>
+
+
+<div
+id="newProductForm"
+class="card hidden"
+>
+
+<h2>Nuevo producto</h2>
+
+<label>Nombre</label>
+
+<input
+id="newName"
+type="text"
+>
+
+<label>Descripción</label>
+
+<textarea
+id="newDescription"
+></textarea>
+
+<label>Precio</label>
+
+<input
+id="newPrice"
+type="number"
+step="0.01"
+>
+
+<label>Categoría</label>
+
+<select id="newCategory">
+
+<option value="Pastes">
+Pastes
+</option>
+
+<option value="Dulces">
+Dulces
+</option>
+
+<option value="Bebidas">
+Bebidas
+</option>
+
+<option value="Promociones">
+Promociones
+</option>
+
+</select>
+
+<label>Disponible</label>
+
+<select id="newAvailable">
+
+<option value="true">
+Sí
+</option>
+
+<option value="false">
+No
+</option>
+
+</select>
+
+<label>Orden</label>
+
+<input
+id="newSortOrder"
+type="number"
+value="1"
+>
+
+<button
+class="save-button"
+onclick="createProduct()"
+>
+GUARDAR PRODUCTO
+</button>
+
+</div>
+
+
+<div id="productsList"></div>
+
+</div>
+
+
+<!-- PEDIDOS -->
+
+<div
+id="ordersSection"
+class="section hidden"
+>
+
+<div class="card">
+
+<h2>Pedidos</h2>
+
+<button
+class="save-button"
+onclick="loadOrders()"
+>
+ACTUALIZAR PEDIDOS
+</button>
+
+</div>
+
+<div id="ordersList"></div>
+
+</div>
+
+
+<!-- CLIENTES -->
+
+<div
+id="customersSection"
+class="section hidden"
+>
+
+<div class="card">
+
+<h2>Clientes</h2>
+
+<button
+class="save-button"
+onclick="loadCustomers()"
+>
+ACTUALIZAR CLIENTES
+</button>
+
+</div>
+
+<div id="customersList"></div>
+
+</div>
+
+
+<!-- CONFIGURACIÓN -->
+
+<div
+id="settingsSection"
+class="section hidden"
+>
+
+<div class="card">
+
+<h2>Configuración de PasteHot</h2>
+
+<div id="settingsList"></div>
+
+<button
+class="save-button"
+onclick="saveSettings()"
+>
+GUARDAR CONFIGURACIÓN
+</button>
+
+</div>
+
+</div>
+
+
+</div>
+
+</div>
+
+
+<script>
+
+
+/* SUPABASE */
+
+const SUPABASE_URL =
+"https://cqlywpemisknrxswlmea.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+"sb_publishable_wDu6p-CtnQtYu7KWH1YS1A_h7LeL0SX";
+
+const supabaseClient =
+supabase.createClient(
+SUPABASE_URL,
+SUPABASE_PUBLISHABLE_KEY
+);
+
+
+/* LOGIN */
+
+async function login(){
+
+    const email =
+    document
+    .getElementById("loginEmail")
+    .value
+    .trim();
+
+    const password =
+    document
+    .getElementById("loginPassword")
+    .value;
+
+
+    const message =
+    document
+    .getElementById("loginMessage");
+
+
+    message.classList.add("hidden");
+
+
+    const {data,error} =
+    await supabaseClient.auth.signInWithPassword({
+
+        email:email,
+
+        password:password
+
+    });
+
+
+    if(error){
+
+        message.textContent =
+        "Correo o contraseña incorrectos.";
+
+        message.classList.remove("hidden");
+
+        return;
+
+    }
+
+
+    document
+    .getElementById("loginScreen")
+    .classList.add("hidden");
+
+
+    document
+    .getElementById("adminPanel")
+    .classList.remove("hidden");
+
+
+    loadProducts();
+
+}
+
+
+/* LOGOUT */
+
+async function logout(){
+
+    await supabaseClient.auth.signOut();
+
+    location.reload();
+
+}
+
+
+/* SESIÓN EXISTENTE */
+
+async function checkSession(){
+
+    const {data} =
+    await supabaseClient.auth.getSession();
+
+
+    if(data.session){
+
+        document
+        .getElementById("loginScreen")
+        .classList.add("hidden");
+
+
+        document
+        .getElementById("adminPanel")
+        .classList.remove("hidden");
+
+
+        loadProducts();
+
+    }
+
+}
+
+
+/* CAMBIAR SECCIÓN */
+
+function showSection(
+    sectionId,
+    button
+){
+
+    document
+    .querySelectorAll(".section")
+    .forEach(
+        section =>
+        section.classList.add("hidden")
+    );
+
+
+    document
+    .getElementById(sectionId)
+    .classList.remove("hidden");
+
+
+    document
+    .querySelectorAll("nav button")
+    .forEach(
+        btn =>
+        btn.classList.remove("active")
+    );
+
+
+    button.classList.add("active");
+
+
+    if(sectionId === "productsSection"){
+        loadProducts();
+    }
+
+    if(sectionId === "ordersSection"){
+        loadOrders();
+    }
+
+    if(sectionId === "customersSection"){
+        loadCustomers();
+    }
+
+    if(sectionId === "settingsSection"){
+        loadSettings();
+    }
+
+}
+
+
+/* PRODUCTOS */
+
+async function loadProducts(){
+
+    const list =
+    document.getElementById("productsList");
+
+
+    list.innerHTML =
+    "<p>Cargando productos...</p>";
+
+
+    const {data,error} =
+    await supabaseClient
+    .from("products")
+    .select("*")
+    .order(
+        "sort_order",
+        {ascending:true}
+    );
+
+
+    if(error){
+
+        list.innerHTML =
+        "<p>No se pudieron cargar los productos.</p>";
+
+        console.error(error);
+
+        return;
+
+    }
+
+
+    list.innerHTML = "";
+
+
+    data.forEach(product => {
+
+        const div =
+        document.createElement("div");
+
+        div.className =
+        "product";
+
+
+        div.innerHTML = `
+
+        <div class="product-header">
+
+            <div class="product-name">
+                ${escapeHtml(product.name)}
+            </div>
+
+            <div class="status ${
+                product.available
+                ? "available"
+                : "unavailable"
+            }">
+
+                ${
+                    product.available
+                    ? "DISPONIBLE"
+                    : "AGOTADO"
+                }
+
+            </div>
+
+        </div>
+
+        ${
+            product.image_url
+            ?
+            `<img
+                class="preview"
+                src="${product.image_url}"
+            >`
+            :
+            ""
+        }
+
+        <label>Nombre</label>
+
+        <input
+            id="name-${product.id}"
+            value="${escapeAttribute(product.name)}"
+        >
+
+        <label>Descripción</label>
+
+        <textarea
+            id="description-${product.id}"
+        >${escapeHtml(product.description || "")}</textarea>
+
+        <label>Precio</label>
+
+        <input
+            id="price-${product.id}"
+            type="number"
+            step="0.01"
+            value="${product.price}"
+        >
+
+        <label>Categoría</label>
+
+        <select id="category-${product.id}">
+
+            <option
+                value="Pastes"
+                ${product.category === "Pastes" ? "selected" : ""}
+            >
+                Pastes
+            </option>
+
+            <option
+                value="Dulces"
+                ${product.category === "Dulces" ? "selected" : ""}
+            >
+                Dulces
+            </option>
+
+            <option
+                value="Bebidas"
+                ${product.category === "Bebidas" ? "selected" : ""}
+            >
+                Bebidas
+            </option>
+
+            <option
+                value="Promociones"
+                ${product.category === "Promociones" ? "selected" : ""}
+            >
+                Promociones
+            </option>
+
+        </select>
+
+
+        <label>Disponible</label>
+
+        <select id="available-${product.id}">
+
+            <option
+                value="true"
+                ${product.available ? "selected" : ""}
+            >
+                Sí
+            </option>
+
+            <option
+                value="false"
+                ${!product.available ? "selected" : ""}
+            >
+                No
+            </option>
+
+        </select>
+
+
+        <label>URL de imagen</label>
+
+        <input
+            id="image-${product.id}"
+            value="${escapeAttribute(product.image_url || "")}"
+        >
+
+
+        <label>Orden</label>
+
+        <input
+            id="sort-${product.id}"
+            type="number"
+            value="${product.sort_order}"
+        >
+
+
+        <button
+            class="save-button"
+            onclick="updateProduct('${product.id}')"
+        >
+            GUARDAR CAMBIOS
+        </button>
+
+        `;
+
+
+        list.appendChild(div);
+
+    });
+
+}
+
+
+/* ACTUALIZAR PRODUCTO */
+
+async function updateProduct(id){
+
+    const name =
+    document.getElementById(
+        `name-${id}`
+    ).value.trim();
+
+
+    const description =
+    document.getElementById(
+        `description-${id}`
+    ).value.trim();
+
+
+    const price =
+    Number(
+        document.getElementById(
+            `price-${id}`
+        ).value
+    );
+
+
+    const category =
+    document.getElementById(
+        `category-${id}`
+    ).value;
+
+
+    const available =
+    document.getElementById(
+        `available-${id}`
+    ).value === "true";
+
+
+    const image_url =
+    document.getElementById(
+        `image-${id}`
+    ).value.trim();
+
+
+    const sort_order =
+    Number(
+        document.getElementById(
+            `sort-${id}`
+        ).value
+    );
+
+
+    const {error} =
+    await supabaseClient
+    .from("products")
+    .update({
+
+        name:name,
+
+        description:description,
+
+        price:price,
+
+        category:category,
+
+        available:available,
+
+        image_url:image_url,
+
+        sort_order:sort_order,
+
+        updated_at:new Date().toISOString()
+
+    })
+    .eq("id",id);
+
+
+    if(error){
+
+        alert(
+            "No se pudo guardar el producto."
+        );
+
+        console.error(error);
+
+        return;
+
+    }
+
+
+    alert(
+        "Producto guardado."
+    );
+
+
+    loadProducts();
+
+}
+
+
+/* NUEVO PRODUCTO */
+
+function showNewProductForm(){
+
+    document
+    .getElementById("newProductForm")
+    .classList.remove("hidden");
+
+}
+
+
+async function createProduct(){
+
+    const name =
+    document
+    .getElementById("newName")
+    .value
+    .trim();
+
+
+    const description =
+    document
+    .getElementById("newDescription")
+    .value
+    .trim();
+
+
+    const price =
+    Number(
+        document
+        .getElementById("newPrice")
+        .value
+    );
+
+
+    const category =
+    document
+    .getElementById("newCategory")
+    .value;
+
+
+    const available =
+    document
+    .getElementById("newAvailable")
+    .value === "true";
+
+
+    const sort_order =
+    Number(
+        document
+        .getElementById("newSortOrder")
+        .value
+    );
+
+
+    if(!name){
+
+        alert(
+            "Escribe el nombre del producto."
+        );
+
+        return;
+
+    }
+
+
+    const {error} =
+    await supabaseClient
+    .from("products")
+    .insert({
+
+        name:name,
+
+        description:description,
+
+        price:price,
+
+        category:category,
+
+        available:available,
+
+        sort_order:sort_order
+
+    });
+
+
+    if(error){
+
+        alert(
+            "No se pudo crear el producto."
+        );
+
+        console.error(error);
+
+        return;
+
+    }
+
+
+    alert(
+        "Producto creado."
+    );
+
+
+    document
+    .getElementById("newProductForm")
+    .classList.add("hidden");
+
+
+    loadProducts();
+
+}
+
+
+/* PEDIDOS */
+
+async function loadOrders(){
+
+    const list =
+    document.getElementById(
+        "ordersList"
+    );
+
+
+    list.innerHTML =
+    "<p>Cargando pedidos...</p>";
+
+
+    const {data,error} =
+    await supabaseClient
+    .from("orders")
+    .select("*")
+    .order(
+        "created_at",
+        {ascending:false}
+    );
+
+
+    if(error){
+
+        list.innerHTML =
+        "<p>No se pudieron cargar los pedidos.</p>";
+
+        console.error(error);
+
+        return;
+
+    }
+
+
+    if(!data.length){
+
+        list.innerHTML =
+        "<p>No hay pedidos.</p>";
+
+        return;
+
+    }
+
+
+    list.innerHTML = "";
+
+
+    data.forEach(order => {
+
+        const div =
+        document.createElement("div");
+
+        div.className =
+        "order";
+
+
+        div.innerHTML = `
+
+        <h3>
+            Pedido ${order.id.substring(0,8)}
+        </h3>
+
+        <p>
+            <strong>Cliente:</strong>
+            ${escapeHtml(order.customer_name)}
+        </p>
+
+        <p>
+            <strong>Teléfono:</strong>
+            ${escapeHtml(order.customer_phone)}
+        </p>
+
+        <p>
+            <strong>Entrega:</strong>
+            ${escapeHtml(order.delivery_type)}
+        </p>
+
+        <p>
+            <strong>Dirección:</strong>
+            ${escapeHtml(order.address || "")}
+        </p>
+
+        <p>
+            <strong>Pago:</strong>
+            ${escapeHtml(order.payment_method)}
+        </p>
+
+        <p>
+            <strong>Estado del pago:</strong>
+            ${escapeHtml(order.payment_status)}
+        </p>
+
+        <p>
+            <strong>Estado del pedido:</strong>
+            ${escapeHtml(order.order_status)}
+        </p>
+
+        <p class="order-total">
+            Total: $${Number(order.total).toFixed(2)}
+        </p>
+
+        <label>Estado del pedido</label>
+
+        <select
+            id="status-${order.id}"
+        >
+
+            <option
+                value="pending"
+                ${order.order_status === "pending" ? "selected" : ""}
+            >
+                Pendiente
+            </option>
+
+            <option
+                value="confirmed"
+                ${order.order_status === "confirmed" ? "selected" : ""}
+            >
+                Confirmado
+            </option>
+
+            <option
+                value="preparing"
+                ${order.order_status === "preparing" ? "selected" : ""}
+            >
+                En preparación
+            </option>
+
+            <option
+                value="ready"
+                ${order.order_status === "ready" ? "selected" : ""}
+            >
+                Listo
+            </option>
+
+            <option
+                value="on_the_way"
+                ${order.order_status === "on_the_way" ? "selected" : ""}
+            >
+                En camino
+            </option>
+
+            <option
+                value="delivered"
+                ${order.order_status === "delivered" ? "selected" : ""}
+            >
+                Entregado
+            </option>
+
+            <option
+                value="cancelled"
+                ${order.order_status === "cancelled" ? "selected" : ""}
+            >
+                Cancelado
+            </option>
+
+        </select>
+
+
+        <button
+            class="save-button"
+            onclick="updateOrderStatus('${order.id}')"
+        >
+            ACTUALIZAR PEDIDO
+        </button>
+
+        `;
+
+
+        list.appendChild(div);
+
+    });
+
+}
+
+
+/* ACTUALIZAR PEDIDO */
+
+async function updateOrderStatus(id){
+
+    const status =
+    document
+    .getElementById(
+        `status-${id}`
+    )
+    .value;
+
+
+    const {error} =
+    await supabaseClient
+    .from("orders")
+    .update({
+
+        order_status:status,
+
+        updated_at:
+        new Date().toISOString()
+
+    })
+    .eq("id",id);
+
+
+    if(error){
+
+        alert(
+            "No se pudo actualizar el pedido."
+        );
+
+        console.error(error);
+
+        return;
+
+    }
+
+
+    alert(
+        "Pedido actualizado."
+    );
+
+
+    loadOrders();
+
+}
+
+
+/* CLIENTES */
+
+async function loadCustomers(){
+
+    const list =
+    document.getElementById(
+        "customersList"
+    );
+
+
+    list.innerHTML =
+    "<p>Cargando clientes...</p>";
+
+
+    const {data,error} =
+    await supabaseClient
+    .from("customers")
+    .select("*")
+    .order(
+        "created_at",
+        {ascending:false}
+    );
+
+
+    if(error){
+
+        list.innerHTML =
+        "<p>No se pudieron cargar los clientes.</p>";
+
+        console.error(error);
+
+        return;
+
+    }
+
+
+    if(!data.length){
+
+        list.innerHTML =
+        "<p>No hay clientes.</p>";
+
+        return;
+
+    }
+
+
+    list.innerHTML = "";
+
+
+    data.forEach(customer => {
+
+        const div =
+        document.createElement("div");
+
+        div.className =
+        "product";
+
+
+        div.innerHTML = `
+
+        <h3>
+            ${escapeHtml(customer.name)}
+        </h3>
+
+        <p>
+            Teléfono:
+            ${escapeHtml(customer.phone)}
+        </p>
+
+        <p>
+            Email:
+            ${escapeHtml(customer.email || "")}
+        </p>
+
+        `;
+
+
+        list.appendChild(div);
+
+    });
+
+}
+
+
+/* CONFIGURACIÓN */
+
+async function loadSettings(){
+
+    const list =
+    document.getElementById(
+        "settingsList"
+    );
+
+
+    list.innerHTML =
+    "<p>Cargando configuración...</p>";
+
+
+    const {data,error} =
+    await supabaseClient
+    .from("settings")
+    .select("*")
+    .order("key");
+
+
+    if(error){
+
+        list.innerHTML =
+        "<p>No se pudo cargar la configuración.</p>";
+
+        console.error(error);
+
+        return;
+
+    }
+
+
+    list.innerHTML = "";
+
+
+    data.forEach(setting => {
+
+        const label =
+        document.createElement("label");
+
+        label.textContent =
+        setting.key;
+
+
+        const input =
+        document.createElement("input");
+
+        input.id =
+        `setting-${setting.id}`;
+
+        input.value =
+        setting.value || "";
+
+
+        list.appendChild(label);
+
+        list.appendChild(input);
+
+    });
+
+}
+
+
+async function saveSettings(){
+
+    const {data,error} =
+    await supabaseClient
+    .from("settings")
+    .select("*");
+
+
+    if(error){
+
+        alert(
+            "No se pudo guardar la configuración."
+        );
+
+        return;
+
+    }
+
+
+    for(const setting of data){
+
+        const input =
+        document.getElementById(
+            `setting-${setting.id}`
+        );
+
+
+        if(input){
+
+            await supabaseClient
+            .from("settings")
+            .update({
+
+                value:input.value,
+
+                updated_at:
+                new Date().toISOString()
+
+            })
+            .eq(
+                "id",
+                setting.id
+            );
+
+        }
+
+    }
+
+
+    alert(
+        "Configuración guardada."
+    );
+
+}
+
+
+/* SEGURIDAD DE TEXTO */
+
+function escapeHtml(text){
+
+    const div =
+    document.createElement("div");
+
+    div.textContent =
+    text;
+
+    return div.innerHTML;
+
+}
+
+
+function escapeAttribute(text){
+
+    return String(text)
+    .replace(/&/g,"&amp;")
+    .replace(/"/g,"&quot;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;");
+
+}
+
+
+/* INICIAR */
+
+checkSession();
+
+</script>
+
+</body>
+</html>
