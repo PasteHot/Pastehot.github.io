@@ -1,98 +1,76 @@
 <!DOCTYPE html>
-<html lang="es-MX">
+<html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PasteHot | Saborea tu tiempo</title>
+
+<title>PasteHot</title>
+
+<meta name="description" content="PasteHot - Saborea tu tiempo.">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
+
 *{
     box-sizing:border-box;
-    margin:0;
-    padding:0;
 }
 
 body{
+    margin:0;
     font-family:Arial,Helvetica,sans-serif;
-    background:#f7f3ee;
+    background:#f5f5f5;
     color:#222;
-    padding-bottom:90px;
 }
 
 header{
-    background:#a90000;
+    background:#c90000;
     color:white;
     text-align:center;
-    padding:28px 15px 24px;
-    position:sticky;
-    top:0;
-    z-index:20;
-    box-shadow:0 3px 12px rgba(0,0,0,.18);
+    padding:24px 15px;
 }
 
 .logo{
-    font-size:36px;
+    font-size:38px;
     font-weight:900;
-    letter-spacing:-1px;
+    letter-spacing:2px;
 }
 
 .slogan{
-    font-size:14px;
     margin-top:5px;
+    font-size:16px;
 }
 
 .container{
-    max-width:700px;
-    margin:auto;
-    padding:18px 14px;
+    width:94%;
+    max-width:1100px;
+    margin:25px auto;
 }
 
-.categories{
-    display:flex;
-    gap:8px;
-    overflow-x:auto;
-    padding:5px 0 15px;
+h2{
+    margin-top:35px;
+    margin-bottom:15px;
 }
 
-.categories button{
-    border:0;
-    background:white;
-    padding:10px 15px;
-    border-radius:25px;
-    white-space:nowrap;
-    font-weight:bold;
-    box-shadow:0 2px 7px rgba(0,0,0,.1);
-    cursor:pointer;
-}
-
-.categories button.active{
-    background:#a90000;
-    color:white;
-}
-
-.section-title{
-    font-size:25px;
-    font-weight:900;
-    margin:18px 0 12px;
+.products{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:18px;
 }
 
 .product{
     background:white;
-    border-radius:16px;
+    border-radius:14px;
     overflow:hidden;
-    margin-bottom:14px;
     box-shadow:0 3px 12px rgba(0,0,0,.10);
 }
 
-.product-image{
+.product img{
     width:100%;
-    height:190px;
+    aspect-ratio:1/1;
+    object-fit:cover;
+    display:block;
     background:#ddd;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    color:#777;
-    font-size:15px;
 }
 
 .product-info{
@@ -100,651 +78,986 @@ header{
 }
 
 .product-name{
-    font-size:20px;
-    font-weight:800;
+    font-size:19px;
+    font-weight:bold;
+    margin-bottom:6px;
 }
 
 .product-description{
     color:#666;
     font-size:14px;
-    margin:6px 0 12px;
-    line-height:1.4;
+    min-height:38px;
 }
 
-.product-bottom{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-}
-
-.price{
-    font-size:21px;
-    font-weight:900;
-    color:#a90000;
-}
-
-.add{
-    background:#a90000;
-    color:white;
-    border:0;
-    border-radius:10px;
-    padding:11px 17px;
-    font-weight:bold;
-    cursor:pointer;
-}
-
-.cart-button{
-    position:fixed;
-    bottom:15px;
-    left:50%;
-    transform:translateX(-50%);
-    width:calc(100% - 28px);
-    max-width:670px;
-    background:#a90000;
-    color:white;
-    border:0;
-    border-radius:15px;
-    padding:16px;
-    font-size:17px;
-    font-weight:900;
-    box-shadow:0 5px 20px rgba(0,0,0,.3);
-    z-index:30;
-    cursor:pointer;
-}
-
-.cart-count{
-    background:white;
-    color:#a90000;
-    border-radius:50%;
-    padding:3px 8px;
-    margin-left:5px;
-}
-
-.modal{
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.65);
-    z-index:50;
-    align-items:flex-end;
-    justify-content:center;
-}
-
-.modal-content{
-    background:#f7f3ee;
-    width:100%;
-    max-width:700px;
-    max-height:92vh;
-    overflow-y:auto;
-    border-radius:22px 22px 0 0;
-    padding:22px;
-}
-
-.modal-header{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:18px;
-}
-
-.modal-header h2{
-    font-size:25px;
-}
-
-.close{
-    border:0;
-    background:#ddd;
-    width:38px;
-    height:38px;
-    border-radius:50%;
+.product-price{
     font-size:20px;
+    font-weight:bold;
+    margin:12px 0;
+}
+
+button{
+    border:0;
+    border-radius:8px;
+    padding:11px 15px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.add-button{
+    width:100%;
+    background:#c90000;
+    color:white;
+}
+
+.add-button:hover{
+    background:#a90000;
+}
+
+.cart{
+    background:white;
+    margin-top:35px;
+    padding:20px;
+    border-radius:14px;
+    box-shadow:0 3px 12px rgba(0,0,0,.10);
 }
 
 .cart-item{
-    background:white;
-    padding:13px;
-    border-radius:12px;
-    margin-bottom:9px;
     display:flex;
     justify-content:space-between;
     align-items:center;
+    gap:10px;
+    padding:12px 0;
+    border-bottom:1px solid #ddd;
 }
 
-.cart-item-name{
-    font-weight:bold;
-}
-
-.qty{
+.cart-controls{
     display:flex;
     align-items:center;
-    gap:9px;
+    gap:8px;
 }
 
-.qty button{
-    width:30px;
-    height:30px;
-    border:0;
-    border-radius:8px;
-    background:#a90000;
-    color:white;
-    font-weight:bold;
+.small-button{
+    padding:6px 10px;
+    background:#ddd;
 }
 
 .total{
-    font-size:22px;
-    font-weight:900;
     text-align:right;
-    margin:18px 0;
+    font-size:24px;
+    font-weight:bold;
+    margin-top:20px;
 }
 
-.form-title{
-    font-size:20px;
-    font-weight:900;
-    margin:22px 0 10px;
-}
-
-input,textarea{
-    width:100%;
-    border:1px solid #ccc;
+.form{
     background:white;
-    border-radius:10px;
-    padding:13px;
-    margin-bottom:10px;
+    margin-top:25px;
+    padding:20px;
+    border-radius:14px;
+    box-shadow:0 3px 12px rgba(0,0,0,.10);
+}
+
+label{
+    display:block;
+    font-weight:bold;
+    margin-top:15px;
+    margin-bottom:6px;
+}
+
+input,
+textarea,
+select{
+    width:100%;
+    padding:12px;
+    border:1px solid #ccc;
+    border-radius:8px;
     font-size:16px;
 }
 
 textarea{
-    min-height:80px;
+    min-height:90px;
+    resize:vertical;
 }
 
-.option{
-    background:white;
-    padding:13px;
-    border-radius:10px;
-    margin-bottom:8px;
-}
-
-.option label{
-    display:flex;
-    gap:10px;
-    align-items:center;
-}
-
-.option input{
-    width:auto;
-    margin:0;
-}
-
-.whatsapp{
+.order-button{
     width:100%;
-    background:#168c3b;
+    margin-top:20px;
+    background:#25D366;
     color:white;
-    border:0;
-    padding:16px;
-    border-radius:12px;
-    font-size:17px;
-    font-weight:900;
-    cursor:pointer;
-    margin-top:8px;
+    font-size:18px;
 }
 
 .empty{
-    text-align:center;
-    padding:30px 10px;
     color:#777;
+    text-align:center;
+    padding:20px;
+}
+
+.loading{
+    text-align:center;
+    padding:30px;
+    font-size:18px;
+}
+
+.error{
+    background:#ffe0e0;
+    color:#900;
+    padding:15px;
+    border-radius:8px;
+    margin:20px 0;
+}
+
+.hidden{
+    display:none;
 }
 
 footer{
     text-align:center;
-    padding:25px 10px;
+    padding:35px 15px;
     color:#777;
-    font-size:13px;
 }
+
 </style>
 </head>
 
 <body>
 
 <header>
-    <div class="logo">PASTEHOT</div>
-    <div class="slogan">Saborea tu tiempo</div>
+
+<div class="logo">PASTEHOT</div>
+
+<div class="slogan">
+Saborea tu tiempo.
+</div>
+
 </header>
 
 <div class="container">
 
-    <div class="categories">
-        <button class="active" onclick="showCategory('pastes',this)">Pastes</button>
-        <button onclick="showCategory('dulces',this)">Dulces</button>
-        <button onclick="showCategory('bebidas',this)">Bebidas</button>
-        <button onclick="showCategory('promos',this)">Promociones</button>
-    </div>
+<div id="loading" class="loading">
+Cargando menú...
+</div>
 
-    <div id="products"></div>
+<div id="error" class="error hidden"></div>
 
-    <footer>
-        PasteHot · San Antonio Hool, Yucatán
-    </footer>
+<div id="menu"></div>
+
+<div class="cart">
+
+<h2>Tu pedido</h2>
+
+<div id="cartItems">
+<div class="empty">
+Tu carrito está vacío.
+</div>
+</div>
+
+<div class="total">
+Total: $<span id="cartTotal">0.00</span>
+</div>
 
 </div>
 
-<button class="cart-button" onclick="openCart()">
-    🛒 Ver mi pedido
-    <span class="cart-count" id="cartCount">0</span>
+<div class="form">
+
+<h2>Datos del pedido</h2>
+
+<label for="customerName">
+Nombre
+</label>
+
+<input
+id="customerName"
+type="text"
+placeholder="Tu nombre"
+>
+
+<label for="customerPhone">
+Teléfono / WhatsApp
+</label>
+
+<input
+id="customerPhone"
+type="tel"
+placeholder="10 dígitos"
+>
+
+<label for="deliveryType">
+¿Cómo quieres recibir tu pedido?
+</label>
+
+<select id="deliveryType">
+
+<option value="delivery">
+Envío a domicilio
+</option>
+
+<option value="pickup">
+Recoger
+</option>
+
+</select>
+
+<div id="addressContainer">
+
+<label for="address">
+Dirección
+</label>
+
+<textarea
+id="address"
+placeholder="Calle, número, fraccionamiento, referencias..."
+></textarea>
+
+</div>
+
+<label for="paymentMethod">
+Forma de pago
+</label>
+
+<select id="paymentMethod">
+
+<option value="cash">
+Efectivo
+</option>
+
+<option value="card">
+Tarjeta
+</option>
+
+<option value="transfer">
+Transferencia
+</option>
+
+</select>
+
+<label for="notes">
+Notas del pedido
+</label>
+
+<textarea
+id="notes"
+placeholder="Alguna indicación especial..."
+></textarea>
+
+<button
+class="order-button"
+onclick="sendOrder()"
+>
+PEDIR POR WHATSAPP
 </button>
 
-<div class="modal" id="cartModal">
-    <div class="modal-content">
-
-        <div class="modal-header">
-            <h2>Mi pedido</h2>
-            <button class="close" onclick="closeCart()">×</button>
-        </div>
-
-        <div id="cartItems"></div>
-
-        <div class="total">
-            Total: $<span id="cartTotal">0</span>
-        </div>
-
-        <div class="form-title">Tus datos</div>
-
-        <input id="customerName" type="text" placeholder="Nombre">
-
-        <input id="customerPhone" type="tel" placeholder="Teléfono">
-
-        <div class="form-title">¿Cómo recibirás tu pedido?</div>
-
-        <div class="option">
-            <label>
-                <input type="radio" name="delivery" value="Envío a domicilio" checked>
-                🚚 Envío a domicilio
-            </label>
-        </div>
-
-        <div class="option">
-            <label>
-                <input type="radio" name="delivery" value="Recoger en PasteHot">
-                🏠 Recoger en PasteHot
-            </label>
-        </div>
-
-        <textarea id="address" placeholder="Dirección y referencias"></textarea>
-
-        <div class="form-title">Forma de pago</div>
-
-        <div class="option">
-            <label>
-                <input type="radio" name="payment" value="Efectivo" checked>
-                💵 Efectivo
-            </label>
-        </div>
-
-        <div class="option">
-            <label>
-                <input type="radio" name="payment" value="Transferencia">
-                🏦 Transferencia
-            </label>
-        </div>
-
-        <div class="option">
-            <label>
-                <input type="radio" name="payment" value="Tarjeta">
-                💳 Tarjeta
-            </label>
-        </div>
-
-        <button class="whatsapp" onclick="sendWhatsApp()">
-            📲 Enviar pedido por WhatsApp
-        </button>
-
-    </div>
 </div>
+
+</div>
+
+<footer>
+
+PasteHot<br>
+Saborea tu tiempo.
+
+</footer>
 
 <script>
 
-const products = {
+/* =====================================================
+   CONFIGURACIÓN SUPABASE
+   ===================================================== */
 
-pastes:[
-{
-name:"Papa con carne",
-price:35,
-description:"Paste relleno de papa con carne."
-},
-{
-name:"Frijol con chorizo",
-price:35,
-description:"Paste relleno de frijol con chorizo."
-},
-{
-name:"Hawaiano",
-price:35,
-description:"Una combinación de sabores dulce y salado."
-},
-{
-name:"Mole rojo almendrado",
-price:35,
-description:"Mole rojo almendrado con pechuga de pollo y ajonjolí."
-},
-{
-name:"Choriqueso",
-price:35,
-description:"Chorizo y queso en nuestro paste."
-},
-{
-name:"Cheesepot",
-price:35,
-description:"Nuestra combinación especial de queso."
+const SUPABASE_URL =
+"https://cqlywpemisknrxswlmea.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+"sb_publishable_wDu6p-CtnQtYu7KWH1YS1A_h7LeL0SX";
+
+const supabaseClient =
+supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY
+);
+
+
+/* =====================================================
+   CONFIGURACIÓN WHATSAPP
+   ===================================================== */
+
+/*
+   CAMBIA ESTE NÚMERO POR EL WHATSAPP DE PASTEHOT.
+
+   Formato:
+   52 + número de México
+
+   Ejemplo:
+   529999999999
+*/
+
+const WHATSAPP_NUMBER =
+"529902317606";
+
+
+/* =====================================================
+   VARIABLES
+   ===================================================== */
+
+let products = [];
+
+let cart = [];
+
+
+/* =====================================================
+   CARGAR PRODUCTOS DESDE SUPABASE
+   ===================================================== */
+
+async function loadProducts(){
+
+    const loading =
+    document.getElementById("loading");
+
+    const error =
+    document.getElementById("error");
+
+    try{
+
+        const { data, error: supabaseError } =
+        await supabaseClient
+        .from("products")
+        .select("*")
+        .eq("available", true)
+        .order("sort_order", { ascending:true });
+
+        if(supabaseError){
+            throw supabaseError;
+        }
+
+        products = data || [];
+
+        loading.classList.add("hidden");
+
+        renderProducts();
+
+    }catch(errorObject){
+
+        console.error(errorObject);
+
+        loading.classList.add("hidden");
+
+        error.classList.remove("hidden");
+
+        error.textContent =
+        "No se pudo cargar el menú. Revisa la conexión con Supabase.";
+
+    }
+
 }
-],
 
-dulces:[
-{
-name:"Arroz con leche",
-price:35,
-description:"Paste dulce relleno de arroz con leche."
-},
-{
-name:"Zarzamora con Philadelphia",
-price:35,
-description:"Zarzamora y queso Philadelphia."
-},
-{
-name:"Guayaba con Philadelphia",
-price:35,
-description:"Guayaba y queso Philadelphia."
-}
-],
 
-bebidas:[],
-promos:[]
-};
-
-let currentCategory="pastes";
-let cart=[];
-
-function showCategory(category,button){
-
-    currentCategory=category;
-
-    document.querySelectorAll(".categories button")
-    .forEach(b=>b.classList.remove("active"));
-
-    button.classList.add("active");
-
-    renderProducts();
-}
+/* =====================================================
+   MOSTRAR PRODUCTOS
+   ===================================================== */
 
 function renderProducts(){
 
-    const container=document.getElementById("products");
+    const menu =
+    document.getElementById("menu");
 
-    container.innerHTML="";
+    menu.innerHTML = "";
 
-    let list=products[currentCategory];
+    const categories = [];
 
-    let title={
-        pastes:"Pastes",
-        dulces:"Dulces",
-        bebidas:"Bebidas",
-        promos:"Promociones"
-    }[currentCategory];
+    products.forEach(product => {
 
-    const heading=document.createElement("div");
-    heading.className="section-title";
-    heading.textContent=title;
+        if(!categories.includes(product.category)){
+            categories.push(product.category);
+        }
 
-    container.appendChild(heading);
+    });
 
-    if(list.length===0){
 
-        const empty=document.createElement("div");
-        empty.className="empty";
-        empty.textContent="Próximamente...";
-        container.appendChild(empty);
+    categories.forEach(category => {
+
+        const title =
+        document.createElement("h2");
+
+        title.textContent =
+        category;
+
+        menu.appendChild(title);
+
+
+        const grid =
+        document.createElement("div");
+
+        grid.className =
+        "products";
+
+
+        const categoryProducts =
+        products.filter(
+            product =>
+            product.category === category
+        );
+
+
+        categoryProducts.forEach(product => {
+
+            const card =
+            document.createElement("div");
+
+            card.className =
+            "product";
+
+
+            const image =
+            document.createElement("img");
+
+            if(product.image_url){
+
+                image.src =
+                product.image_url;
+
+            }else{
+
+                image.src =
+                "data:image/svg+xml;charset=UTF-8," +
+                encodeURIComponent(`
+                <svg xmlns="http://www.w3.org/2000/svg"
+                width="600"
+                height="600">
+                <rect width="100%" height="100%"
+                fill="#dddddd"/>
+                <text x="50%" y="50%"
+                dominant-baseline="middle"
+                text-anchor="middle"
+                font-size="35"
+                fill="#777">
+                Foto próximamente
+                </text>
+                </svg>
+                `);
+
+            }
+
+
+            const info =
+            document.createElement("div");
+
+            info.className =
+            "product-info";
+
+
+            const name =
+            document.createElement("div");
+
+            name.className =
+            "product-name";
+
+            name.textContent =
+            product.name;
+
+
+            const description =
+            document.createElement("div");
+
+            description.className =
+            "product-description";
+
+            description.textContent =
+            product.description || "";
+
+
+            const price =
+            document.createElement("div");
+
+            price.className =
+            "product-price";
+
+            price.textContent =
+            "$" +
+            Number(product.price).toFixed(2);
+
+
+            const button =
+            document.createElement("button");
+
+            button.className =
+            "add-button";
+
+            button.textContent =
+            "AGREGAR AL PEDIDO";
+
+
+            button.onclick =
+            function(){
+
+                addToCart(product.id);
+
+            };
+
+
+            info.appendChild(name);
+
+            info.appendChild(description);
+
+            info.appendChild(price);
+
+            info.appendChild(button);
+
+            card.appendChild(image);
+
+            card.appendChild(info);
+
+            grid.appendChild(card);
+
+        });
+
+
+        menu.appendChild(grid);
+
+    });
+
+}
+
+
+/* =====================================================
+   CARRITO
+   ===================================================== */
+
+function addToCart(productId){
+
+    const product =
+    products.find(
+        p => p.id === productId
+    );
+
+    if(!product){
         return;
     }
 
-    list.forEach((product,index)=>{
 
-        const card=document.createElement("div");
-        card.className="product";
-
-        card.innerHTML=`
-
-        <div class="product-image">
-            Foto del producto
-        </div>
-
-        <div class="product-info">
-
-            <div class="product-name">
-                ${product.name}
-            </div>
-
-            <div class="product-description">
-                ${product.description}
-            </div>
-
-            <div class="product-bottom">
-
-                <div class="price">
-                    $${product.price}
-                </div>
-
-                <button class="add"
-                onclick="addToCart('${currentCategory}',${index})">
-                    Agregar
-                </button>
-
-            </div>
-
-        </div>
-        `;
-
-        container.appendChild(card);
-    });
-}
-
-function addToCart(category,index){
-
-    const product=products[category][index];
-
-    const existing=cart.find(
-        item=>item.name===product.name
+    const existing =
+    cart.find(
+        item => item.product.id === productId
     );
 
+
     if(existing){
+
         existing.quantity++;
+
     }else{
+
         cart.push({
-            ...product,
+            product:product,
             quantity:1
         });
+
     }
 
-    updateCart();
-}
-
-function updateCart(){
-
-    let count=0;
-    let total=0;
-
-    cart.forEach(item=>{
-        count+=item.quantity;
-        total+=item.price*item.quantity;
-    });
-
-    document.getElementById("cartCount").textContent=count;
-    document.getElementById("cartTotal").textContent=total;
-}
-
-function openCart(){
 
     renderCart();
 
-    document.getElementById("cartModal").style.display="flex";
 }
 
-function closeCart(){
 
-    document.getElementById("cartModal").style.display="none";
+function changeQuantity(productId, amount){
+
+    const item =
+    cart.find(
+        item =>
+        item.product.id === productId
+    );
+
+    if(!item){
+        return;
+    }
+
+
+    item.quantity += amount;
+
+
+    if(item.quantity <= 0){
+
+        cart =
+        cart.filter(
+            item =>
+            item.product.id !== productId
+        );
+
+    }
+
+
+    renderCart();
+
 }
+
+
+function getCartTotal(){
+
+    return cart.reduce(
+        (total,item) =>
+        total +
+        Number(item.product.price) *
+        item.quantity,
+        0
+    );
+
+}
+
 
 function renderCart(){
 
-    const container=document.getElementById("cartItems");
+    const container =
+    document.getElementById("cartItems");
 
-    container.innerHTML="";
+    const total =
+    document.getElementById("cartTotal");
 
-    if(cart.length===0){
 
-        container.innerHTML=
+    if(cart.length === 0){
+
+        container.innerHTML =
         '<div class="empty">Tu carrito está vacío.</div>';
 
+        total.textContent =
+        "0.00";
+
         return;
+
     }
 
-    cart.forEach((item,index)=>{
 
-        const div=document.createElement("div");
+    container.innerHTML = "";
 
-        div.className="cart-item";
 
-        div.innerHTML=`
+    cart.forEach(item => {
 
-        <div>
-            <div class="cart-item-name">
-                ${item.name}
-            </div>
-            <div>
-                $${item.price} c/u
-            </div>
-        </div>
+        const row =
+        document.createElement("div");
 
-        <div class="qty">
+        row.className =
+        "cart-item";
 
-            <button onclick="changeQuantity(${index},-1)">
-                −
-            </button>
 
-            <strong>${item.quantity}</strong>
+        const name =
+        document.createElement("div");
 
-            <button onclick="changeQuantity(${index},1)">
-                +
-            </button>
+        name.textContent =
+        item.product.name +
+        " × " +
+        item.quantity;
 
-        </div>
-        `;
 
-        container.appendChild(div);
+        const controls =
+        document.createElement("div");
+
+        controls.className =
+        "cart-controls";
+
+
+        const minus =
+        document.createElement("button");
+
+        minus.className =
+        "small-button";
+
+        minus.textContent =
+        "−";
+
+        minus.onclick =
+        function(){
+
+            changeQuantity(
+                item.product.id,
+                -1
+            );
+
+        };
+
+
+        const plus =
+        document.createElement("button");
+
+        plus.className =
+        "small-button";
+
+        plus.textContent =
+        "+";
+
+        plus.onclick =
+        function(){
+
+            changeQuantity(
+                item.product.id,
+                1
+            );
+
+        };
+
+
+        controls.appendChild(minus);
+
+        controls.appendChild(plus);
+
+
+        row.appendChild(name);
+
+        row.appendChild(controls);
+
+
+        container.appendChild(row);
+
     });
+
+
+    total.textContent =
+    getCartTotal().toFixed(2);
+
 }
 
-function changeQuantity(index,change){
 
-    cart[index].quantity+=change;
+/* =====================================================
+   MOSTRAR / OCULTAR DIRECCIÓN
+   ===================================================== */
 
-    if(cart[index].quantity<=0){
-        cart.splice(index,1);
+document
+.getElementById("deliveryType")
+.addEventListener(
+    "change",
+    function(){
+
+        const container =
+        document.getElementById(
+            "addressContainer"
+        );
+
+        if(this.value === "delivery"){
+
+            container.classList.remove(
+                "hidden"
+            );
+
+        }else{
+
+            container.classList.add(
+                "hidden"
+            );
+
+        }
+
     }
+);
 
-    updateCart();
-    renderCart();
-}
 
-function sendWhatsApp(){
+/* =====================================================
+   ENVIAR PEDIDO A WHATSAPP
+   ===================================================== */
 
-    if(cart.length===0){
+function sendOrder(){
 
-        alert("Tu pedido está vacío.");
+    if(cart.length === 0){
+
+        alert(
+            "Agrega al menos un producto al pedido."
+        );
+
         return;
+
     }
 
-    const name=
-    document.getElementById("customerName").value.trim();
 
-    const phone=
-    document.getElementById("customerPhone").value.trim();
+    const name =
+    document
+    .getElementById("customerName")
+    .value
+    .trim();
 
-    const address=
-    document.getElementById("address").value.trim();
 
-    const delivery=
-    document.querySelector(
-        'input[name="delivery"]:checked'
-    ).value;
+    const phone =
+    document
+    .getElementById("customerPhone")
+    .value
+    .trim();
 
-    const payment=
-    document.querySelector(
-        'input[name="payment"]:checked'
-    ).value;
+
+    const deliveryType =
+    document
+    .getElementById("deliveryType")
+    .value;
+
+
+    const address =
+    document
+    .getElementById("address")
+    .value
+    .trim();
+
+
+    const paymentMethod =
+    document
+    .getElementById("paymentMethod")
+    .value;
+
+
+    const notes =
+    document
+    .getElementById("notes")
+    .value
+    .trim();
+
 
     if(!name){
+
         alert("Escribe tu nombre.");
+
         return;
+
     }
+
 
     if(!phone){
-        alert("Escribe tu teléfono.");
+
+        alert(
+            "Escribe tu teléfono o WhatsApp."
+        );
+
         return;
+
     }
 
-    if(delivery==="Envío a domicilio" && !address){
-        alert("Escribe tu dirección.");
+
+    if(
+        deliveryType === "delivery"
+        &&
+        !address
+    ){
+
+        alert(
+            "Escribe la dirección de entrega."
+        );
+
         return;
+
     }
 
-    let message="🔥 *NUEVO PEDIDO PASTEHOT* 🔥\n\n";
 
-    message+="*Cliente:* "+name+"\n";
-    message+="*Teléfono:* "+phone+"\n";
-    message+="*Entrega:* "+delivery+"\n";
+    const paymentNames = {
 
-    if(address){
-        message+="*Dirección:* "+address+"\n";
-    }
+        cash:"Efectivo",
 
-    message+="*Pago:* "+payment+"\n\n";
-    message+="*PEDIDO:*\n";
+        card:"Tarjeta",
 
-    let total=0;
+        transfer:"Transferencia"
 
-    cart.forEach(item=>{
+    };
 
-        const subtotal=item.price*item.quantity;
 
-        total+=subtotal;
+    const deliveryNames = {
 
-        message+=
-        item.quantity+
-        " × "+
-        item.name+
-        " — $"+
-        subtotal+
+        delivery:"Envío a domicilio",
+
+        pickup:"Recoger"
+
+    };
+
+
+    let message =
+    "Hola PasteHot 👋\n\n";
+
+
+    message +=
+    "*NUEVO PEDIDO*\n\n";
+
+
+    message +=
+    "Nombre: " +
+    name +
+    "\n";
+
+
+    message +=
+    "Teléfono: " +
+    phone +
+    "\n";
+
+
+    message +=
+    "Entrega: " +
+    deliveryNames[deliveryType] +
+    "\n";
+
+
+    if(deliveryType === "delivery"){
+
+        message +=
+        "Dirección: " +
+        address +
         "\n";
+
+    }
+
+
+    message +=
+    "Pago: " +
+    paymentNames[paymentMethod] +
+    "\n";
+
+
+    message +=
+    "\n*Productos:*\n";
+
+
+    cart.forEach(item => {
+
+        message +=
+        item.quantity +
+        " × " +
+        item.product.name +
+        " — $" +
+        (
+            Number(item.product.price) *
+            item.quantity
+        ).toFixed(2) +
+        "\n";
+
     });
 
-    message+="\n*TOTAL: $"+total+"*";
 
-    /*
-    CAMBIA ÚNICAMENTE EL NÚMERO DE ABAJO
-    POR TU NÚMERO DE WHATSAPP BUSINESS.
-    */
+    message +=
+    "\n*TOTAL: $" +
+    getCartTotal().toFixed(2) +
+    "*";
 
-    const whatsappNumber="529902317606";
 
-    const url=
-    "https://wa.me/"+
-    whatsappNumber+
-    "?text="+
+    if(notes){
+
+        message +=
+        "\n\nNotas: " +
+        notes;
+
+    }
+
+
+    const url =
+    "https://wa.me/" +
+    WHATSAPP_NUMBER +
+    "?text=" +
     encodeURIComponent(message);
 
-    window.open(url,"_blank");
+
+    window.open(
+        url,
+        "_blank"
+    );
+
 }
 
-renderProducts();
-updateCart();
+
+/* =====================================================
+   INICIAR
+   ===================================================== */
+
+loadProducts();
+
+renderCart();
 
 </script>
 
