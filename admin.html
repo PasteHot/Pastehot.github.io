@@ -1,27 +1,16 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
-
 <meta charset="UTF-8">
-
-<meta name="viewport"
-      content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 
 <title>Administrador</title>
 
-<link rel="preconnect"
-      href="https://fonts.googleapis.com">
-
-<link rel="preconnect"
-      href="https://fonts.gstatic.com"
-      crossorigin>
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@700;800;900&display=swap"
-      rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 
 <style>
 
@@ -29,11 +18,21 @@
     box-sizing:border-box;
 }
 
+:root{
+    --red:#C62828;
+    --green:#16833b;
+    --dark:#171717;
+    --bg:#f4f5f7;
+    --border:#e5e5e5;
+    --text:#171717;
+    --muted:#777;
+}
+
 body{
     margin:0;
     font-family:Inter,Arial,sans-serif;
-    background:#f3f4f6;
-    color:#171717;
+    background:var(--bg);
+    color:var(--text);
 }
 
 button,
@@ -47,6 +46,13 @@ button{
     cursor:pointer;
 }
 
+.hidden{
+    display:none!important;
+}
+
+
+/* LOGIN */
+
 .login{
     min-height:100vh;
     display:flex;
@@ -59,60 +65,20 @@ button{
 .login-box{
     width:min(420px,100%);
     background:white;
-    border-radius:24px;
-    padding:30px;
-    box-shadow:0 20px 60px rgba(0,0,0,.3);
+    border-radius:25px;
+    padding:32px;
+    box-shadow:0 25px 70px rgba(0,0,0,.35);
 }
 
 .login-box h1{
     margin:0 0 8px;
-    font-family:Montserrat;
+    font-family:Montserrat,sans-serif;
     font-size:28px;
 }
 
 .login-box p{
-    color:#777;
     margin:0 0 25px;
-}
-
-.field{
-    margin-bottom:15px;
-}
-
-.field label{
-    display:block;
-    font-size:12px;
-    font-weight:800;
-    margin-bottom:6px;
-}
-
-.field input,
-.field textarea,
-.field select{
-    width:100%;
-    border:1px solid #ddd;
-    border-radius:12px;
-    padding:12px;
-    background:white;
-}
-
-.field textarea{
-    min-height:100px;
-    resize:vertical;
-}
-
-.primary{
-    width:100%;
-    border:0;
-    background:#C62828;
-    color:white;
-    padding:13px;
-    border-radius:12px;
-    font-weight:800;
-}
-
-.hidden{
-    display:none !important;
+    color:#777;
 }
 
 
@@ -123,13 +89,13 @@ button{
 }
 
 .topbar{
-    height:68px;
+    height:70px;
     background:#171717;
     color:white;
     display:flex;
     align-items:center;
     justify-content:space-between;
-    padding:0 22px;
+    padding:0 24px;
     position:sticky;
     top:0;
     z-index:100;
@@ -137,7 +103,7 @@ button{
 
 .topbar h1{
     margin:0;
-    font-family:Montserrat;
+    font-family:Montserrat,sans-serif;
     font-size:20px;
 }
 
@@ -145,21 +111,24 @@ button{
     border:1px solid rgba(255,255,255,.25);
     background:transparent;
     color:white;
-    padding:9px 13px;
-    border-radius:9px;
+    padding:9px 14px;
+    border-radius:10px;
+    font-weight:700;
 }
 
+
+/* LAYOUT */
 
 .layout{
     display:flex;
-    min-height:calc(100vh - 68px);
+    min-height:calc(100vh - 70px);
 }
 
 .sidebar{
-    width:230px;
+    width:240px;
     background:white;
-    border-right:1px solid #ddd;
-    padding:15px;
+    border-right:1px solid var(--border);
+    padding:16px;
     flex-shrink:0;
 }
 
@@ -168,24 +137,27 @@ button{
     text-align:left;
     border:0;
     background:transparent;
-    padding:13px;
-    border-radius:11px;
-    font-weight:700;
+    padding:13px 14px;
+    border-radius:12px;
+    font-weight:750;
     color:#555;
     margin-bottom:5px;
 }
 
+.nav:hover{
+    background:#f7f7f7;
+}
+
 .nav.active{
     background:#fff0f0;
-    color:#C62828;
+    color:var(--red);
 }
 
 .content{
     flex:1;
-    padding:25px;
-    max-width:1400px;
+    padding:28px;
+    max-width:1500px;
 }
-
 
 .tab{
     display:none;
@@ -195,17 +167,74 @@ button{
     display:block;
 }
 
+
+/* TITLES */
+
 .page-title{
     display:flex;
     align-items:center;
     justify-content:space-between;
+    gap:15px;
     margin-bottom:22px;
 }
 
 .page-title h2{
     margin:0;
-    font-family:Montserrat;
-    font-size:25px;
+    font-family:Montserrat,sans-serif;
+    font-size:26px;
+}
+
+.page-title p{
+    margin:5px 0 0;
+    color:var(--muted);
+    font-size:13px;
+}
+
+
+/* BUTTONS */
+
+.primary{
+    border:0;
+    background:var(--red);
+    color:white;
+    padding:13px 18px;
+    border-radius:11px;
+    font-weight:800;
+}
+
+.primary:hover{
+    filter:brightness(.94);
+}
+
+.secondary{
+    border:1px solid #ddd;
+    background:white;
+    color:#222;
+    padding:12px 16px;
+    border-radius:11px;
+    font-weight:800;
+}
+
+.danger{
+    border:0;
+    background:#b91c1c;
+    color:white;
+    padding:10px 14px;
+    border-radius:10px;
+    font-weight:800;
+}
+
+.small-btn{
+    border:1px solid #ddd;
+    background:white;
+    padding:9px 12px;
+    border-radius:9px;
+    font-size:12px;
+    font-weight:800;
+}
+
+.small-btn:hover{
+    background:#f7f7f7;
 }
 
 
@@ -213,15 +242,61 @@ button{
 
 .card{
     background:white;
-    border-radius:18px;
-    padding:20px;
-    box-shadow:0 5px 20px rgba(0,0,0,.06);
+    border-radius:19px;
+    padding:21px;
+    box-shadow:0 5px 22px rgba(0,0,0,.055);
     margin-bottom:18px;
 }
 
 .card h3{
     margin:0 0 18px;
     font-size:17px;
+}
+
+
+/* FIELDS */
+
+.field{
+    margin-bottom:16px;
+}
+
+.field label{
+    display:block;
+    font-size:12px;
+    font-weight:800;
+    margin-bottom:7px;
+}
+
+.field input,
+.field textarea,
+.field select{
+    width:100%;
+    border:1px solid #ddd;
+    border-radius:11px;
+    padding:12px 13px;
+    background:white;
+    outline:none;
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus{
+    border-color:#999;
+}
+
+.field textarea{
+    min-height:100px;
+    resize:vertical;
+}
+
+.editor-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:15px;
+}
+
+.full{
+    grid-column:1/-1;
 }
 
 
@@ -234,19 +309,19 @@ button{
 
 .product-row{
     background:white;
-    border-radius:17px;
-    padding:14px;
+    border-radius:18px;
+    padding:15px;
     display:grid;
-    grid-template-columns:90px 1fr auto;
-    gap:15px;
+    grid-template-columns:92px 1fr auto;
+    gap:16px;
     align-items:center;
-    box-shadow:0 4px 16px rgba(0,0,0,.06);
+    box-shadow:0 4px 17px rgba(0,0,0,.055);
 }
 
 .product-thumb{
-    width:90px;
-    height:90px;
-    border-radius:13px;
+    width:92px;
+    height:92px;
+    border-radius:14px;
     object-fit:cover;
     background:#eee;
 }
@@ -257,41 +332,28 @@ button{
 }
 
 .product-info p{
-    margin:0 0 7px;
+    margin:0 0 6px;
     color:#777;
     font-size:12px;
 }
 
-.price{
+.product-price{
+    font-size:15px;
     font-weight:900;
 }
 
 .product-actions{
     display:flex;
-    flex-direction:column;
+    align-items:center;
+    justify-content:flex-end;
+    flex-wrap:wrap;
     gap:8px;
-    min-width:150px;
-}
-
-.small-btn{
-    border:1px solid #ddd;
-    background:white;
-    padding:9px 11px;
-    border-radius:9px;
-    font-size:12px;
-    font-weight:800;
-}
-
-.small-btn.red{
-    background:#C62828;
-    border-color:#C62828;
-    color:white;
 }
 
 
-/* SWITCH */
+/* TOGGLE */
 
-.switch{
+.toggle-wrap{
     display:flex;
     align-items:center;
     gap:9px;
@@ -299,40 +361,71 @@ button{
     font-weight:800;
 }
 
-.switch input{
-    width:19px;
-    height:19px;
-    accent-color:#C62828;
+.toggle{
+    position:relative;
+    width:58px;
+    height:32px;
+    flex-shrink:0;
+}
+
+.toggle input{
+    opacity:0;
+    width:0;
+    height:0;
+}
+
+.slider{
+    position:absolute;
+    inset:0;
+    border-radius:40px;
+    background:#c62828;
+    transition:.2s;
+    cursor:pointer;
+}
+
+.slider:before{
+    content:"";
+    position:absolute;
+    width:24px;
+    height:24px;
+    left:4px;
+    top:4px;
+    background:white;
+    border-radius:50%;
+    box-shadow:0 2px 5px rgba(0,0,0,.25);
+    transition:.2s;
+}
+
+.toggle input:checked + .slider{
+    background:#16833b;
+}
+
+.toggle input:checked + .slider:before{
+    transform:translateX(26px);
+}
+
+.toggle-label{
+    min-width:70px;
 }
 
 
-/* EDITOR */
-
-.editor-grid{
-    display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:15px;
-}
-
-.full{
-    grid-column:1/-1;
-}
+/* PHOTO */
 
 .photo-box{
     border:2px dashed #ddd;
     border-radius:16px;
-    padding:15px;
+    padding:17px;
 }
 
 .preview{
     width:100%;
-    max-width:280px;
-    height:180px;
+    max-width:300px;
+    height:190px;
     object-fit:cover;
     border-radius:13px;
     background:#eee;
     display:block;
-    margin-bottom:12px;
+    margin-bottom:13px;
 }
 
 .file-btn{
@@ -353,6 +446,24 @@ button{
 }
 
 
+/* SAVE BAR */
+
+.save-bar{
+    position:sticky;
+    bottom:15px;
+    z-index:50;
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    background:rgba(255,255,255,.95);
+    border:1px solid #ddd;
+    box-shadow:0 8px 30px rgba(0,0,0,.12);
+    padding:12px;
+    border-radius:15px;
+    margin-top:18px;
+}
+
+
 /* DESIGN */
 
 .design-grid{
@@ -363,22 +474,114 @@ button{
 
 .design-card{
     background:white;
-    border-radius:18px;
+    border-radius:19px;
     padding:20px;
-    box-shadow:0 5px 20px rgba(0,0,0,.06);
+    box-shadow:0 5px 22px rgba(0,0,0,.055);
 }
 
 .design-card h3{
     margin:0 0 15px;
+    font-size:17px;
 }
 
 .design-preview{
     width:100%;
-    height:180px;
+    height:220px;
     object-fit:cover;
+    object-position:center center;
     border-radius:15px;
     background:#eee;
+    margin-bottom:13px;
+    display:block;
+}
+
+.design-preview.profile{
+    object-fit:contain;
+}
+
+
+/* POSITION CONTROLS */
+
+.position-box{
+    background:#f7f7f7;
+    border-radius:14px;
+    padding:15px;
+    margin-top:15px;
+}
+
+.position-title{
+    font-size:12px;
+    font-weight:900;
     margin-bottom:12px;
+}
+
+.position-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+
+.range-row{
+    margin-bottom:10px;
+}
+
+.range-row label{
+    display:flex;
+    justify-content:space-between;
+    font-size:11px;
+    font-weight:800;
+    margin-bottom:5px;
+}
+
+.range-row input[type="range"]{
+    width:100%;
+}
+
+.position-reset{
+    margin-top:5px;
+    width:100%;
+}
+
+
+/* CATEGORY */
+
+.category-list{
+    display:grid;
+    gap:9px;
+}
+
+.category-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:#f8f8f8;
+    border:1px solid #eee;
+    border-radius:12px;
+    padding:10px;
+}
+
+.category-number{
+    width:28px;
+    height:28px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#171717;
+    color:white;
+    border-radius:8px;
+    font-size:11px;
+    font-weight:900;
+}
+
+.category-name{
+    flex:1;
+    font-weight:750;
+    font-size:13px;
+}
+
+.category-actions{
+    display:flex;
+    gap:5px;
 }
 
 
@@ -399,10 +602,11 @@ td{
     border-bottom:1px solid #eee;
     text-align:left;
     font-size:13px;
+    white-space:nowrap;
 }
 
 th{
-    font-size:11px;
+    font-size:10px;
     text-transform:uppercase;
     color:#777;
 }
@@ -412,15 +616,17 @@ th{
 
 .message{
     position:fixed;
-    bottom:20px;
-    right:20px;
+    bottom:22px;
+    right:22px;
     background:#171717;
     color:white;
-    padding:13px 17px;
+    padding:13px 18px;
     border-radius:12px;
     display:none;
-    z-index:300;
+    z-index:500;
     font-size:13px;
+    font-weight:700;
+    box-shadow:0 8px 30px rgba(0,0,0,.25);
 }
 
 .message.show{
@@ -428,9 +634,57 @@ th{
 }
 
 
+/* MODAL */
+
+.modal{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    z-index:400;
+}
+
+.modal.show{
+    display:flex;
+}
+
+.modal-box{
+    background:white;
+    width:min(500px,100%);
+    max-height:90vh;
+    overflow:auto;
+    border-radius:20px;
+    padding:22px;
+}
+
+.modal-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:18px;
+}
+
+.modal-header h3{
+    margin:0;
+    font-family:Montserrat,sans-serif;
+}
+
+.close{
+    border:0;
+    background:#f1f1f1;
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    font-size:18px;
+}
+
+
 /* MOBILE */
 
-@media(max-width:800px){
+@media(max-width:850px){
 
     .layout{
         display:block;
@@ -443,6 +697,9 @@ th{
         display:flex;
         overflow-x:auto;
         gap:5px;
+        position:sticky;
+        top:70px;
+        z-index:90;
     }
 
     .nav{
@@ -471,14 +728,17 @@ th{
 
     .product-actions{
         grid-column:1/-1;
-        flex-direction:row;
-        flex-wrap:wrap;
+        justify-content:flex-start;
+    }
+
+    .page-title{
+        align-items:flex-start;
+        flex-direction:column;
     }
 
 }
 
 </style>
-
 </head>
 
 
@@ -487,45 +747,26 @@ th{
 
 <!-- LOGIN -->
 
-<section class="login"
-         id="loginScreen">
+<section class="login" id="loginScreen">
 
     <div class="login-box">
 
         <h1>Administrador</h1>
 
-        <p>
-            Acceso de administración
-        </p>
-
+        <p>Acceso de administración</p>
 
         <div class="field">
-
             <label>Correo</label>
-
-            <input id="loginEmail"
-                   type="email"
-                   autocomplete="username">
-
+            <input id="loginEmail" type="email" autocomplete="username">
         </div>
-
 
         <div class="field">
-
             <label>Contraseña</label>
-
-            <input id="loginPassword"
-                   type="password"
-                   autocomplete="current-password">
-
+            <input id="loginPassword" type="password" autocomplete="current-password">
         </div>
 
-
-        <button class="primary"
-                onclick="login()">
-
+        <button class="primary" style="width:100%;" onclick="login()">
             Entrar
-
         </button>
 
     </div>
@@ -535,556 +776,859 @@ th{
 
 <!-- APP -->
 
-<section class="app"
-         id="app">
+<section class="app" id="app">
 
-    <header class="topbar">
+<header class="topbar">
 
-        <h1>Administrador</h1>
+    <h1>Administrador</h1>
 
-        <button class="logout"
-                onclick="logout()">
+    <button class="logout" onclick="logout()">
+        Cerrar sesión
+    </button>
 
-            Cerrar sesión
+</header>
 
+
+<div class="layout">
+
+
+<aside class="sidebar">
+
+    <button class="nav active" onclick="showTab('products',this)">
+        🥟 Productos
+    </button>
+
+    <button class="nav" onclick="showTab('categories',this)">
+        🗂️ Categorías
+    </button>
+
+    <button class="nav" onclick="showTab('design',this)">
+        🎨 Diseño
+    </button>
+
+    <button class="nav" onclick="showTab('business',this)">
+        ⚙️ Negocio y pagos
+    </button>
+
+    <button class="nav" onclick="showTab('orders',this)">
+        📦 Pedidos
+    </button>
+
+    <button class="nav" onclick="showTab('customers',this)">
+        👥 Clientes
+    </button>
+
+</aside>
+
+
+<main class="content">
+
+
+<!-- =====================================================
+     PRODUCTOS
+===================================================== -->
+
+<section class="tab active" id="tab-products">
+
+<div class="page-title">
+
+    <div>
+        <h2>Productos</h2>
+        <p>Administra los productos de tu menú.</p>
+    </div>
+
+    <button class="primary" onclick="newProduct()">
+        + Nuevo producto
+    </button>
+
+</div>
+
+
+<div class="card" id="productEditor">
+
+    <h3 id="productEditorTitle">
+        Nuevo producto
+    </h3>
+
+
+    <div class="editor-grid">
+
+
+        <div class="field">
+
+            <label>Nombre</label>
+
+            <input id="productName" type="text">
+
+        </div>
+
+
+        <div class="field">
+
+            <label>Precio</label>
+
+            <input id="productPrice"
+                   type="number"
+                   step="0.01"
+                   min="0">
+
+        </div>
+
+
+        <div class="field full">
+
+            <label>Descripción</label>
+
+            <textarea id="productDescription"></textarea>
+
+        </div>
+
+
+        <div class="field">
+
+            <label>Categoría</label>
+
+            <select id="productCategory"></select>
+
+        </div>
+
+
+        <div class="field">
+
+            <label>Disponibilidad</label>
+
+            <div class="toggle-wrap">
+
+                <label class="toggle">
+
+                    <input id="productAvailable"
+                           type="checkbox"
+                           checked
+                           onchange="updateEditorToggleLabel()">
+
+                    <span class="slider"></span>
+
+                </label>
+
+                <span id="editorToggleLabel"
+                      class="toggle-label">
+                    Disponible
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <div class="field full">
+
+            <div class="photo-box">
+
+                <label>Foto del producto</label>
+
+                <br><br>
+
+                <img id="productPreview"
+                     class="preview"
+                     src=""
+                     alt="Vista previa">
+
+                <label class="file-btn">
+
+                    📷 Seleccionar imagen
+
+                    <input id="productImage"
+                           type="file"
+                           accept="image/*"
+                           onchange="productImageSelected()">
+
+                </label>
+
+                <div id="productImageStatus"
+                     style="margin-top:10px;font-size:12px;color:#777;">
+                </div>
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+    <div class="save-bar">
+
+        <button class="secondary"
+                onclick="newProduct()">
+            Limpiar
         </button>
 
-    </header>
+        <button class="primary"
+                onclick="saveProduct()">
+            💾 Guardar cambios
+        </button>
 
+    </div>
 
-    <div class="layout">
+</div>
 
 
-        <aside class="sidebar">
+<div class="product-list" id="productList">
+    Cargando...
+</div>
 
-            <button class="nav active"
-                    onclick="showTab('products',this)">
-                🥟 Productos
-            </button>
+</section>
 
-            <button class="nav"
-                    onclick="showTab('design',this)">
-                🎨 Diseño
-            </button>
 
-            <button class="nav"
-                    onclick="showTab('business',this)">
-                ⚙️ Negocio y pagos
-            </button>
+<!-- =====================================================
+     CATEGORÍAS
+===================================================== -->
 
-            <button class="nav"
-                    onclick="showTab('orders',this)">
-                📦 Pedidos
-            </button>
+<section class="tab" id="tab-categories">
 
-            <button class="nav"
-                    onclick="showTab('customers',this)">
-                👥 Clientes
-            </button>
+<div class="page-title">
 
-        </aside>
+    <div>
+        <h2>Categorías</h2>
+        <p>Agrega, modifica, elimina y ordena las categorías del menú.</p>
+    </div>
 
+</div>
 
-        <main class="content">
 
+<div class="card">
 
-            <!-- PRODUCTOS -->
+    <h3>Agregar categoría</h3>
 
-            <section class="tab active"
-                     id="tab-products">
+    <div style="display:flex;gap:10px;">
 
-                <div class="page-title">
+        <input id="newCategoryName"
+               type="text"
+               placeholder="Ej. Combos"
+               style="flex:1;border:1px solid #ddd;border-radius:11px;padding:12px;">
 
-                    <h2>Productos</h2>
+        <button class="primary"
+                onclick="addCategory()">
+            + Agregar
+        </button>
 
-                    <button class="small-btn red"
-                            onclick="newProduct()">
+    </div>
 
-                        + Nuevo producto
+</div>
 
-                    </button>
 
-                </div>
+<div class="card">
 
+    <h3>Categorías del menú</h3>
 
-                <div class="card"
-                     id="productEditor">
+    <div class="category-list"
+         id="categoryList">
+        Cargando...
+    </div>
 
-                    <h3>
-                        Nuevo producto
-                    </h3>
+</div>
 
+</section>
 
-                    <div class="editor-grid">
 
-                        <div class="field">
+<!-- =====================================================
+     DISEÑO
+===================================================== -->
 
-                            <label>Nombre</label>
+<section class="tab" id="tab-design">
 
-                            <input id="productName">
+<div class="page-title">
 
-                        </div>
+    <div>
+        <h2>Diseño</h2>
+        <p>Personaliza las imágenes y la apariencia del menú.</p>
+    </div>
 
+</div>
 
-                        <div class="field">
 
-                            <label>Precio</label>
+<div class="design-grid">
 
-                            <input id="productPrice"
-                                   type="number"
-                                   step="0.01">
 
-                        </div>
+<!-- PORTADA -->
 
+<div class="design-card">
 
-                        <div class="field full">
+    <h3>Portada</h3>
 
-                            <label>Descripción</label>
+    <img id="coverPreview"
+         class="design-preview"
+         alt="Portada">
 
-                            <textarea id="productDescription"></textarea>
+    <label class="file-btn">
 
-                        </div>
+        📷 Seleccionar portada
 
+        <input id="coverInput"
+               type="file"
+               accept="image/*"
+               onchange="selectDesignImage('cover',this)">
 
-                        <div class="field">
+    </label>
 
-                            <label>Categoría</label>
 
-                            <select id="productCategory">
+    <div class="position-box">
 
-                                <option value="Pastes salados">
-                                    Pastes salados
-                                </option>
+        <div class="position-title">
+            Ajustar portada
+        </div>
 
-                                <option value="Pastes dulces">
-                                    Pastes dulces
-                                </option>
 
-                                <option value="Pastes de temporada">
-                                    Pastes de temporada
-                                </option>
+        <div class="range-row">
 
-                                <option value="Bebidas">
-                                    Bebidas
-                                </option>
+            <label>
+                <span>Horizontal</span>
+                <span id="coverXValue">50%</span>
+            </label>
 
-                                <option value="Promociones">
-                                    Promociones
-                                </option>
+            <input id="coverX"
+                   type="range"
+                   min="0"
+                   max="100"
+                   value="50"
+                   oninput="previewPosition('cover')">
 
-                            </select>
+        </div>
 
-                        </div>
 
+        <div class="range-row">
 
-                        <div class="field">
+            <label>
+                <span>Vertical</span>
+                <span id="coverYValue">50%</span>
+            </label>
 
-                            <label>Disponible</label>
+            <input id="coverY"
+                   type="range"
+                   min="0"
+                   max="100"
+                   value="50"
+                   oninput="previewPosition('cover')">
 
-                            <label class="switch">
+        </div>
 
-                                <input id="productAvailable"
-                                       type="checkbox"
-                                       checked>
 
-                                Disponible
+        <div class="range-row">
 
-                            </label>
+            <label>
+                <span>Tamaño</span>
+                <span id="coverSizeValue">100%</span>
+            </label>
 
-                        </div>
+            <input id="coverSize"
+                   type="range"
+                   min="100"
+                   max="200"
+                   value="100"
+                   oninput="previewPosition('cover')">
 
+        </div>
 
-                        <div class="field full">
 
-                            <div class="photo-box">
+        <button class="secondary position-reset"
+                onclick="resetImagePosition('cover')">
+            Restablecer posición
+        </button>
 
-                                <label>
-                                    Foto del producto
-                                </label>
+    </div>
 
-                                <br><br>
+</div>
 
-                                <img id="productPreview"
-                                     class="preview"
-                                     src="">
 
-                                <label class="file-btn">
+<!-- PERFIL -->
 
-                                    📷 Seleccionar imagen
+<div class="design-card">
 
-                                    <input id="productImage"
-                                           type="file"
-                                           accept="image/*"
-                                           onchange="productImageSelected()">
+    <h3>Foto de perfil / Logo</h3>
 
-                                </label>
+    <img id="profilePreview"
+         class="design-preview profile"
+         alt="Perfil">
 
-                                <div id="productImageStatus"
-                                     style="margin-top:10px;font-size:12px;color:#777;">
-                                </div>
+    <label class="file-btn">
 
-                            </div>
+        📷 Seleccionar logo
 
-                        </div>
+        <input id="profileInput"
+               type="file"
+               accept="image/*"
+               onchange="selectDesignImage('profile',this)">
 
+    </label>
 
-                        <div class="full">
 
-                            <button class="primary"
-                                    onclick="saveProduct()">
+    <div class="position-box">
 
-                                Guardar producto
+        <div class="position-title">
+            Ajustar logo
+        </div>
 
-                            </button>
 
-                        </div>
+        <div class="range-row">
 
-                    </div>
+            <label>
+                <span>Horizontal</span>
+                <span id="profileXValue">50%</span>
+            </label>
 
-                </div>
+            <input id="profileX"
+                   type="range"
+                   min="0"
+                   max="100"
+                   value="50"
+                   oninput="previewPosition('profile')">
 
+        </div>
 
-                <div class="product-list"
-                     id="productList">
 
-                    Cargando...
+        <div class="range-row">
 
-                </div>
+            <label>
+                <span>Vertical</span>
+                <span id="profileYValue">50%</span>
+            </label>
 
-            </section>
+            <input id="profileY"
+                   type="range"
+                   min="0"
+                   max="100"
+                   value="50"
+                   oninput="previewPosition('profile')">
 
+        </div>
 
-            <!-- DISEÑO -->
 
-            <section class="tab"
-                     id="tab-design">
+        <div class="range-row">
 
-                <div class="page-title">
+            <label>
+                <span>Tamaño</span>
+                <span id="profileSizeValue">130%</span>
+            </label>
 
-                    <h2>Diseño</h2>
+            <input id="profileSize"
+                   type="range"
+                   min="50"
+                   max="200"
+                   value="130"
+                   oninput="previewPosition('profile')">
 
-                </div>
+        </div>
 
 
-                <div class="design-grid">
+        <button class="secondary position-reset"
+                onclick="resetImagePosition('profile')">
+            Restablecer posición
+        </button>
 
+    </div>
 
-                    <div class="design-card">
+</div>
 
-                        <h3>Portada</h3>
 
-                        <img id="coverPreview"
-                             class="design-preview">
+<!-- FONDO -->
 
-                        <label class="file-btn">
+<div class="design-card">
 
-                            📷 Seleccionar portada
+    <h3>Fondo del menú</h3>
 
-                            <input type="file"
-                                   accept="image/*"
-                                   onchange="saveDesignImage('cover_image',this,'coverPreview')">
 
-                        </label>
+    <div class="field">
 
-                    </div>
+        <label>Tipo de fondo</label>
 
+        <select id="backgroundType"
+                onchange="markDesignChanged()">
 
-                    <div class="design-card">
+            <option value="color">Color</option>
+            <option value="image">Imagen</option>
 
-                        <h3>Foto de perfil</h3>
+        </select>
 
-                        <img id="profilePreview"
-                             class="design-preview">
+    </div>
 
-                        <label class="file-btn">
 
-                            📷 Seleccionar foto
+    <div class="field">
 
-                            <input type="file"
-                                   accept="image/*"
-                                   onchange="saveDesignImage('profile_image',this,'profilePreview')">
+        <label>Color de fondo</label>
 
-                        </label>
+        <input id="backgroundColor"
+               type="color"
+               onchange="markDesignChanged()"
+               style="height:60px;padding:4px;">
 
-                    </div>
+    </div>
 
 
-                    <div class="design-card">
+    <label class="file-btn">
 
-                        <h3>Fondo del menú</h3>
+        📷 Seleccionar fondo
 
-                        <div class="field">
+        <input id="backgroundInput"
+               type="file"
+               accept="image/*"
+               onchange="selectDesignImage('background',this)">
 
-                            <label>Tipo de fondo</label>
+    </label>
 
-                            <select id="backgroundType"
-                                    onchange="saveBackgroundType()">
 
-                                <option value="color">
-                                    Color
-                                </option>
+    <img id="backgroundPreview"
+         class="design-preview"
+         alt="Fondo">
 
-                                <option value="image">
-                                    Imagen
-                                </option>
 
-                            </select>
+    <div class="position-box">
 
-                        </div>
+        <div class="position-title">
+            Ajustar fondo
+        </div>
 
 
-                        <div class="field">
+        <div class="range-row">
 
-                            <label>Color de fondo</label>
+            <label>
+                <span>Horizontal</span>
+                <span id="backgroundXValue">50%</span>
+            </label>
 
-                            <input id="backgroundColor"
-                                   type="color"
-                                   onchange="saveSetting('background_color',this.value)">
+            <input id="backgroundX"
+                   type="range"
+                   min="0"
+                   max="100"
+                   value="50"
+                   oninput="previewPosition('background')">
 
-                        </div>
+        </div>
 
 
-                        <div class="field">
+        <div class="range-row">
 
-                            <label class="file-btn">
+            <label>
+                <span>Vertical</span>
+                <span id="backgroundYValue">50%</span>
+            </label>
 
-                                📷 Seleccionar fondo
+            <input id="backgroundY"
+                   type="range"
+                   min="0"
+                   max="100"
+                   value="50"
+                   oninput="previewPosition('background')">
 
-                                <input type="file"
-                                       accept="image/*"
-                                       onchange="saveDesignImage('background_image',this,'backgroundPreview')">
+        </div>
 
-                            </label>
 
-                        </div>
+        <div class="range-row">
 
+            <label>
+                <span>Tamaño</span>
+                <span id="backgroundSizeValue">100%</span>
+            </label>
 
-                        <img id="backgroundPreview"
-                             class="design-preview">
+            <input id="backgroundSize"
+                   type="range"
+                   min="100"
+                   max="200"
+                   value="100"
+                   oninput="previewPosition('background')">
 
-                    </div>
+        </div>
 
 
-                    <div class="design-card">
+        <button class="secondary position-reset"
+                onclick="resetImagePosition('background')">
+            Restablecer posición
+        </button>
 
-                        <h3>Color principal</h3>
+    </div>
 
-                        <p style="color:#777;font-size:13px;">
-                            Este color se utilizará en botones,
-                            categorías y elementos principales.
-                        </p>
+</div>
 
-                        <input id="primaryColor"
-                               type="color"
-                               onchange="saveSetting('primary_color',this.value)"
-                               style="width:100%;height:70px;">
 
-                    </div>
+<!-- COLOR -->
 
-                </div>
+<div class="design-card">
 
-            </section>
+    <h3>Color principal</h3>
 
+    <p style="color:#777;font-size:13px;line-height:1.5;">
+        Este color se utilizará en botones, categorías y elementos principales del menú.
+    </p>
 
-            <!-- NEGOCIO -->
+    <input id="primaryColor"
+           type="color"
+           onchange="markDesignChanged()"
+           style="width:100%;height:70px;">
 
-            <section class="tab"
-                     id="tab-business">
+</div>
 
-                <div class="page-title">
 
-                    <h2>Negocio y pagos</h2>
+</div>
 
-                </div>
 
+<div class="save-bar">
 
-                <div class="card">
+    <button class="secondary"
+            onclick="loadSettings()">
+        Cancelar cambios
+    </button>
 
-                    <div class="field">
+    <button class="primary"
+            onclick="saveAllDesign()">
+        💾 Guardar cambios de diseño
+    </button>
 
-                        <label>
-                            Descripción del negocio
-                        </label>
+</div>
 
-                        <textarea id="businessDescription"></textarea>
+</section>
 
-                    </div>
 
+<!-- =====================================================
+     NEGOCIO
+===================================================== -->
 
-                    <div class="field">
+<section class="tab" id="tab-business">
 
-                        <label>
-                            Slogan
-                        </label>
+<div class="page-title">
 
-                        <input id="businessSlogan">
+    <div>
+        <h2>Negocio y pagos</h2>
+        <p>Configuración general de tu negocio.</p>
+    </div>
 
-                    </div>
+</div>
 
 
-                    <div class="field">
+<div class="card">
 
-                        <label>
-                            WhatsApp
-                        </label>
+    <div class="field">
 
-                        <input id="businessWhatsapp">
+        <label>Descripción del negocio</label>
 
-                    </div>
+        <textarea id="businessDescription"></textarea>
 
+    </div>
 
-                    <div class="field">
 
-                        <label>
-                            Costo de entrega
-                        </label>
+    <div class="field">
 
-                        <input id="businessDeliveryCost"
-                               type="number"
-                               step="0.01">
+        <label>Slogan</label>
 
-                    </div>
+        <input id="businessSlogan">
 
+    </div>
 
-                    <div class="field">
 
-                        <label>
-                            Datos para transferencia
-                        </label>
+    <div class="field">
 
-                        <textarea id="bankDetails"
-                                  placeholder="Banco:
+        <label>WhatsApp</label>
+
+        <input id="businessWhatsapp">
+
+    </div>
+
+
+    <div class="field">
+
+        <label>Costo de entrega</label>
+
+        <input id="businessDeliveryCost"
+               type="number"
+               step="0.01">
+
+    </div>
+
+
+    <div class="field">
+
+        <label>Datos para transferencia</label>
+
+        <textarea id="bankDetails"
+                  placeholder="Banco:
 Titular:
 Cuenta:
 CLABE:
 Tarjeta:"></textarea>
 
-                    </div>
+    </div>
 
 
-                    <button class="primary"
-                            onclick="saveBusiness()">
+    <div class="save-bar">
 
-                        Guardar configuración
-
-                    </button>
-
-                </div>
-
-            </section>
-
-
-            <!-- PEDIDOS -->
-
-            <section class="tab"
-                     id="tab-orders">
-
-                <div class="page-title">
-
-                    <h2>Pedidos</h2>
-
-                </div>
-
-
-                <div class="card">
-
-                    <div class="table-wrap">
-
-                        <table>
-
-                            <thead>
-
-                                <tr>
-
-                                    <th>Fecha</th>
-                                    <th>Cliente</th>
-                                    <th>Entrega</th>
-                                    <th>Pago</th>
-                                    <th>Total</th>
-                                    <th>Estado</th>
-
-                                </tr>
-
-                            </thead>
-
-                            <tbody id="ordersTable">
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
-
-                </div>
-
-            </section>
-
-
-            <!-- CLIENTES -->
-
-            <section class="tab"
-                     id="tab-customers">
-
-                <div class="page-title">
-
-                    <h2>Clientes</h2>
-
-                </div>
-
-
-                <div class="card">
-
-                    <div class="table-wrap">
-
-                        <table>
-
-                            <thead>
-
-                                <tr>
-
-                                    <th>Nombre</th>
-                                    <th>Teléfono</th>
-                                    <th>Correo</th>
-                                    <th>Registro</th>
-
-                                </tr>
-
-                            </thead>
-
-                            <tbody id="customersTable">
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
-
-                </div>
-
-            </section>
-
-
-        </main>
+        <button class="primary"
+                onclick="saveBusiness()">
+            💾 Guardar cambios
+        </button>
 
     </div>
+
+</div>
 
 </section>
 
 
-<div class="message"
-     id="message">
+<!-- =====================================================
+     PEDIDOS
+===================================================== -->
+
+<section class="tab" id="tab-orders">
+
+<div class="page-title">
+
+    <div>
+        <h2>Pedidos</h2>
+        <p>Pedidos recibidos.</p>
+    </div>
+
+    <button class="secondary"
+            onclick="loadOrders()">
+        ↻ Actualizar
+    </button>
+
 </div>
+
+
+<div class="card">
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+
+<tr>
+    <th>Fecha</th>
+    <th>Cliente</th>
+    <th>Entrega</th>
+    <th>Pago</th>
+    <th>Total</th>
+    <th>Estado</th>
+</tr>
+
+</thead>
+
+<tbody id="ordersTable"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</section>
+
+
+<!-- =====================================================
+     CLIENTES
+===================================================== -->
+
+<section class="tab" id="tab-customers">
+
+<div class="page-title">
+
+    <div>
+        <h2>Clientes</h2>
+        <p>Clientes registrados.</p>
+    </div>
+
+    <button class="secondary"
+            onclick="loadCustomers()">
+        ↻ Actualizar
+    </button>
+
+</div>
+
+
+<div class="card">
+
+<div class="table-wrap">
+
+<table>
+
+<thead>
+
+<tr>
+    <th>Nombre</th>
+    <th>Teléfono</th>
+    <th>Correo</th>
+    <th>Registro</th>
+</tr>
+
+</thead>
+
+<tbody id="customersTable"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</section>
+
+
+</main>
+
+</div>
+
+</section>
+
+
+<!-- MODAL CATEGORÍA -->
+
+<div class="modal" id="categoryModal">
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+
+            <h3>Editar categoría</h3>
+
+            <button class="close"
+                    onclick="closeCategoryModal()">
+                ×
+            </button>
+
+        </div>
+
+        <div class="field">
+
+            <label>Nombre de la categoría</label>
+
+            <input id="editCategoryName">
+
+        </div>
+
+        <button class="primary"
+                style="width:100%;"
+                onclick="saveCategoryEdit()">
+            Guardar categoría
+        </button>
+
+    </div>
+
+</div>
+
+
+<div class="message" id="message"></div>
 
 
 <script>
 
+
+/* =====================================================
+   SUPABASE
+===================================================== */
 
 const SUPABASE_URL =
 "https://cqlywpemisknrxswlmea.supabase.co";
 
 const SUPABASE_KEY =
 "sb_publishable_wDu6p-CtnQtYu7KWH1YS1A_h7LeL0SX";
-
 
 const supabaseClient =
 supabase.createClient(
@@ -1093,14 +1637,46 @@ supabase.createClient(
 );
 
 
+/* =====================================================
+   VARIABLES
+===================================================== */
+
 let products = [];
+
+let categories = [];
 
 let editingProductId = null;
 
+let editingCategoryId = null;
 
-/* =========================
+let designFiles = {
+    cover:null,
+    profile:null,
+    background:null
+};
+
+let designSettings = {
+    cover:{
+        x:50,
+        y:50,
+        size:100
+    },
+    profile:{
+        x:50,
+        y:50,
+        size:130
+    },
+    background:{
+        x:50,
+        y:50,
+        size:100
+    }
+};
+
+
+/* =====================================================
    MENSAJES
-========================= */
+===================================================== */
 
 function notify(text){
 
@@ -1113,28 +1689,34 @@ function notify(text){
 
     setTimeout(
         () => box.classList.remove("show"),
-        2500
+        2800
     );
 
 }
 
 
-/* =========================
+/* =====================================================
    LOGIN
-========================= */
+===================================================== */
 
 async function login(){
 
     const email =
-        document.getElementById(
-            "loginEmail"
-        ).value.trim();
-
+        document.getElementById("loginEmail")
+        .value.trim();
 
     const password =
-        document.getElementById(
-            "loginPassword"
-        ).value;
+        document.getElementById("loginPassword")
+        .value;
+
+
+    if(!email || !password){
+
+        alert("Escribe tu correo y contraseña.");
+
+        return;
+
+    }
 
 
     const {error} =
@@ -1172,7 +1754,6 @@ async function checkSession(){
     const {data} =
         await supabaseClient.auth.getSession();
 
-
     if(data.session){
 
         showApp();
@@ -1184,74 +1765,62 @@ async function checkSession(){
 
 async function showApp(){
 
-    document.getElementById(
-        "loginScreen"
-    ).style.display =
-        "none";
+    document.getElementById("loginScreen")
+        .style.display = "none";
 
-
-    document.getElementById(
-        "app"
-    ).style.display =
-        "block";
-
+    document.getElementById("app")
+        .style.display = "block";
 
     await loadAll();
 
 }
 
 
-/* =========================
+/* =====================================================
    TABS
-========================= */
+===================================================== */
 
 function showTab(name,button){
 
-    document.querySelectorAll(
-        ".tab"
-    ).forEach(tab => {
-
-        tab.classList.remove("active");
-
-    });
+    document.querySelectorAll(".tab")
+        .forEach(tab =>
+            tab.classList.remove("active")
+        );
 
 
-    document.getElementById(
-        "tab-" + name
-    ).classList.add("active");
+    document.getElementById("tab-"+name)
+        .classList.add("active");
 
 
-    document.querySelectorAll(
-        ".nav"
-    ).forEach(nav => {
-
-        nav.classList.remove("active");
-
-    });
+    document.querySelectorAll(".nav")
+        .forEach(nav =>
+            nav.classList.remove("active")
+        );
 
 
     button.classList.add("active");
 
 
     if(name === "orders"){
-
         loadOrders();
-
     }
 
 
     if(name === "customers"){
-
         loadCustomers();
+    }
 
+
+    if(name === "categories"){
+        loadCategories();
     }
 
 }
 
 
-/* =========================
-   PRODUCTOS
-========================= */
+/* =====================================================
+   PRODUCTOS - CARGAR
+===================================================== */
 
 async function loadProducts(){
 
@@ -1267,26 +1836,31 @@ async function loadProducts(){
 
         console.error(error);
 
+        document.getElementById("productList").innerHTML =
+            `<div class="card">${escapeHtml(error.message)}</div>`;
+
         return;
 
     }
 
 
-    products =
-        data || [];
-
+    products = data || [];
 
     renderProductList();
+
+    populateProductCategories();
 
 }
 
 
+/* =====================================================
+   PRODUCTOS - LISTA
+===================================================== */
+
 function renderProductList(){
 
     const container =
-        document.getElementById(
-            "productList"
-        );
+        document.getElementById("productList");
 
 
     if(products.length === 0){
@@ -1311,34 +1885,38 @@ function renderProductList(){
 
             return `
 
-                <div class="product-row">
+            <div class="product-row">
 
-                    <img
-                        class="product-thumb"
-                        src="${image}"
-                    >
+                <img
+                    class="product-thumb"
+                    src="${escapeAttribute(image)}"
+                    alt=""
+                >
 
 
-                    <div class="product-info">
+                <div class="product-info">
 
-                        <h3>
-                            ${escapeHtml(product.name)}
-                        </h3>
+                    <h3>
+                        ${escapeHtml(product.name)}
+                    </h3>
 
-                        <p>
-                            ${escapeHtml(product.category || "")}
-                        </p>
+                    <p>
+                        ${escapeHtml(product.category || "Sin categoría")}
+                    </p>
 
-                        <div class="price">
-                            $${money(product.price)}
-                        </div>
-
+                    <div class="product-price">
+                        $${money(product.price)}
                     </div>
 
+                </div>
 
-                    <div class="product-actions">
 
-                        <label class="switch">
+                <div class="product-actions">
+
+
+                    <div class="toggle-wrap">
+
+                        <label class="toggle">
 
                             <input
                                 type="checkbox"
@@ -1346,34 +1924,46 @@ function renderProductList(){
                                 onchange="toggleProduct(${product.id},this.checked)"
                             >
 
+                            <span class="slider"></span>
+
+                        </label>
+
+                        <span class="toggle-label">
                             ${product.available ? "Disponible" : "Agotado"}
-
-                        </label>
-
-
-                        <button
-                            class="small-btn"
-                            onclick="editProduct(${product.id})"
-                        >
-                            Editar
-                        </button>
-
-
-                        <label class="file-btn">
-
-                            📷 Cambiar foto
-
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onchange="replaceProductImage(${product.id},this)"
-                            >
-
-                        </label>
+                        </span>
 
                     </div>
 
+
+                    <button
+                        class="small-btn"
+                        onclick="editProduct(${product.id})">
+                        ✏️ Editar
+                    </button>
+
+
+                    <label class="file-btn">
+
+                        📷 Foto
+
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onchange="replaceProductImage(${product.id},this)"
+                        >
+
+                    </label>
+
+
+                    <button
+                        class="small-btn"
+                        onclick="deleteProduct(${product.id})">
+                        🗑️ Eliminar
+                    </button>
+
                 </div>
+
+            </div>
 
             `;
 
@@ -1382,205 +1972,258 @@ function renderProductList(){
 }
 
 
-/* =========================
-   NUEVO PRODUCTO
-========================= */
+/* =====================================================
+   PRODUCTOS - CATEGORÍAS
+===================================================== */
 
-function newProduct(){
+function populateProductCategories(){
 
-    editingProductId =
-        null;
-
-
-    document.getElementById(
-        "productEditor"
-    ).scrollIntoView({
-        behavior:"smooth"
-    });
+    const select =
+        document.getElementById("productCategory");
 
 
-    document.querySelector(
-        "#productEditor h3"
-    ).textContent =
-        "Nuevo producto";
+    if(!categories.length){
+
+        select.innerHTML =
+            `<option value="">Sin categorías</option>`;
+
+        return;
+
+    }
 
 
-    document.getElementById(
-        "productName"
-    ).value = "";
+    select.innerHTML =
+        categories.map(category => `
 
+            <option value="${escapeAttribute(category.name)}">
+                ${escapeHtml(category.name)}
+            </option>
 
-    document.getElementById(
-        "productDescription"
-    ).value = "";
-
-
-    document.getElementById(
-        "productPrice"
-    ).value = "35";
-
-
-    document.getElementById(
-        "productCategory"
-    ).value =
-        "Pastes salados";
-
-
-    document.getElementById(
-        "productAvailable"
-    ).checked =
-        true;
-
-
-    document.getElementById(
-        "productPreview"
-    ).src = "";
-
-
-    document.getElementById(
-        "productImage"
-    ).value = "";
+        `).join("");
 
 }
 
 
-/* =========================
-   EDITAR
-========================= */
+/* =====================================================
+   NUEVO PRODUCTO
+===================================================== */
+
+function newProduct(){
+
+    editingProductId = null;
+
+
+    document.getElementById("productEditorTitle")
+        .textContent = "Nuevo producto";
+
+
+    document.getElementById("productName")
+        .value = "";
+
+    document.getElementById("productDescription")
+        .value = "";
+
+    document.getElementById("productPrice")
+        .value = "35";
+
+    if(categories.length){
+
+        document.getElementById("productCategory")
+            .value = categories[0].name;
+
+    }
+
+    document.getElementById("productAvailable")
+        .checked = true;
+
+
+    document.getElementById("productPreview")
+        .src = "";
+
+    document.getElementById("productImage")
+        .value = "";
+
+    document.getElementById("productImageStatus")
+        .textContent = "";
+
+
+    updateEditorToggleLabel();
+
+
+    document.getElementById("productEditor")
+        .scrollIntoView({
+            behavior:"smooth",
+            block:"start"
+        });
+
+}
+
+
+/* =====================================================
+   EDITAR PRODUCTO
+===================================================== */
 
 function editProduct(id){
 
     const product =
         products.find(
-            p => p.id === id
+            p => Number(p.id) === Number(id)
         );
 
 
     if(!product){
 
+        alert("No se encontró el producto.");
+
         return;
 
     }
 
 
-    editingProductId =
-        id;
+    editingProductId = product.id;
 
 
-    document.querySelector(
-        "#productEditor h3"
-    ).textContent =
-        "Editar producto";
+    document.getElementById("productEditorTitle")
+        .textContent = "Editar producto";
 
 
-    document.getElementById(
-        "productName"
-    ).value =
-        product.name || "";
+    document.getElementById("productName")
+        .value = product.name || "";
 
 
-    document.getElementById(
-        "productDescription"
-    ).value =
-        product.description || "";
+    document.getElementById("productDescription")
+        .value = product.description || "";
 
 
-    document.getElementById(
-        "productPrice"
-    ).value =
-        product.price || "";
+    document.getElementById("productPrice")
+        .value = product.price ?? "";
 
 
-    const allowedCategories = [
-        "Pastes salados",
-        "Pastes dulces",
-        "Pastes de temporada",
-        "Bebidas",
-        "Promociones"
-    ];
+    const select =
+        document.getElementById("productCategory");
 
 
-    document.getElementById(
-        "productCategory"
-    ).value =
-        allowedCategories.includes(
-            product.category
+    if(
+        product.category &&
+        [...select.options].some(
+            option => option.value === product.category
         )
-        ? product.category
-        : "Pastes salados";
+    ){
+
+        select.value = product.category;
+
+    }else if(categories.length){
+
+        select.value = categories[0].name;
+
+    }
 
 
-    document.getElementById(
-        "productAvailable"
-    ).checked =
-        product.available;
+    document.getElementById("productAvailable")
+        .checked = Boolean(product.available);
 
 
-    document.getElementById(
-        "productPreview"
-    ).src =
-        product.image_url || "";
+    document.getElementById("productPreview")
+        .src = product.image_url || "";
 
 
-    document.getElementById(
-        "productEditor"
-    ).scrollIntoView({
-        behavior:"smooth"
-    });
+    document.getElementById("productImage")
+        .value = "";
+
+
+    document.getElementById("productImageStatus")
+        .textContent =
+        product.image_url
+        ? "Foto actual guardada."
+        : "Este producto todavía no tiene foto.";
+
+
+    updateEditorToggleLabel();
+
+
+    document.getElementById("productEditor")
+        .scrollIntoView({
+            behavior:"smooth",
+            block:"start"
+        });
 
 }
 
 
-/* =========================
+/* =====================================================
+   TOGGLE EDITOR
+===================================================== */
+
+function updateEditorToggleLabel(){
+
+    const available =
+        document.getElementById("productAvailable")
+        .checked;
+
+
+    document.getElementById("editorToggleLabel")
+        .textContent =
+        available
+        ? "Disponible"
+        : "Agotado";
+
+}
+
+
+/* =====================================================
    GUARDAR PRODUCTO
-========================= */
+===================================================== */
 
 async function saveProduct(){
 
     const name =
-        document.getElementById(
-            "productName"
-        ).value.trim();
+        document.getElementById("productName")
+        .value.trim();
 
 
     const description =
-        document.getElementById(
-            "productDescription"
-        ).value.trim();
+        document.getElementById("productDescription")
+        .value.trim();
 
 
     const price =
         Number(
-            document.getElementById(
-                "productPrice"
-            ).value
+            document.getElementById("productPrice")
+            .value
         );
 
 
     const category =
-        document.getElementById(
-            "productCategory"
-        ).value;
+        document.getElementById("productCategory")
+        .value;
 
 
     const available =
-        document.getElementById(
-            "productAvailable"
-        ).checked;
+        document.getElementById("productAvailable")
+        .checked;
 
 
     if(!name){
 
-        alert("Escribe el nombre.");
+        alert("Escribe el nombre del producto.");
 
         return;
 
     }
 
 
-    if(!price){
+    if(!price || price < 0){
 
-        alert("Escribe el precio.");
+        alert("Escribe un precio válido.");
+
+        return;
+
+    }
+
+
+    if(!category){
+
+        alert("Selecciona una categoría.");
 
         return;
 
@@ -1602,7 +2245,7 @@ async function saveProduct(){
     let result;
 
 
-    if(editingProductId){
+    if(editingProductId !== null){
 
         result =
             await supabaseClient
@@ -1612,10 +2255,26 @@ async function saveProduct(){
 
     }else{
 
+        const maxSort =
+            products.length
+            ? Math.max(
+                ...products.map(
+                    p => Number(p.sort_order || 0)
+                )
+              )
+            : 0;
+
+
+        payload.sort_order =
+            maxSort + 1;
+
+
         result =
             await supabaseClient
             .from("products")
-            .insert(payload);
+            .insert(payload)
+            .select()
+            .single();
 
     }
 
@@ -1629,7 +2288,42 @@ async function saveProduct(){
     }
 
 
-    notify("Producto guardado");
+    notify(
+        editingProductId !== null
+        ? "Producto actualizado"
+        : "Producto creado"
+    );
+
+
+    const imageInput =
+        document.getElementById("productImage");
+
+
+    const file =
+        imageInput.files[0];
+
+
+    let productId =
+        editingProductId;
+
+
+    if(!productId && result.data){
+
+        productId = result.data.id;
+
+    }
+
+
+    if(file && productId){
+
+        await uploadProductImage(
+            productId,
+            file,
+            false
+        );
+
+    }
+
 
     await loadProducts();
 
@@ -1638,9 +2332,60 @@ async function saveProduct(){
 }
 
 
-/* =========================
+/* =====================================================
+   ELIMINAR PRODUCTO
+===================================================== */
+
+async function deleteProduct(id){
+
+    const product =
+        products.find(
+            p => Number(p.id) === Number(id)
+        );
+
+
+    if(!product){
+        return;
+    }
+
+
+    const confirmed =
+        confirm(
+            `¿Eliminar "${product.name}"?`
+        );
+
+
+    if(!confirmed){
+        return;
+    }
+
+
+    const {error} =
+        await supabaseClient
+        .from("products")
+        .delete()
+        .eq("id",id);
+
+
+    if(error){
+
+        alert(error.message);
+
+        return;
+
+    }
+
+
+    notify("Producto eliminado");
+
+    await loadProducts();
+
+}
+
+
+/* =====================================================
    DISPONIBILIDAD
-========================= */
+===================================================== */
 
 async function toggleProduct(id,available){
 
@@ -1658,6 +2403,8 @@ async function toggleProduct(id,available){
 
         alert(error.message);
 
+        await loadProducts();
+
         return;
 
     }
@@ -1670,33 +2417,32 @@ async function toggleProduct(id,available){
     );
 
 
-    await loadProducts();
+    const product =
+        products.find(
+            p => Number(p.id) === Number(id)
+        );
 
-}
 
+    if(product){
 
-/* =========================
-   SUBIR FOTO PRODUCTO
-========================= */
-
-async function productImageSelected(){
-
-    if(!editingProductId){
-
-        document.getElementById(
-            "productImageStatus"
-        ).textContent =
-            "Primero guarda el producto y después selecciona su foto.";
-
-        return;
+        product.available = available;
 
     }
 
 
+    renderProductList();
+
+}
+
+
+/* =====================================================
+   FOTO PRODUCTO
+===================================================== */
+
+async function productImageSelected(){
+
     const input =
-        document.getElementById(
-            "productImage"
-        );
+        document.getElementById("productImage");
 
 
     const file =
@@ -1704,6 +2450,16 @@ async function productImageSelected(){
 
 
     if(!file){
+        return;
+    }
+
+
+    if(!editingProductId){
+
+        document.getElementById(
+            "productImageStatus"
+        ).textContent =
+        "La foto se guardará al pulsar Guardar cambios.";
 
         return;
 
@@ -1712,7 +2468,8 @@ async function productImageSelected(){
 
     await uploadProductImage(
         editingProductId,
-        file
+        file,
+        true
     );
 
 }
@@ -1725,21 +2482,20 @@ async function replaceProductImage(id,input){
 
 
     if(!file){
-
         return;
-
     }
 
 
     await uploadProductImage(
         id,
-        file
+        file,
+        false
     );
 
 }
 
 
-async function uploadProductImage(id,file){
+async function uploadProductImage(id,file,refreshEditor){
 
     const status =
         document.getElementById(
@@ -1780,7 +2536,11 @@ async function uploadProductImage(id,file){
 
         alert(uploadError.message);
 
-        return;
+        if(status){
+            status.textContent = "";
+        }
+
+        return false;
 
     }
 
@@ -1810,7 +2570,7 @@ async function uploadProductImage(id,file){
 
         alert(error.message);
 
-        return;
+        return false;
 
     }
 
@@ -1823,22 +2583,474 @@ async function uploadProductImage(id,file){
     }
 
 
-    document.getElementById(
-        "productPreview"
-    ).src =
-        imageUrl;
+    if(refreshEditor){
+
+        document.getElementById("productPreview")
+            .src = imageUrl;
+
+    }
 
 
     notify("Foto guardada");
 
     await loadProducts();
 
+    return true;
+
 }
 
 
-/* =========================
-   DISEÑO
-========================= */
+/* =====================================================
+   CATEGORÍAS - CARGAR
+===================================================== */
+
+async function loadCategories(){
+
+    const {data,error} =
+        await supabaseClient
+        .from("categories")
+        .select("*")
+        .order("sort_order",{ascending:true})
+        .order("id",{ascending:true});
+
+
+    if(error){
+
+        console.error(error);
+
+        document.getElementById("categoryList")
+            .innerHTML =
+            `<div>${escapeHtml(error.message)}</div>`;
+
+        return;
+
+    }
+
+
+    categories =
+        data || [];
+
+
+    renderCategories();
+
+    populateProductCategories();
+
+}
+
+
+/* =====================================================
+   CATEGORÍAS - MOSTRAR
+===================================================== */
+
+function renderCategories(){
+
+    const container =
+        document.getElementById("categoryList");
+
+
+    if(!categories.length){
+
+        container.innerHTML =
+            `<div style="color:#777;">
+                No hay categorías.
+            </div>`;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        categories.map((category,index) => `
+
+        <div class="category-row">
+
+            <div class="category-number">
+                ${index + 1}
+            </div>
+
+            <div class="category-name">
+                ${escapeHtml(category.name)}
+            </div>
+
+            <div class="category-actions">
+
+                <button
+                    class="small-btn"
+                    onclick="moveCategory(${category.id},'up')"
+                    ${index === 0 ? "disabled" : ""}>
+                    ↑
+                </button>
+
+                <button
+                    class="small-btn"
+                    onclick="moveCategory(${category.id},'down')"
+                    ${index === categories.length-1 ? "disabled" : ""}>
+                    ↓
+                </button>
+
+                <button
+                    class="small-btn"
+                    onclick="openCategoryEdit(${category.id})">
+                    ✏️
+                </button>
+
+                <button
+                    class="small-btn"
+                    onclick="deleteCategory(${category.id})">
+                    🗑️
+                </button>
+
+            </div>
+
+        </div>
+
+        `).join("");
+
+}
+
+
+/* =====================================================
+   AGREGAR CATEGORÍA
+===================================================== */
+
+async function addCategory(){
+
+    const input =
+        document.getElementById("newCategoryName");
+
+
+    const name =
+        input.value.trim();
+
+
+    if(!name){
+
+        alert("Escribe el nombre de la categoría.");
+
+        return;
+
+    }
+
+
+    const maxSort =
+        categories.length
+        ? Math.max(
+            ...categories.map(
+                c => Number(c.sort_order || 0)
+            )
+          )
+        : 0;
+
+
+    const {error} =
+        await supabaseClient
+        .from("categories")
+        .insert({
+            name,
+            sort_order:maxSort + 1
+        });
+
+
+    if(error){
+
+        alert(error.message);
+
+        return;
+
+    }
+
+
+    input.value = "";
+
+    notify("Categoría agregada");
+
+    await loadCategories();
+
+}
+
+
+/* =====================================================
+   EDITAR CATEGORÍA
+===================================================== */
+
+function openCategoryEdit(id){
+
+    const category =
+        categories.find(
+            c => Number(c.id) === Number(id)
+        );
+
+
+    if(!category){
+        return;
+    }
+
+
+    editingCategoryId =
+        category.id;
+
+
+    document.getElementById("editCategoryName")
+        .value = category.name;
+
+
+    document.getElementById("categoryModal")
+        .classList.add("show");
+
+}
+
+
+function closeCategoryModal(){
+
+    editingCategoryId = null;
+
+    document.getElementById("categoryModal")
+        .classList.remove("show");
+
+}
+
+
+async function saveCategoryEdit(){
+
+    if(!editingCategoryId){
+        return;
+    }
+
+
+    const name =
+        document.getElementById("editCategoryName")
+        .value.trim();
+
+
+    if(!name){
+
+        alert("Escribe un nombre.");
+
+        return;
+
+    }
+
+
+    const oldCategory =
+        categories.find(
+            c => Number(c.id) === Number(editingCategoryId)
+        );
+
+
+    const {error} =
+        await supabaseClient
+        .from("categories")
+        .update({
+            name
+        })
+        .eq("id",editingCategoryId);
+
+
+    if(error){
+
+        alert(error.message);
+
+        return;
+
+    }
+
+
+    /*
+       Si cambiaste el nombre de una categoría,
+       también actualizamos los productos que
+       utilizaban el nombre anterior.
+    */
+
+    if(oldCategory && oldCategory.name !== name){
+
+        await supabaseClient
+        .from("products")
+        .update({
+            category:name,
+            updated_at:new Date().toISOString()
+        })
+        .eq("category",oldCategory.name);
+
+    }
+
+
+    closeCategoryModal();
+
+    notify("Categoría actualizada");
+
+    await loadCategories();
+
+    await loadProducts();
+
+}
+
+
+/* =====================================================
+   ELIMINAR CATEGORÍA
+===================================================== */
+
+async function deleteCategory(id){
+
+    const category =
+        categories.find(
+            c => Number(c.id) === Number(id)
+        );
+
+
+    if(!category){
+        return;
+    }
+
+
+    const used =
+        products.some(
+            p => p.category === category.name
+        );
+
+
+    if(used){
+
+        alert(
+            "Esta categoría tiene productos asociados. Cambia primero esos productos a otra categoría."
+        );
+
+        return;
+
+    }
+
+
+    const confirmed =
+        confirm(
+            `¿Eliminar la categoría "${category.name}"?`
+        );
+
+
+    if(!confirmed){
+        return;
+    }
+
+
+    const {error} =
+        await supabaseClient
+        .from("categories")
+        .delete()
+        .eq("id",id);
+
+
+    if(error){
+
+        alert(error.message);
+
+        return;
+
+    }
+
+
+    notify("Categoría eliminada");
+
+    await loadCategories();
+
+}
+
+
+/* =====================================================
+   MOVER CATEGORÍA
+===================================================== */
+
+async function moveCategory(id,direction){
+
+    const index =
+        categories.findIndex(
+            c => Number(c.id) === Number(id)
+        );
+
+
+    if(index < 0){
+        return;
+    }
+
+
+    const targetIndex =
+        direction === "up"
+        ? index - 1
+        : index + 1;
+
+
+    if(targetIndex < 0 ||
+       targetIndex >= categories.length){
+
+        return;
+
+    }
+
+
+    const current =
+        categories[index];
+
+    const target =
+        categories[targetIndex];
+
+
+    const currentSort =
+        current.sort_order;
+
+    const targetSort =
+        target.sort_order;
+
+
+    await supabaseClient
+        .from("categories")
+        .update({
+            sort_order:999999
+        })
+        .eq("id",current.id);
+
+
+    const first =
+        await supabaseClient
+        .from("categories")
+        .update({
+            sort_order:currentSort
+        })
+        .eq("id",target.id);
+
+
+    if(first.error){
+
+        alert(first.error.message);
+
+        return;
+
+    }
+
+
+    const second =
+        await supabaseClient
+        .from("categories")
+        .update({
+            sort_order:targetSort
+        })
+        .eq("id",current.id);
+
+
+    if(second.error){
+
+        alert(second.error.message);
+
+        return;
+
+    }
+
+
+    await loadCategories();
+
+}
+
+
+/* =====================================================
+   DISEÑO - CARGAR
+===================================================== */
 
 async function loadSettings(){
 
@@ -1859,6 +3071,7 @@ async function loadSettings(){
 
     const settings = {};
 
+
     (data || []).forEach(item => {
 
         settings[item.key] =
@@ -1867,154 +3080,327 @@ async function loadSettings(){
     });
 
 
-    document.getElementById(
-        "backgroundType"
-    ).value =
-        settings.background_type ||
-        "color";
+    document.getElementById("backgroundType")
+        .value =
+        settings.background_type || "color";
 
 
-    document.getElementById(
-        "backgroundColor"
-    ).value =
-        settings.background_color ||
-        "#F5F3EF";
+    document.getElementById("backgroundColor")
+        .value =
+        settings.background_color || "#F5F3EF";
 
 
-    document.getElementById(
-        "primaryColor"
-    ).value =
-        settings.primary_color ||
-        "#C62828";
+    document.getElementById("primaryColor")
+        .value =
+        settings.primary_color || "#C62828";
 
 
-    document.getElementById(
-        "businessDescription"
-    ).value =
-        settings.description ||
-        "";
+    document.getElementById("businessDescription")
+        .value =
+        settings.description || "";
 
 
-    document.getElementById(
-        "businessSlogan"
-    ).value =
-        settings.slogan ||
-        "Saborea tu tiempo.";
+    document.getElementById("businessSlogan")
+        .value =
+        settings.slogan || "Saborea tu tiempo.";
 
 
-    document.getElementById(
-        "businessWhatsapp"
-    ).value =
-        settings.whatsapp ||
-        "529902317606";
+    document.getElementById("businessWhatsapp")
+        .value =
+        settings.whatsapp || "529902317606";
 
 
-    document.getElementById(
-        "businessDeliveryCost"
-    ).value =
-        settings.delivery_cost ||
-        "0";
+    document.getElementById("businessDeliveryCost")
+        .value =
+        settings.delivery_cost || "0";
 
 
-    document.getElementById(
-        "bankDetails"
-    ).value =
-        settings.bank_details ||
-        "";
+    document.getElementById("bankDetails")
+        .value =
+        settings.bank_details || "";
 
 
-    document.getElementById(
-        "coverPreview"
-    ).src =
-        settings.cover_image ||
-        "";
+    document.getElementById("coverPreview")
+        .src =
+        settings.cover_image || "";
 
 
-    document.getElementById(
-        "profilePreview"
-    ).src =
-        settings.profile_image ||
-        "";
+    document.getElementById("profilePreview")
+        .src =
+        settings.profile_image || "";
 
 
-    document.getElementById(
-        "backgroundPreview"
-    ).src =
-        settings.background_image ||
-        "";
-
-}
+    document.getElementById("backgroundPreview")
+        .src =
+        settings.background_image || "";
 
 
-async function saveSetting(key,value){
+    designSettings.cover.x =
+        Number(settings.cover_x ?? 50);
 
-    const {error} =
-        await supabaseClient
-        .from("settings")
-        .upsert(
-            {
-                key,
-                value:String(value),
-                updated_at:new Date().toISOString()
-            },
-            {
-                onConflict:"key"
-            }
-        );
+    designSettings.cover.y =
+        Number(settings.cover_y ?? 50);
+
+    designSettings.cover.size =
+        Number(settings.cover_size ?? 100);
 
 
-    if(error){
+    designSettings.profile.x =
+        Number(settings.profile_x ?? 50);
 
-        alert(error.message);
+    designSettings.profile.y =
+        Number(settings.profile_y ?? 50);
 
-        return;
+    designSettings.profile.size =
+        Number(settings.profile_size ?? 130);
 
-    }
+
+    designSettings.background.x =
+        Number(settings.background_x ?? 50);
+
+    designSettings.background.y =
+        Number(settings.background_y ?? 50);
+
+    designSettings.background.size =
+        Number(settings.background_size ?? 100);
 
 
-    notify("Configuración guardada");
+    setPositionControls("cover");
+
+    setPositionControls("profile");
+
+    setPositionControls("background");
+
+
+    applyPreviewPosition("cover");
+
+    applyPreviewPosition("profile");
+
+    applyPreviewPosition("background");
+
+
+    return settings;
 
 }
 
 
-async function saveBackgroundType(){
+/* =====================================================
+   SELECCIONAR IMAGEN DE DISEÑO
+===================================================== */
 
-    const value =
-        document.getElementById(
-            "backgroundType"
-        ).value;
-
-
-    await saveSetting(
-        "background_type",
-        value
-    );
-
-}
-
-
-async function saveDesignImage(
-    settingKey,
-    input,
-    previewId
-){
+function selectDesignImage(type,input){
 
     const file =
         input.files[0];
 
 
     if(!file){
-
         return;
+    }
+
+
+    designFiles[type] =
+        file;
+
+
+    const preview =
+        document.getElementById(
+            type === "cover"
+            ? "coverPreview"
+            : type === "profile"
+            ? "profilePreview"
+            : "backgroundPreview"
+        );
+
+
+    const url =
+        URL.createObjectURL(file);
+
+
+    preview.src = url;
+
+
+    markDesignChanged();
+
+}
+
+
+/* =====================================================
+   POSICIÓN
+===================================================== */
+
+function previewPosition(type){
+
+    const x =
+        Number(
+            document.getElementById(type+"X").value
+        );
+
+
+    const y =
+        Number(
+            document.getElementById(type+"Y").value
+        );
+
+
+    const size =
+        Number(
+            document.getElementById(type+"Size").value
+        );
+
+
+    designSettings[type] = {
+        x,
+        y,
+        size
+    };
+
+
+    setPositionLabels(type);
+
+    applyPreviewPosition(type);
+
+    markDesignChanged();
+
+}
+
+
+function applyPreviewPosition(type){
+
+    const preview =
+        document.getElementById(
+            type === "cover"
+            ? "coverPreview"
+            : type === "profile"
+            ? "profilePreview"
+            : "backgroundPreview"
+        );
+
+
+    const data =
+        designSettings[type];
+
+
+    if(!preview){
+        return;
+    }
+
+
+    preview.style.objectPosition =
+        `${data.x}% ${data.y}%`;
+
+
+    preview.style.objectFit =
+        "cover";
+
+
+    preview.style.transform =
+        `scale(${data.size / 100})`;
+
+}
+
+
+function setPositionControls(type){
+
+    const data =
+        designSettings[type];
+
+
+    document.getElementById(type+"X")
+        .value = data.x;
+
+
+    document.getElementById(type+"Y")
+        .value = data.y;
+
+
+    document.getElementById(type+"Size")
+        .value = data.size;
+
+
+    setPositionLabels(type);
+
+}
+
+
+function setPositionLabels(type){
+
+    const data =
+        designSettings[type];
+
+
+    document.getElementById(type+"XValue")
+        .textContent =
+        data.x + "%";
+
+
+    document.getElementById(type+"YValue")
+        .textContent =
+        data.y + "%";
+
+
+    document.getElementById(type+"SizeValue")
+        .textContent =
+        data.size + "%";
+
+}
+
+
+function resetImagePosition(type){
+
+    if(type === "profile"){
+
+        designSettings[type] = {
+            x:50,
+            y:50,
+            size:130
+        };
+
+    }else{
+
+        designSettings[type] = {
+            x:50,
+            y:50,
+            size:100
+        };
 
     }
 
 
-    notify("Subiendo imagen...");
+    setPositionControls(type);
 
+    applyPreviewPosition(type);
+
+    markDesignChanged();
+
+}
+
+
+/* =====================================================
+   DISEÑO - CAMBIOS
+===================================================== */
+
+function markDesignChanged(){
+
+    /*
+       Solo marca que existen cambios.
+       Todo se guarda cuando se pulsa
+       "Guardar cambios de diseño".
+    */
+
+}
+
+
+/* =====================================================
+   SUBIR DISEÑO
+===================================================== */
+
+async function uploadDesignFile(type,file){
 
     const path =
         "design/" +
+        type +
+        "-" +
         Date.now() +
         "-" +
         sanitizeFilename(file.name);
@@ -2036,9 +3422,9 @@ async function saveDesignImage(
 
     if(uploadError){
 
-        alert(uploadError.message);
-
-        return;
+        throw new Error(
+            uploadError.message
+        );
 
     }
 
@@ -2050,81 +3436,299 @@ async function saveDesignImage(
         .getPublicUrl(path);
 
 
-    const imageUrl =
-        urlData.publicUrl;
-
-
-    await saveSetting(
-        settingKey,
-        imageUrl
-    );
-
-
-    document.getElementById(
-        previewId
-    ).src =
-        imageUrl;
-
-
-    notify("Imagen guardada");
+    return urlData.publicUrl;
 
 }
 
+
+/* =====================================================
+   GUARDAR TODO EL DISEÑO
+===================================================== */
+
+async function saveAllDesign(){
+
+    try{
+
+        notify("Guardando diseño...");
+
+
+        /*
+           PORTADA
+        */
+
+        if(designFiles.cover){
+
+            const url =
+                await uploadDesignFile(
+                    "cover",
+                    designFiles.cover
+                );
+
+
+            await upsertSetting(
+                "cover_image",
+                url
+            );
+
+
+            designFiles.cover = null;
+
+        }
+
+
+        /*
+           PERFIL
+        */
+
+        if(designFiles.profile){
+
+            const url =
+                await uploadDesignFile(
+                    "profile",
+                    designFiles.profile
+                );
+
+
+            await upsertSetting(
+                "profile_image",
+                url
+            );
+
+
+            designFiles.profile = null;
+
+        }
+
+
+        /*
+           FONDO
+        */
+
+        if(designFiles.background){
+
+            const url =
+                await uploadDesignFile(
+                    "background",
+                    designFiles.background
+                );
+
+
+            await upsertSetting(
+                "background_image",
+                url
+            );
+
+
+            designFiles.background = null;
+
+        }
+
+
+        /*
+           FONDO
+        */
+
+        await upsertSetting(
+            "background_type",
+            document.getElementById(
+                "backgroundType"
+            ).value
+        );
+
+
+        await upsertSetting(
+            "background_color",
+            document.getElementById(
+                "backgroundColor"
+            ).value
+        );
+
+
+        await upsertSetting(
+            "primary_color",
+            document.getElementById(
+                "primaryColor"
+            ).value
+        );
+
+
+        /*
+           POSICIONES
+        */
+
+        await upsertSetting(
+            "cover_x",
+            designSettings.cover.x
+        );
+
+        await upsertSetting(
+            "cover_y",
+            designSettings.cover.y
+        );
+
+        await upsertSetting(
+            "cover_size",
+            designSettings.cover.size
+        );
+
+
+        await upsertSetting(
+            "profile_x",
+            designSettings.profile.x
+        );
+
+        await upsertSetting(
+            "profile_y",
+            designSettings.profile.y
+        );
+
+        await upsertSetting(
+            "profile_size",
+            designSettings.profile.size
+        );
+
+
+        await upsertSetting(
+            "background_x",
+            designSettings.background.x
+        );
+
+        await upsertSetting(
+            "background_y",
+            designSettings.background.y
+        );
+
+        await upsertSetting(
+            "background_size",
+            designSettings.background.size
+        );
+
+
+        notify("Diseño guardado correctamente");
+
+        await loadSettings();
+
+    }catch(error){
+
+        console.error(error);
+
+        alert(
+            "No se pudo guardar el diseño: " +
+            error.message
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   CONFIGURACIÓN
+===================================================== */
+
+async function upsertSetting(key,value){
+
+    const {error} =
+        await supabaseClient
+        .from("settings")
+        .upsert(
+            {
+                key,
+                value:String(value),
+                updated_at:new Date().toISOString()
+            },
+            {
+                onConflict:"key"
+            }
+        );
+
+
+    if(error){
+
+        throw new Error(
+            error.message
+        );
+
+    }
+
+}
+
+
+/* =====================================================
+   NEGOCIO
+===================================================== */
 
 async function saveBusiness(){
 
-    await saveSetting(
-        "description",
-        document.getElementById(
-            "businessDescription"
-        ).value
-    );
+    try{
+
+        notify("Guardando configuración...");
 
 
-    await saveSetting(
-        "slogan",
-        document.getElementById(
-            "businessSlogan"
-        ).value
-    );
+        await upsertSetting(
+            "description",
+            document.getElementById(
+                "businessDescription"
+            ).value
+        );
 
 
-    await saveSetting(
-        "whatsapp",
-        document.getElementById(
-            "businessWhatsapp"
-        ).value
-    );
+        await upsertSetting(
+            "slogan",
+            document.getElementById(
+                "businessSlogan"
+            ).value
+        );
 
 
-    await saveSetting(
-        "delivery_cost",
-        document.getElementById(
-            "businessDeliveryCost"
-        ).value
-    );
+        await upsertSetting(
+            "whatsapp",
+            document.getElementById(
+                "businessWhatsapp"
+            ).value
+        );
 
 
-    await saveSetting(
-        "bank_details",
-        document.getElementById(
-            "bankDetails"
-        ).value
-    );
+        await upsertSetting(
+            "delivery_cost",
+            document.getElementById(
+                "businessDeliveryCost"
+            ).value
+        );
 
 
-    notify(
-        "Configuración guardada"
-    );
+        await upsertSetting(
+            "bank_details",
+            document.getElementById(
+                "bankDetails"
+            ).value
+        );
+
+
+        notify(
+            "Configuración guardada correctamente"
+        );
+
+    }catch(error){
+
+        alert(error.message);
+
+    }
 
 }
 
 
-/* =========================
+/* =====================================================
    PEDIDOS
-========================= */
+===================================================== */
 
 async function loadOrders(){
+
+    const tbody =
+        document.getElementById(
+            "ordersTable"
+        );
+
 
     const {data,error} =
         await supabaseClient
@@ -2133,12 +3737,6 @@ async function loadOrders(){
         .order(
             "created_at",
             {ascending:false}
-        );
-
-
-    const tbody =
-        document.getElementById(
-            "ordersTable"
         );
 
 
@@ -2173,44 +3771,50 @@ async function loadOrders(){
     tbody.innerHTML =
         data.map(order => `
 
-            <tr>
+        <tr>
 
-                <td>
-                    ${formatDate(order.created_at)}
-                </td>
+            <td>
+                ${formatDate(order.created_at)}
+            </td>
 
-                <td>
-                    ${escapeHtml(order.customer_name || "")}
-                </td>
+            <td>
+                ${escapeHtml(order.customer_name || "")}
+            </td>
 
-                <td>
-                    ${escapeHtml(order.delivery_type || "")}
-                </td>
+            <td>
+                ${escapeHtml(order.delivery_type || "")}
+            </td>
 
-                <td>
-                    ${escapeHtml(order.payment_method || "")}
-                </td>
+            <td>
+                ${escapeHtml(order.payment_method || "")}
+            </td>
 
-                <td>
-                    $${money(order.total)}
-                </td>
+            <td>
+                $${money(order.total)}
+            </td>
 
-                <td>
-                    ${escapeHtml(order.order_status || "")}
-                </td>
+            <td>
+                ${escapeHtml(order.order_status || "")}
+            </td>
 
-            </tr>
+        </tr>
 
         `).join("");
 
 }
 
 
-/* =========================
+/* =====================================================
    CLIENTES
-========================= */
+===================================================== */
 
 async function loadCustomers(){
+
+    const tbody =
+        document.getElementById(
+            "customersTable"
+        );
+
 
     const {data,error} =
         await supabaseClient
@@ -2219,12 +3823,6 @@ async function loadCustomers(){
         .order(
             "created_at",
             {ascending:false}
-        );
-
-
-    const tbody =
-        document.getElementById(
-            "customersTable"
         );
 
 
@@ -2259,36 +3857,38 @@ async function loadCustomers(){
     tbody.innerHTML =
         data.map(customer => `
 
-            <tr>
+        <tr>
 
-                <td>
-                    ${escapeHtml(customer.name || "")}
-                </td>
+            <td>
+                ${escapeHtml(customer.name || "")}
+            </td>
 
-                <td>
-                    ${escapeHtml(customer.phone || "")}
-                </td>
+            <td>
+                ${escapeHtml(customer.phone || "")}
+            </td>
 
-                <td>
-                    ${escapeHtml(customer.email || "")}
-                </td>
+            <td>
+                ${escapeHtml(customer.email || "")}
+            </td>
 
-                <td>
-                    ${formatDate(customer.created_at)}
-                </td>
+            <td>
+                ${formatDate(customer.created_at)}
+            </td>
 
-            </tr>
+        </tr>
 
         `).join("");
 
 }
 
 
-/* =========================
-   UTILIDADES
-========================= */
+/* =====================================================
+   CARGAR TODO
+===================================================== */
 
 async function loadAll(){
+
+    await loadCategories();
 
     await loadProducts();
 
@@ -2296,6 +3896,10 @@ async function loadAll(){
 
 }
 
+
+/* =====================================================
+   UTILIDADES
+===================================================== */
 
 function money(value){
 
@@ -2314,16 +3918,12 @@ function money(value){
 function formatDate(value){
 
     if(!value){
-
         return "";
-
     }
 
 
     return new Date(value)
-        .toLocaleString(
-            "es-MX"
-        );
+        .toLocaleString("es-MX");
 
 }
 
@@ -2340,7 +3940,7 @@ function sanitizeFilename(name){
 
 function escapeHtml(value){
 
-    return String(value || "")
+    return String(value ?? "")
         .replace(/&/g,"&amp;")
         .replace(/</g,"&lt;")
         .replace(/>/g,"&gt;")
@@ -2350,10 +3950,16 @@ function escapeHtml(value){
 }
 
 
+function escapeAttribute(value){
+
+    return escapeHtml(value);
+
+}
+
+
 checkSession();
 
 </script>
 
 </body>
-
 </html>
