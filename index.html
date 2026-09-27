@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
 
 <meta charset="UTF-8">
 
 <meta name="viewport"
-content="width=device-width, initial-scale=1.0">
+content="width=device-width,initial-scale=1.0">
 
 <title>Menú</title>
 
@@ -45,11 +46,11 @@ transform:translateX(-50%);
 width:150px;
 height:150px;
 border-radius:50%;
-overflow:hidden;
 background:white;
 border:6px solid white;
+overflow:hidden;
 box-shadow:0 5px 20px rgba(0,0,0,.3);
-z-index:3;
+z-index:5;
 }
 
 .profile img{
@@ -69,7 +70,6 @@ display:flex;
 gap:10px;
 overflow-x:auto;
 padding-bottom:15px;
-margin-bottom:20px;
 }
 
 .category{
@@ -78,9 +78,9 @@ background:white;
 padding:12px 18px;
 border-radius:30px;
 font-weight:bold;
-cursor:pointer;
 white-space:nowrap;
 box-shadow:0 2px 10px rgba(0,0,0,.08);
+cursor:pointer;
 }
 
 .category.active{
@@ -99,8 +99,6 @@ background:white;
 border-radius:18px;
 overflow:hidden;
 box-shadow:0 5px 20px rgba(0,0,0,.08);
-position:relative;
-transition:.2s;
 }
 
 .product-image{
@@ -150,12 +148,12 @@ cursor:pointer;
 }
 
 .product.soldout{
-opacity:.43;
-filter:grayscale(.55);
+opacity:.42;
+filter:grayscale(.45);
 }
 
 .product.soldout .product-image{
-filter:grayscale(1);
+filter:grayscale(.7);
 }
 
 .soldout-label{
@@ -250,10 +248,26 @@ border-radius:9px;
 cursor:pointer;
 }
 
-.form-section{
-margin-top:25px;
-border-top:1px solid #ddd;
-padding-top:20px;
+.maps-button{
+display:block;
+width:100%;
+background:#4285f4;
+color:white;
+text-align:center;
+padding:13px;
+border-radius:9px;
+font-weight:bold;
+text-decoration:none;
+margin-bottom:15px;
+}
+
+.transfer-box{
+background:#f3f3f3;
+padding:15px;
+border-radius:10px;
+margin-bottom:15px;
+white-space:pre-wrap;
+display:none;
 }
 
 input,
@@ -265,15 +279,6 @@ border:1px solid #ddd;
 border-radius:8px;
 margin:5px 0 12px;
 font-size:15px;
-}
-
-.transfer-box{
-background:#f4f4f4;
-padding:15px;
-border-radius:10px;
-margin-bottom:15px;
-white-space:pre-wrap;
-display:none;
 }
 
 @media(max-width:850px){
@@ -334,18 +339,15 @@ style="display:none"
 
 <main class="main">
 
-
 <div
 id="categories"
 class="categories">
 </div>
 
-
 <div
 id="products"
 class="products">
 </div>
-
 
 </main>
 
@@ -380,8 +382,6 @@ Total: $0.00
 </div>
 
 
-<div class="form-section">
-
 <label>Nombre</label>
 
 <input
@@ -398,18 +398,18 @@ placeholder="Tu teléfono"
 >
 
 
-<label>Tipo de entrega</label>
+<label>Tipo de pedido</label>
 
 <select
 id="deliveryType"
-onchange="updateDelivery()">
+onchange="deliveryChanged()">
 
 <option value="delivery">
 Entrega a domicilio — costo extra
 </option>
 
 <option value="pickup">
-Recoger
+Recoger pedido
 </option>
 
 </select>
@@ -423,6 +423,23 @@ Recoger
 id="address"
 placeholder="Dirección completa"
 ></textarea>
+
+</div>
+
+
+<div
+id="pickupMapBox"
+style="display:none"
+>
+
+<a
+id="pickupMapButton"
+class="maps-button"
+target="_blank"
+rel="noopener"
+>
+📍 Abrir ubicación de PasteHot en Google Maps
+</a>
 
 </div>
 
@@ -462,40 +479,41 @@ placeholder="Notas para tu pedido">
 class="whatsapp"
 onclick="sendOrder()">
 
-<span style="font-size:20px">◉</span>
-Pedir por WhatsApp
+🟢 Pedir por WhatsApp
 
 </button>
-
-</div>
 
 </div>
 
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+
 <script>
 
-const SUPABASE_URL =
+
+const SUPABASE_URL=
 "https://cqlywpemisknrxswlmea.supabase.co";
 
-const SUPABASE_KEY =
+
+const SUPABASE_KEY=
 "sb_publishable_wDu6p-CtnQtYu7KWH1YS1A_h7LeL0SX";
 
-const supabaseClient =
+
+const db=
 supabase.createClient(
 SUPABASE_URL,
 SUPABASE_KEY
 );
 
 
-let allProducts=[];
+let products=[];
 
 let cart=[];
 
-let activeCategory="Pastes salados";
-
 let settings={};
+
+let activeCategory="";
 
 
 async function init(){
@@ -513,24 +531,26 @@ renderProducts();
 
 async function loadSettings(){
 
-const {data,error} =
-await supabaseClient
+const result=
+await db
 .from("settings")
 .select("key,value");
 
-if(error){
 
-console.error(error);
+if(result.error){
+
+console.error(result.error);
 
 return;
 
 }
 
-(data || []).forEach(row=>{
 
+(result.data||[]).forEach(
+row=>{
 settings[row.key]=row.value;
-
-});
+}
+);
 
 
 applyDesign();
@@ -538,131 +558,45 @@ applyDesign();
 }
 
 
-function applyDesign(){
-
-const cover =
-settings.cover_image;
-
-const profile =
-settings.profile_image;
-
-
-if(cover){
-
-const el=
-document.getElementById("coverImage");
-
-el.src=cover;
-
-el.style.display="block";
-
-el.style.transform=
-`translate(
-${Number(settings.cover_x || 0)}px,
-${Number(settings.cover_y || 0)}px
-)
-scale(
-${Number(settings.cover_scale || 100)/100}
-)`;
-
-}
-
-
-if(profile){
-
-const el=
-document.getElementById("profileImage");
-
-el.src=profile;
-
-el.style.display="block";
-
-el.style.transform=
-`scale(
-${Number(settings.profile_scale || 200)/100}
-)
-translate(
-${Number(settings.profile_x || 0)}px,
-${Number(settings.profile_y || 0)}px
-)`;
-
-}
-
-
-const type =
-settings.background_type || "color";
-
-
-if(type==="image" && settings.background_image){
-
-document.body.style.backgroundImage=
-`url("${settings.background_image}")`;
-
-document.body.style.backgroundSize=
-`${settings.background_scale || 100}%`;
-
-document.body.style.backgroundPosition=
-`${Number(settings.background_x || 0)+50}% ${Number(settings.background_y || 0)+50}%`;
-
-document.body.style.backgroundAttachment="fixed";
-
-}else{
-
-document.body.style.backgroundImage="none";
-
-document.body.style.backgroundColor=
-settings.background_color || "#f4f4f4";
-
-}
-
-}
-
-
 async function loadProducts(){
 
-const {data,error} =
-await supabaseClient
+const result=
+await db
 .from("products")
 .select("*")
 .order("sort_order",{ascending:true})
 .order("created_at",{ascending:true});
 
 
-if(error){
+if(result.error){
 
-console.error(error);
+console.error(result.error);
 
 return;
 
 }
 
 
-allProducts=data || [];
+products=result.data || [];
 
 }
 
 
 function getCategories(){
 
-let result=[
-"Pastes salados",
-"Pastes dulces",
-"Pastes de temporada",
-"Bebidas",
-"Promociones"
-];
-
-
 if(settings.categories){
 
 try{
 
-const parsed=
+const saved=
 JSON.parse(settings.categories);
 
-if(Array.isArray(parsed) && parsed.length){
+if(
+Array.isArray(saved) &&
+saved.length
+){
 
-result=parsed;
+return saved;
 
 }
 
@@ -671,7 +605,13 @@ result=parsed;
 }
 
 
-return result;
+return[
+"Pastes salados",
+"Pastes dulces",
+"Pastes de temporada",
+"Bebidas",
+"Promociones"
+];
 
 }
 
@@ -686,6 +626,7 @@ getCategories();
 
 
 if(
+!activeCategory ||
 !cats.includes(activeCategory)
 ){
 
@@ -694,30 +635,40 @@ activeCategory=cats[0];
 }
 
 
-box.innerHTML=
-cats.map(category=>`
-
-<button
-class="category ${category===activeCategory?"active":""}"
-onclick='selectCategory(${JSON.stringify(category)})'
->
-
-${escapeHtml(category)}
-
-</button>
-
-`).join("");
-
-}
+box.innerHTML="";
 
 
-function selectCategory(category){
+cats.forEach(category=>{
+
+const button=
+document.createElement("button");
+
+button.className=
+"category "+
+(
+category===activeCategory
+?"active"
+:""
+);
+
+button.innerText=category;
+
+
+button.onclick=
+function(){
 
 activeCategory=category;
 
 renderCategories();
 
 renderProducts();
+
+};
+
+
+box.appendChild(button);
+
+});
 
 }
 
@@ -727,10 +678,11 @@ function renderProducts(){
 const box=
 document.getElementById("products");
 
+
 const list=
-allProducts.filter(
-product =>
-product.category===activeCategory
+products.filter(
+p=>
+p.category===activeCategory
 );
 
 
@@ -744,93 +696,157 @@ return;
 }
 
 
-box.innerHTML=
-list.map(product=>{
+box.innerHTML="";
 
-const available=
-product.available===true;
+
+list.forEach(product=>{
+
+const card=
+document.createElement("article");
+
+card.className=
+"product "+
+(
+product.available===true
+?""
+:"soldout"
+);
+
 
 const image=
+document.createElement("img");
+
+image.className="product-image";
+
+image.src=
 product.image_url ||
 "https://via.placeholder.com/600x400";
 
 
-return `
+image.onerror=
+function(){
 
-<article
-class="product ${available?"":"soldout"}"
->
+this.src=
+"https://via.placeholder.com/600x400";
 
-<img
-class="product-image"
-src="${escapeHtml(image)}"
-alt=""
->
+};
 
 
-${
-available
-? ""
-: `
-<div class="soldout-label">
-AGOTADO
-</div>
-`
+const body=
+document.createElement("div");
+
+body.className="product-body";
+
+
+const title=
+document.createElement("h3");
+
+title.className="product-name";
+
+title.innerText=
+product.name || "";
+
+
+const description=
+document.createElement("div");
+
+description.className=
+"product-description";
+
+description.innerText=
+product.description || "";
+
+
+const bottom=
+document.createElement("div");
+
+bottom.className=
+"product-bottom";
+
+
+const price=
+document.createElement("div");
+
+price.className="price";
+
+price.innerText=
+"$"+Number(product.price||0).toFixed(2);
+
+
+const button=
+document.createElement("button");
+
+button.className="add";
+
+
+if(product.available===true){
+
+button.innerText="AGREGAR";
+
+button.onclick=
+function(){
+
+addToCart(product.id);
+
+};
+
+}else{
+
+button.innerText="AGOTADO";
+
+button.disabled=true;
+
 }
 
 
-<div class="product-body">
+bottom.appendChild(price);
 
-<h3 class="product-name">
-${escapeHtml(product.name)}
-</h3>
+bottom.appendChild(button);
 
-<div class="product-description">
-${escapeHtml(product.description || "")}
-</div>
+body.appendChild(title);
 
+body.appendChild(description);
 
-<div class="product-bottom">
+body.appendChild(bottom);
 
-<div class="price">
-$${Number(product.price).toFixed(2)}
-</div>
+card.appendChild(image);
 
 
-<button
-class="add"
-${available ? "" : "disabled"}
-onclick='addToCart(${JSON.stringify(String(product.id))})'
->
+if(product.available!==true){
 
-${available ? "AGREGAR" : "AGOTADO"}
+const sold=
+document.createElement("div");
 
-</button>
+sold.className="soldout-label";
 
-</div>
+sold.innerText="AGOTADO";
 
-</div>
+card.appendChild(sold);
 
-</article>
+}
 
-`;
 
-}).join("");
+card.appendChild(body);
+
+box.appendChild(card);
+
+});
 
 }
 
 
 function addToCart(id){
 
-id=String(id);
-
 const product=
-allProducts.find(
-p=>String(p.id)===id
+products.find(
+p=>String(p.id)===String(id)
 );
 
 
-if(!product || product.available!==true){
+if(
+!product ||
+product.available!==true
+){
 
 return;
 
@@ -839,7 +855,9 @@ return;
 
 const existing=
 cart.find(
-item=>String(item.product.id)===id
+item=>
+String(item.product.id)===
+String(id)
 );
 
 
@@ -850,7 +868,7 @@ existing.quantity++;
 }else{
 
 cart.push({
-product:product,
+product,
 quantity:1
 });
 
@@ -864,15 +882,15 @@ renderCart();
 
 function removeFromCart(id){
 
-id=String(id);
-
 const item=
 cart.find(
-x=>String(x.product.id)===id
+x=>
+String(x.product.id)===
+String(id)
 );
 
 
-if(!item) return;
+if(!item)return;
 
 
 item.quantity--;
@@ -882,7 +900,9 @@ if(item.quantity<=0){
 
 cart=
 cart.filter(
-x=>String(x.product.id)!==id
+x=>
+String(x.product.id)!==
+String(id)
 );
 
 }
@@ -898,7 +918,8 @@ function renderCart(){
 const box=
 document.getElementById("cartItems");
 
-let total=0;
+
+let subtotal=0;
 
 let count=0;
 
@@ -910,57 +931,55 @@ box.innerHTML=
 
 }else{
 
-box.innerHTML=
-cart.map(item=>{
+box.innerHTML="";
 
-const subtotal=
-Number(item.product.price) *
+
+cart.forEach(item=>{
+
+const amount=
+Number(item.product.price)*
 item.quantity;
 
-total+=subtotal;
+
+subtotal+=amount;
 
 count+=item.quantity;
 
 
-return `
+const row=
+document.createElement("div");
 
-<div class="cart-item">
+row.className="cart-item";
 
+
+row.innerHTML=
+`
 <div>
-
-<strong>
-${escapeHtml(item.product.name)}
-</strong>
-
+<strong>${escapeHtml(item.product.name)}</strong>
 <br>
-
 $${Number(item.product.price).toFixed(2)}
 × ${item.quantity}
-
 </div>
 
-
 <div>
-
 <button
-onclick='removeFromCart(${JSON.stringify(String(item.product.id))})'
+onclick="removeFromCart('${String(item.product.id)}')"
 >
 −
 </button>
 
 <button
-onclick='addToCart(${JSON.stringify(String(item.product.id))})'
+onclick="addToCart('${String(item.product.id)}')"
 >
 +
 </button>
-
 </div>
-
-</div>
-
 `;
 
-}).join("");
+
+box.appendChild(row);
+
+});
 
 }
 
@@ -968,13 +987,15 @@ onclick='addToCart(${JSON.stringify(String(item.product.id))})'
 const delivery=
 document.getElementById("deliveryType").value;
 
-if(delivery==="delivery"){
 
-total+=Number(
-settings.delivery_cost || 0
-);
+const deliveryCost=
+delivery==="delivery"
+?Number(settings.delivery_cost||0)
+:0;
 
-}
+
+const total=
+subtotal+deliveryCost;
 
 
 document.getElementById("cartCount").innerText=
@@ -982,7 +1003,7 @@ count;
 
 
 document.getElementById("cartTotal").innerText=
-"Total: $" + total.toFixed(2);
+"Total: $"+total.toFixed(2);
 
 }
 
@@ -996,15 +1017,32 @@ document
 }
 
 
-function updateDelivery(){
+function deliveryChanged(){
 
 const type=
 document.getElementById("deliveryType").value;
 
+
 document.getElementById("addressBox").style.display=
 type==="delivery"
-? "block"
-: "none";
+?"block"
+:"none";
+
+
+document.getElementById("pickupMapBox").style.display=
+type==="pickup"
+?"block"
+:"none";
+
+
+if(type==="pickup"){
+
+document.getElementById("pickupMapButton").href=
+settings.pickup_maps_url ||
+"#";
+
+}
+
 
 renderCart();
 
@@ -1015,6 +1053,7 @@ function paymentChanged(){
 
 const method=
 document.getElementById("paymentMethod").value;
+
 
 const box=
 document.getElementById("transferBox");
@@ -1037,7 +1076,7 @@ box.style.display="none";
 }
 
 
-async function sendOrder(){
+function sendOrder(){
 
 if(!cart.length){
 
@@ -1049,22 +1088,39 @@ return;
 
 
 const name=
-document.getElementById("customerName").value.trim();
+document
+.getElementById("customerName")
+.value.trim();
+
 
 const phone=
-document.getElementById("customerPhone").value.trim();
+document
+.getElementById("customerPhone")
+.value.trim();
 
-const deliveryType=
-document.getElementById("deliveryType").value;
+
+const delivery=
+document
+.getElementById("deliveryType")
+.value;
+
 
 const address=
-document.getElementById("address").value.trim();
+document
+.getElementById("address")
+.value.trim();
 
-const paymentMethod=
-document.getElementById("paymentMethod").value;
+
+const payment=
+document
+.getElementById("paymentMethod")
+.value;
+
 
 const notes=
-document.getElementById("notes").value.trim();
+document
+.getElementById("notes")
+.value.trim();
 
 
 if(!name || !phone){
@@ -1077,7 +1133,7 @@ return;
 
 
 if(
-deliveryType==="delivery" &&
+delivery==="delivery" &&
 !address
 ){
 
@@ -1091,42 +1147,48 @@ return;
 let subtotal=0;
 
 
+let items="";
+
+
 cart.forEach(item=>{
 
-subtotal +=
-Number(item.product.price) *
+const amount=
+Number(item.product.price)*
 item.quantity;
+
+
+subtotal+=amount;
+
+
+items+=
+item.quantity+
+" x "+
+item.product.name+
+" - $"+
+amount.toFixed(2)+
+"\n";
 
 });
 
 
 const deliveryCost=
-deliveryType==="delivery"
-? Number(settings.delivery_cost || 0)
-: 0;
+delivery==="delivery"
+?Number(settings.delivery_cost||0)
+:0;
 
 
 const total=
 subtotal+deliveryCost;
 
 
-const lines=
-cart.map(item=>
-`${item.quantity} x ${item.product.name} - $${(
-Number(item.product.price)*item.quantity
-).toFixed(2)}`
-).join("\n");
-
-
-const whatsapp=
-settings.whatsapp ||
-"529902317606";
+const maps=
+settings.pickup_maps_url || "";
 
 
 const message=
-`Hola, quiero hacer un pedido en PasteHot.
+`Hola, quiero hacer un pedido.
 
-${lines}
+${items}
 
 Subtotal: $${subtotal.toFixed(2)}
 Entrega: $${deliveryCost.toFixed(2)}
@@ -1134,26 +1196,107 @@ Total: $${total.toFixed(2)}
 
 Nombre: ${name}
 Teléfono: ${phone}
-Entrega: ${deliveryType==="delivery"?"A domicilio":"Recoger"}
-${deliveryType==="delivery"?`Dirección: ${address}`:""}
-Pago: ${paymentMethod==="transfer"?"Transferencia":"Efectivo"}
-Notas: ${notes}`;
+
+Tipo:
+${delivery==="pickup"?"Recoger pedido":"Entrega a domicilio"}
+
+${delivery==="delivery"
+?"Dirección: "+address
+:"Ubicación de recogida: "+maps}
+
+Forma de pago:
+${payment==="transfer"?"Transferencia":"Efectivo"}
+
+Notas:
+${notes}`;
+
+
+const whatsapp=
+settings.whatsapp ||
+"529902317606";
 
 
 window.open(
-"https://wa.me/"+whatsapp+
+"https://wa.me/"+
+whatsapp+
 "?text="+
 encodeURIComponent(message),
 "_blank"
 );
 
+}
+
+
+function applyDesign(){
+
+const cover=
+settings.cover_image;
+
+
+const profile=
+settings.profile_image;
+
+
+if(cover){
+
+const image=
+document.getElementById("coverImage");
+
+image.src=cover;
+
+image.style.display="block";
+
+}
+
+
+if(profile){
+
+const image=
+document.getElementById("profileImage");
+
+image.src=profile;
+
+image.style.display="block";
+
+}
+
+
+const backgroundType=
+settings.background_type ||
+"color";
+
+
+if(
+backgroundType==="image" &&
+settings.background_image
+){
+
+document.body.style.backgroundImage=
+`url("${settings.background_image}")`;
+
+document.body.style.backgroundSize=
+(settings.background_scale||100)+"%";
+
+document.body.style.backgroundPosition=
+"center";
+
+}else{
+
+document.body.style.backgroundImage=
+"none";
+
+document.body.style.backgroundColor=
+settings.background_color||
+"#f4f4f4";
+
+}
 
 }
 
 
 function escapeHtml(value){
 
-return String(value ?? "")
+return String(value??"")
 .replace(/&/g,"&amp;")
 .replace(/</g,"&lt;")
 .replace(/>/g,"&gt;")
@@ -1168,4 +1311,5 @@ init();
 </script>
 
 </body>
+
 </html>
