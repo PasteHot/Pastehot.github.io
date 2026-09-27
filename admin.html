@@ -1,16 +1,27 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<meta name="viewport"
+      content="width=device-width,initial-scale=1.0">
 
 <title>Administrador</title>
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="preconnect"
+      href="https://fonts.googleapis.com">
+
+<link rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@700;800;900&display=swap"
+      rel="stylesheet">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 
 <style>
 
@@ -18,21 +29,11 @@
     box-sizing:border-box;
 }
 
-:root{
-    --red:#C62828;
-    --green:#16833b;
-    --dark:#171717;
-    --bg:#f4f5f7;
-    --border:#e5e5e5;
-    --text:#171717;
-    --muted:#777;
-}
-
 body{
     margin:0;
     font-family:Inter,Arial,sans-serif;
-    background:var(--bg);
-    color:var(--text);
+    background:#f3f4f6;
+    color:#171717;
 }
 
 button,
@@ -65,20 +66,20 @@ button{
 .login-box{
     width:min(420px,100%);
     background:white;
-    border-radius:25px;
-    padding:32px;
-    box-shadow:0 25px 70px rgba(0,0,0,.35);
+    border-radius:24px;
+    padding:30px;
+    box-shadow:0 20px 60px rgba(0,0,0,.3);
 }
 
 .login-box h1{
     margin:0 0 8px;
-    font-family:Montserrat,sans-serif;
+    font-family:Montserrat;
     font-size:28px;
 }
 
 .login-box p{
-    margin:0 0 25px;
     color:#777;
+    margin:0 0 25px;
 }
 
 
@@ -89,13 +90,13 @@ button{
 }
 
 .topbar{
-    height:70px;
+    height:68px;
     background:#171717;
     color:white;
     display:flex;
     align-items:center;
     justify-content:space-between;
-    padding:0 24px;
+    padding:0 22px;
     position:sticky;
     top:0;
     z-index:100;
@@ -103,7 +104,7 @@ button{
 
 .topbar h1{
     margin:0;
-    font-family:Montserrat,sans-serif;
+    font-family:Montserrat;
     font-size:20px;
 }
 
@@ -111,9 +112,8 @@ button{
     border:1px solid rgba(255,255,255,.25);
     background:transparent;
     color:white;
-    padding:9px 14px;
-    border-radius:10px;
-    font-weight:700;
+    padding:9px 13px;
+    border-radius:9px;
 }
 
 
@@ -121,14 +121,14 @@ button{
 
 .layout{
     display:flex;
-    min-height:calc(100vh - 70px);
+    min-height:calc(100vh - 68px);
 }
 
 .sidebar{
-    width:240px;
+    width:230px;
     background:white;
-    border-right:1px solid var(--border);
-    padding:16px;
+    border-right:1px solid #ddd;
+    padding:15px;
     flex-shrink:0;
 }
 
@@ -137,27 +137,26 @@ button{
     text-align:left;
     border:0;
     background:transparent;
-    padding:13px 14px;
-    border-radius:12px;
-    font-weight:750;
+    padding:13px;
+    border-radius:11px;
+    font-weight:700;
     color:#555;
     margin-bottom:5px;
 }
 
-.nav:hover{
-    background:#f7f7f7;
-}
-
 .nav.active{
     background:#fff0f0;
-    color:var(--red);
+    color:#C62828;
 }
 
 .content{
     flex:1;
-    padding:28px;
-    max-width:1500px;
+    padding:25px;
+    max-width:1450px;
 }
+
+
+/* TABS */
 
 .tab{
     display:none;
@@ -174,67 +173,14 @@ button{
     display:flex;
     align-items:center;
     justify-content:space-between;
-    gap:15px;
     margin-bottom:22px;
+    gap:15px;
 }
 
 .page-title h2{
     margin:0;
-    font-family:Montserrat,sans-serif;
-    font-size:26px;
-}
-
-.page-title p{
-    margin:5px 0 0;
-    color:var(--muted);
-    font-size:13px;
-}
-
-
-/* BUTTONS */
-
-.primary{
-    border:0;
-    background:var(--red);
-    color:white;
-    padding:13px 18px;
-    border-radius:11px;
-    font-weight:800;
-}
-
-.primary:hover{
-    filter:brightness(.94);
-}
-
-.secondary{
-    border:1px solid #ddd;
-    background:white;
-    color:#222;
-    padding:12px 16px;
-    border-radius:11px;
-    font-weight:800;
-}
-
-.danger{
-    border:0;
-    background:#b91c1c;
-    color:white;
-    padding:10px 14px;
-    border-radius:10px;
-    font-weight:800;
-}
-
-.small-btn{
-    border:1px solid #ddd;
-    background:white;
-    padding:9px 12px;
-    border-radius:9px;
-    font-size:12px;
-    font-weight:800;
-}
-
-.small-btn:hover{
-    background:#f7f7f7;
+    font-family:Montserrat;
+    font-size:25px;
 }
 
 
@@ -242,9 +188,9 @@ button{
 
 .card{
     background:white;
-    border-radius:19px;
-    padding:21px;
-    box-shadow:0 5px 22px rgba(0,0,0,.055);
+    border-radius:18px;
+    padding:20px;
+    box-shadow:0 5px 20px rgba(0,0,0,.06);
     margin-bottom:18px;
 }
 
@@ -257,14 +203,14 @@ button{
 /* FIELDS */
 
 .field{
-    margin-bottom:16px;
+    margin-bottom:15px;
 }
 
 .field label{
     display:block;
     font-size:12px;
     font-weight:800;
-    margin-bottom:7px;
+    margin-bottom:6px;
 }
 
 .field input,
@@ -272,16 +218,9 @@ button{
 .field select{
     width:100%;
     border:1px solid #ddd;
-    border-radius:11px;
-    padding:12px 13px;
+    border-radius:12px;
+    padding:12px;
     background:white;
-    outline:none;
-}
-
-.field input:focus,
-.field textarea:focus,
-.field select:focus{
-    border-color:#999;
 }
 
 .field textarea{
@@ -300,6 +239,64 @@ button{
 }
 
 
+/* BUTTONS */
+
+.primary{
+    border:0;
+    background:#C62828;
+    color:white;
+    padding:13px 18px;
+    border-radius:12px;
+    font-weight:800;
+}
+
+.primary:hover{
+    opacity:.92;
+}
+
+.save-all{
+    width:100%;
+    border:0;
+    background:#171717;
+    color:white;
+    padding:18px;
+    border-radius:14px;
+    font-size:16px;
+    font-weight:900;
+    margin-top:5px;
+}
+
+.save-all:hover{
+    background:#C62828;
+}
+
+.small-btn{
+    border:1px solid #ddd;
+    background:white;
+    padding:9px 11px;
+    border-radius:9px;
+    font-size:12px;
+    font-weight:800;
+}
+
+.small-btn.red{
+    background:#C62828;
+    border-color:#C62828;
+    color:white;
+}
+
+.small-btn.dark{
+    background:#171717;
+    border-color:#171717;
+    color:white;
+}
+
+.small-btn.danger{
+    color:#C62828;
+    border-color:#efb0b0;
+}
+
+
 /* PRODUCTS */
 
 .product-list{
@@ -309,19 +306,24 @@ button{
 
 .product-row{
     background:white;
-    border-radius:18px;
-    padding:15px;
+    border-radius:17px;
+    padding:14px;
     display:grid;
-    grid-template-columns:92px 1fr auto;
-    gap:16px;
+    grid-template-columns:90px 1fr auto;
+    gap:15px;
     align-items:center;
-    box-shadow:0 4px 17px rgba(0,0,0,.055);
+    box-shadow:0 4px 16px rgba(0,0,0,.06);
+    transition:.2s;
+}
+
+.product-row.sold{
+    opacity:.58;
 }
 
 .product-thumb{
-    width:92px;
-    height:92px;
-    border-radius:14px;
+    width:90px;
+    height:90px;
+    border-radius:13px;
     object-fit:cover;
     background:#eee;
 }
@@ -332,43 +334,41 @@ button{
 }
 
 .product-info p{
-    margin:0 0 6px;
+    margin:0 0 7px;
     color:#777;
     font-size:12px;
 }
 
-.product-price{
-    font-size:15px;
+.price{
     font-weight:900;
 }
 
 .product-actions{
     display:flex;
-    align-items:center;
-    justify-content:flex-end;
-    flex-wrap:wrap;
+    flex-direction:column;
     gap:8px;
+    min-width:180px;
 }
 
 
-/* TOGGLE */
+/* SWITCH */
 
-.toggle-wrap{
+.switch-line{
     display:flex;
     align-items:center;
-    gap:9px;
+    gap:10px;
     font-size:12px;
     font-weight:800;
 }
 
-.toggle{
+.switch{
     position:relative;
-    width:58px;
-    height:32px;
+    width:52px;
+    height:30px;
     flex-shrink:0;
 }
 
-.toggle input{
+.switch input{
     opacity:0;
     width:0;
     height:0;
@@ -377,10 +377,9 @@ button{
 .slider{
     position:absolute;
     inset:0;
-    border-radius:40px;
-    background:#c62828;
+    background:#C62828;
+    border-radius:30px;
     transition:.2s;
-    cursor:pointer;
 }
 
 .slider:before{
@@ -388,44 +387,52 @@ button{
     position:absolute;
     width:24px;
     height:24px;
-    left:4px;
-    top:4px;
+    left:3px;
+    top:3px;
     background:white;
     border-radius:50%;
-    box-shadow:0 2px 5px rgba(0,0,0,.25);
     transition:.2s;
+    box-shadow:0 2px 5px rgba(0,0,0,.25);
 }
 
-.toggle input:checked + .slider{
-    background:#16833b;
+.switch input:checked + .slider{
+    background:#20a04b;
 }
 
-.toggle input:checked + .slider:before{
-    transform:translateX(26px);
+.switch input:checked + .slider:before{
+    transform:translateX(22px);
 }
 
-.toggle-label{
-    min-width:70px;
+.status-text{
+    min-width:65px;
+}
+
+.status-text.available{
+    color:#16853d;
+}
+
+.status-text.sold{
+    color:#C62828;
 }
 
 
-/* PHOTO */
+/* EDITOR */
 
 .photo-box{
     border:2px dashed #ddd;
     border-radius:16px;
-    padding:17px;
+    padding:15px;
 }
 
 .preview{
     width:100%;
-    max-width:300px;
-    height:190px;
+    max-width:280px;
+    height:180px;
     object-fit:cover;
     border-radius:13px;
     background:#eee;
     display:block;
-    margin-bottom:13px;
+    margin-bottom:12px;
 }
 
 .file-btn{
@@ -446,21 +453,34 @@ button{
 }
 
 
-/* SAVE BAR */
+/* CATEGORIES */
 
-.save-bar{
-    position:sticky;
-    bottom:15px;
-    z-index:50;
+.category-list{
     display:flex;
-    justify-content:flex-end;
+    flex-wrap:wrap;
     gap:10px;
-    background:rgba(255,255,255,.95);
+}
+
+.category-item{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:#f5f5f5;
     border:1px solid #ddd;
-    box-shadow:0 8px 30px rgba(0,0,0,.12);
-    padding:12px;
-    border-radius:15px;
-    margin-top:18px;
+    border-radius:12px;
+    padding:9px 11px;
+    font-size:13px;
+    font-weight:700;
+}
+
+.category-delete{
+    border:0;
+    background:#fee;
+    color:#C62828;
+    width:25px;
+    height:25px;
+    border-radius:50%;
+    font-weight:900;
 }
 
 
@@ -474,114 +494,62 @@ button{
 
 .design-card{
     background:white;
-    border-radius:19px;
+    border-radius:18px;
     padding:20px;
-    box-shadow:0 5px 22px rgba(0,0,0,.055);
+    box-shadow:0 5px 20px rgba(0,0,0,.06);
 }
 
 .design-card h3{
     margin:0 0 15px;
-    font-size:17px;
 }
 
 .design-preview{
     width:100%;
     height:220px;
     object-fit:cover;
-    object-position:center center;
     border-radius:15px;
     background:#eee;
-    margin-bottom:13px;
-    display:block;
-}
-
-.design-preview.profile{
-    object-fit:contain;
-}
-
-
-/* POSITION CONTROLS */
-
-.position-box{
-    background:#f7f7f7;
-    border-radius:14px;
-    padding:15px;
-    margin-top:15px;
-}
-
-.position-title{
-    font-size:12px;
-    font-weight:900;
     margin-bottom:12px;
 }
 
 .position-grid{
     display:grid;
     grid-template-columns:1fr 1fr;
-    gap:10px;
+    gap:12px;
+    margin-top:15px;
 }
 
-.range-row{
-    margin-bottom:10px;
-}
-
-.range-row label{
+.range-value{
     display:flex;
     justify-content:space-between;
     font-size:11px;
-    font-weight:800;
-    margin-bottom:5px;
+    color:#777;
+    margin-bottom:4px;
 }
 
-.range-row input[type="range"]{
-    width:100%;
-}
-
-.position-reset{
-    margin-top:5px;
+input[type="range"]{
     width:100%;
 }
 
 
-/* CATEGORY */
+/* LOGO SIZE */
 
-.category-list{
-    display:grid;
-    gap:9px;
-}
-
-.category-row{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    background:#f8f8f8;
-    border:1px solid #eee;
-    border-radius:12px;
-    padding:10px;
-}
-
-.category-number{
-    width:28px;
-    height:28px;
+.logo-size-preview{
     display:flex;
     align-items:center;
     justify-content:center;
-    background:#171717;
-    color:white;
-    border-radius:8px;
-    font-size:11px;
-    font-weight:900;
+    min-height:220px;
+    border-radius:15px;
+    background:#eee;
+    overflow:hidden;
 }
 
-.category-name{
-    flex:1;
-    font-weight:750;
-    font-size:13px;
-}
-
-.category-actions{
-    display:flex;
-    gap:5px;
+.logo-size-preview img{
+    width:200%;
+    max-width:none;
+    height:auto;
+    object-fit:contain;
+    transition:.2s;
 }
 
 
@@ -602,11 +570,10 @@ td{
     border-bottom:1px solid #eee;
     text-align:left;
     font-size:13px;
-    white-space:nowrap;
 }
 
 th{
-    font-size:10px;
+    font-size:11px;
     text-transform:uppercase;
     color:#777;
 }
@@ -616,17 +583,15 @@ th{
 
 .message{
     position:fixed;
-    bottom:22px;
-    right:22px;
+    bottom:20px;
+    right:20px;
     background:#171717;
     color:white;
-    padding:13px 18px;
+    padding:13px 17px;
     border-radius:12px;
     display:none;
-    z-index:500;
+    z-index:300;
     font-size:13px;
-    font-weight:700;
-    box-shadow:0 8px 30px rgba(0,0,0,.25);
 }
 
 .message.show{
@@ -634,57 +599,9 @@ th{
 }
 
 
-/* MODAL */
-
-.modal{
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.55);
-    display:none;
-    align-items:center;
-    justify-content:center;
-    padding:20px;
-    z-index:400;
-}
-
-.modal.show{
-    display:flex;
-}
-
-.modal-box{
-    background:white;
-    width:min(500px,100%);
-    max-height:90vh;
-    overflow:auto;
-    border-radius:20px;
-    padding:22px;
-}
-
-.modal-header{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:18px;
-}
-
-.modal-header h3{
-    margin:0;
-    font-family:Montserrat,sans-serif;
-}
-
-.close{
-    border:0;
-    background:#f1f1f1;
-    width:34px;
-    height:34px;
-    border-radius:50%;
-    font-size:18px;
-}
-
-
 /* MOBILE */
 
-@media(max-width:850px){
+@media(max-width:800px){
 
     .layout{
         display:block;
@@ -697,9 +614,6 @@ th{
         display:flex;
         overflow-x:auto;
         gap:5px;
-        position:sticky;
-        top:70px;
-        z-index:90;
     }
 
     .nav{
@@ -728,7 +642,8 @@ th{
 
     .product-actions{
         grid-column:1/-1;
-        justify-content:flex-start;
+        flex-direction:row;
+        flex-wrap:wrap;
     }
 
     .page-title{
@@ -739,6 +654,7 @@ th{
 }
 
 </style>
+
 </head>
 
 
@@ -747,26 +663,43 @@ th{
 
 <!-- LOGIN -->
 
-<section class="login" id="loginScreen">
+<section class="login"
+         id="loginScreen">
 
     <div class="login-box">
 
         <h1>Administrador</h1>
 
-        <p>Acceso de administración</p>
+        <p>
+            Acceso de administración
+        </p>
 
         <div class="field">
+
             <label>Correo</label>
-            <input id="loginEmail" type="email" autocomplete="username">
+
+            <input id="loginEmail"
+                   type="email"
+                   autocomplete="username">
+
         </div>
 
         <div class="field">
+
             <label>Contraseña</label>
-            <input id="loginPassword" type="password" autocomplete="current-password">
+
+            <input id="loginPassword"
+                   type="password"
+                   autocomplete="current-password">
+
         </div>
 
-        <button class="primary" style="width:100%;" onclick="login()">
+        <button class="primary"
+                style="width:100%;"
+                onclick="login()">
+
             Entrar
+
         </button>
 
     </div>
@@ -776,14 +709,19 @@ th{
 
 <!-- APP -->
 
-<section class="app" id="app">
+<section class="app"
+         id="app">
+
 
 <header class="topbar">
 
     <h1>Administrador</h1>
 
-    <button class="logout" onclick="logout()">
+    <button class="logout"
+            onclick="logout()">
+
         Cerrar sesión
+
     </button>
 
 </header>
@@ -794,27 +732,33 @@ th{
 
 <aside class="sidebar">
 
-    <button class="nav active" onclick="showTab('products',this)">
+    <button class="nav active"
+            onclick="showTab('products',this)">
         🥟 Productos
     </button>
 
-    <button class="nav" onclick="showTab('categories',this)">
+    <button class="nav"
+            onclick="showTab('categories',this)">
         🗂️ Categorías
     </button>
 
-    <button class="nav" onclick="showTab('design',this)">
+    <button class="nav"
+            onclick="showTab('design',this)">
         🎨 Diseño
     </button>
 
-    <button class="nav" onclick="showTab('business',this)">
+    <button class="nav"
+            onclick="showTab('business',this)">
         ⚙️ Negocio y pagos
     </button>
 
-    <button class="nav" onclick="showTab('orders',this)">
+    <button class="nav"
+            onclick="showTab('orders',this)">
         📦 Pedidos
     </button>
 
-    <button class="nav" onclick="showTab('customers',this)">
+    <button class="nav"
+            onclick="showTab('customers',this)">
         👥 Clientes
     </button>
 
@@ -824,128 +768,312 @@ th{
 <main class="content">
 
 
-<!-- =====================================================
-     PRODUCTOS
-===================================================== -->
+<!-- PRODUCTOS -->
 
-<section class="tab active" id="tab-products">
+<section class="tab active"
+         id="tab-products">
 
-<div class="page-title">
+    <div class="page-title">
 
-    <div>
         <h2>Productos</h2>
-        <p>Administra los productos de tu menú.</p>
+
+        <button class="small-btn red"
+                onclick="newProduct()">
+
+            + Nuevo producto
+
+        </button>
+
     </div>
 
-    <button class="primary" onclick="newProduct()">
-        + Nuevo producto
-    </button>
 
-</div>
+    <div class="card"
+         id="productEditor">
 
-
-<div class="card" id="productEditor">
-
-    <h3 id="productEditorTitle">
-        Nuevo producto
-    </h3>
+        <h3 id="editorTitle">
+            Nuevo producto
+        </h3>
 
 
-    <div class="editor-grid">
+        <div class="editor-grid">
 
 
-        <div class="field">
+            <div class="field">
 
-            <label>Nombre</label>
+                <label>Nombre</label>
 
-            <input id="productName" type="text">
+                <input id="productName">
 
-        </div>
-
-
-        <div class="field">
-
-            <label>Precio</label>
-
-            <input id="productPrice"
-                   type="number"
-                   step="0.01"
-                   min="0">
-
-        </div>
+            </div>
 
 
-        <div class="field full">
+            <div class="field">
 
-            <label>Descripción</label>
+                <label>Precio</label>
 
-            <textarea id="productDescription"></textarea>
+                <input id="productPrice"
+                       type="number"
+                       step="0.01">
 
-        </div>
-
-
-        <div class="field">
-
-            <label>Categoría</label>
-
-            <select id="productCategory"></select>
-
-        </div>
+            </div>
 
 
-        <div class="field">
+            <div class="field full">
 
-            <label>Disponibilidad</label>
+                <label>Descripción</label>
 
-            <div class="toggle-wrap">
+                <textarea id="productDescription"></textarea>
 
-                <label class="toggle">
+            </div>
 
-                    <input id="productAvailable"
-                           type="checkbox"
-                           checked
-                           onchange="updateEditorToggleLabel()">
 
-                    <span class="slider"></span>
+            <div class="field">
 
-                </label>
+                <label>Categoría</label>
 
-                <span id="editorToggleLabel"
-                      class="toggle-label">
-                    Disponible
-                </span>
+                <select id="productCategory"></select>
+
+            </div>
+
+
+            <div class="field">
+
+                <label>Disponibilidad</label>
+
+                <div class="switch-line">
+
+                    <label class="switch">
+
+                        <input id="productAvailable"
+                               type="checkbox"
+                               checked
+                               onchange="updateEditorSwitchText()">
+
+                        <span class="slider"></span>
+
+                    </label>
+
+                    <span id="editorAvailabilityText"
+                          class="status-text available">
+
+                        Disponible
+
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="field full">
+
+                <div class="photo-box">
+
+                    <label>
+                        Foto del producto
+                    </label>
+
+                    <br><br>
+
+                    <img id="productPreview"
+                         class="preview"
+                         src="">
+
+                    <label class="file-btn">
+
+                        📷 Seleccionar imagen
+
+                        <input id="productImage"
+                               type="file"
+                               accept="image/*"
+                               onchange="productImageSelected()">
+
+                    </label>
+
+                    <div id="productImageStatus"
+                         style="margin-top:10px;font-size:12px;color:#777;">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="full">
+
+                <button class="primary"
+                        style="width:100%;"
+                        onclick="saveProduct()">
+
+                    Guardar producto
+
+                </button>
 
             </div>
 
         </div>
 
+    </div>
 
-        <div class="field full">
 
-            <div class="photo-box">
+    <div class="card">
 
-                <label>Foto del producto</label>
+        <h3>
+            Disponibilidad de productos
+        </h3>
 
-                <br><br>
+        <p style="font-size:13px;color:#777;">
+            Cambia los interruptores y después pulsa
+            <b>GUARDAR CAMBIOS</b>.
+        </p>
 
-                <img id="productPreview"
-                     class="preview"
-                     src=""
-                     alt="Vista previa">
+        <div class="product-list"
+             id="productList">
 
-                <label class="file-btn">
+            Cargando...
 
-                    📷 Seleccionar imagen
+        </div>
 
-                    <input id="productImage"
-                           type="file"
-                           accept="image/*"
-                           onchange="productImageSelected()">
 
-                </label>
+        <button class="save-all"
+                onclick="saveAllProductChanges()">
 
-                <div id="productImageStatus"
-                     style="margin-top:10px;font-size:12px;color:#777;">
+            💾 GUARDAR CAMBIOS
+
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- CATEGORÍAS -->
+
+<section class="tab"
+         id="tab-categories">
+
+    <div class="page-title">
+
+        <h2>Categorías</h2>
+
+    </div>
+
+
+    <div class="card">
+
+        <h3>Agregar categoría</h3>
+
+        <div style="display:flex;gap:10px;">
+
+            <input id="newCategoryName"
+                   placeholder="Ejemplo: Combos"
+                   style="flex:1;border:1px solid #ddd;border-radius:12px;padding:12px;">
+
+            <button class="small-btn red"
+                    onclick="addCategory()">
+
+                + Agregar
+
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <div class="card">
+
+        <h3>Categorías existentes</h3>
+
+        <div class="category-list"
+             id="categoryList">
+
+        </div>
+
+        <button class="save-all"
+                onclick="saveCategories()">
+
+            💾 GUARDAR CAMBIOS
+
+        </button>
+
+    </div>
+
+</section>
+
+
+<!-- DISEÑO -->
+
+<section class="tab"
+         id="tab-design">
+
+    <div class="page-title">
+
+        <h2>Diseño</h2>
+
+    </div>
+
+
+    <div class="design-grid">
+
+
+        <div class="design-card">
+
+            <h3>Portada</h3>
+
+            <img id="coverPreview"
+                 class="design-preview">
+
+            <label class="file-btn">
+
+                📷 Seleccionar portada
+
+                <input type="file"
+                       accept="image/*"
+                       onchange="saveDesignImage('cover_image',this,'coverPreview')">
+
+            </label>
+
+
+            <div class="position-grid">
+
+                <div>
+
+                    <div class="range-value">
+
+                        <span>Horizontal</span>
+
+                        <span id="coverXValue">50%</span>
+
+                    </div>
+
+                    <input id="coverX"
+                           type="range"
+                           min="0"
+                           max="100"
+                           value="50"
+                           oninput="previewPosition('cover')">
+
+                </div>
+
+
+                <div>
+
+                    <div class="range-value">
+
+                        <span>Vertical</span>
+
+                        <span id="coverYValue">50%</span>
+
+                    </div>
+
+                    <input id="coverY"
+                           type="range"
+                           min="0"
+                           max="100"
+                           value="50"
+                           oninput="previewPosition('cover')">
+
                 </div>
 
             </div>
@@ -953,620 +1081,345 @@ th{
         </div>
 
 
-    </div>
+        <div class="design-card">
 
+            <h3>Foto de perfil / Logo</h3>
 
-    <div class="save-bar">
+            <img id="profilePreview"
+                 class="design-preview"
+                 style="object-fit:contain;">
 
-        <button class="secondary"
-                onclick="newProduct()">
-            Limpiar
-        </button>
+            <label class="file-btn">
 
-        <button class="primary"
-                onclick="saveProduct()">
-            💾 Guardar cambios
-        </button>
+                📷 Seleccionar logo
 
-    </div>
+                <input type="file"
+                       accept="image/*"
+                       onchange="saveDesignImage('profile_image',this,'profilePreview')">
 
-</div>
-
-
-<div class="product-list" id="productList">
-    Cargando...
-</div>
-
-</section>
-
-
-<!-- =====================================================
-     CATEGORÍAS
-===================================================== -->
-
-<section class="tab" id="tab-categories">
-
-<div class="page-title">
-
-    <div>
-        <h2>Categorías</h2>
-        <p>Agrega, modifica, elimina y ordena las categorías del menú.</p>
-    </div>
-
-</div>
-
-
-<div class="card">
-
-    <h3>Agregar categoría</h3>
-
-    <div style="display:flex;gap:10px;">
-
-        <input id="newCategoryName"
-               type="text"
-               placeholder="Ej. Combos"
-               style="flex:1;border:1px solid #ddd;border-radius:11px;padding:12px;">
-
-        <button class="primary"
-                onclick="addCategory()">
-            + Agregar
-        </button>
-
-    </div>
-
-</div>
-
-
-<div class="card">
-
-    <h3>Categorías del menú</h3>
-
-    <div class="category-list"
-         id="categoryList">
-        Cargando...
-    </div>
-
-</div>
-
-</section>
-
-
-<!-- =====================================================
-     DISEÑO
-===================================================== -->
-
-<section class="tab" id="tab-design">
-
-<div class="page-title">
-
-    <div>
-        <h2>Diseño</h2>
-        <p>Personaliza las imágenes y la apariencia del menú.</p>
-    </div>
-
-</div>
-
-
-<div class="design-grid">
-
-
-<!-- PORTADA -->
-
-<div class="design-card">
-
-    <h3>Portada</h3>
-
-    <img id="coverPreview"
-         class="design-preview"
-         alt="Portada">
-
-    <label class="file-btn">
-
-        📷 Seleccionar portada
-
-        <input id="coverInput"
-               type="file"
-               accept="image/*"
-               onchange="selectDesignImage('cover',this)">
-
-    </label>
-
-
-    <div class="position-box">
-
-        <div class="position-title">
-            Ajustar portada
-        </div>
-
-
-        <div class="range-row">
-
-            <label>
-                <span>Horizontal</span>
-                <span id="coverXValue">50%</span>
             </label>
 
-            <input id="coverX"
-                   type="range"
-                   min="0"
-                   max="100"
-                   value="50"
-                   oninput="previewPosition('cover')">
+
+            <div class="field"
+                 style="margin-top:18px;">
+
+                <div class="range-value">
+
+                    <span>Tamaño del logo</span>
+
+                    <span id="profileSizeValue">200%</span>
+
+                </div>
+
+                <input id="profileSize"
+                       type="range"
+                       min="50"
+                       max="300"
+                       value="200"
+                       oninput="updateProfileSize()">
+
+            </div>
+
+
+            <div class="position-grid">
+
+                <div>
+
+                    <div class="range-value">
+
+                        <span>Horizontal</span>
+
+                        <span id="profileXValue">50%</span>
+
+                    </div>
+
+                    <input id="profileX"
+                           type="range"
+                           min="0"
+                           max="100"
+                           value="50"
+                           oninput="previewPosition('profile')">
+
+                </div>
+
+
+                <div>
+
+                    <div class="range-value">
+
+                        <span>Vertical</span>
+
+                        <span id="profileYValue">50%</span>
+
+                    </div>
+
+                    <input id="profileY"
+                           type="range"
+                           min="0"
+                           max="100"
+                           value="50"
+                           oninput="previewPosition('profile')">
+
+                </div>
+
+            </div>
 
         </div>
 
 
-        <div class="range-row">
+        <div class="design-card">
 
-            <label>
-                <span>Vertical</span>
-                <span id="coverYValue">50%</span>
-            </label>
+            <h3>Fondo del menú</h3>
 
-            <input id="coverY"
-                   type="range"
-                   min="0"
-                   max="100"
-                   value="50"
-                   oninput="previewPosition('cover')">
+            <div class="field">
 
-        </div>
+                <label>Tipo de fondo</label>
 
+                <select id="backgroundType"
+                        onchange="markDesignChanged()">
 
-        <div class="range-row">
+                    <option value="color">
+                        Color
+                    </option>
 
-            <label>
-                <span>Tamaño</span>
-                <span id="coverSizeValue">100%</span>
-            </label>
+                    <option value="image">
+                        Imagen
+                    </option>
 
-            <input id="coverSize"
-                   type="range"
-                   min="100"
-                   max="200"
-                   value="100"
-                   oninput="previewPosition('cover')">
+                </select>
 
-        </div>
+            </div>
 
 
-        <button class="secondary position-reset"
-                onclick="resetImagePosition('cover')">
-            Restablecer posición
-        </button>
+            <div class="field">
 
-    </div>
+                <label>Color de fondo</label>
 
-</div>
+                <input id="backgroundColor"
+                       type="color"
+                       onchange="markDesignChanged()"
+                       style="height:55px;">
 
-
-<!-- PERFIL -->
-
-<div class="design-card">
-
-    <h3>Foto de perfil / Logo</h3>
-
-    <img id="profilePreview"
-         class="design-preview profile"
-         alt="Perfil">
-
-    <label class="file-btn">
-
-        📷 Seleccionar logo
-
-        <input id="profileInput"
-               type="file"
-               accept="image/*"
-               onchange="selectDesignImage('profile',this)">
-
-    </label>
+            </div>
 
 
-    <div class="position-box">
+            <div class="field">
 
-        <div class="position-title">
-            Ajustar logo
-        </div>
+                <label class="file-btn">
+
+                    📷 Seleccionar fondo
+
+                    <input type="file"
+                           accept="image/*"
+                           onchange="saveDesignImage('background_image',this,'backgroundPreview')">
+
+                </label>
+
+            </div>
 
 
-        <div class="range-row">
-
-            <label>
-                <span>Horizontal</span>
-                <span id="profileXValue">50%</span>
-            </label>
-
-            <input id="profileX"
-                   type="range"
-                   min="0"
-                   max="100"
-                   value="50"
-                   oninput="previewPosition('profile')">
+            <img id="backgroundPreview"
+                 class="design-preview">
 
         </div>
 
 
-        <div class="range-row">
+        <div class="design-card">
 
-            <label>
-                <span>Vertical</span>
-                <span id="profileYValue">50%</span>
-            </label>
+            <h3>Color principal</h3>
 
-            <input id="profileY"
-                   type="range"
-                   min="0"
-                   max="100"
-                   value="50"
-                   oninput="previewPosition('profile')">
+            <p style="color:#777;font-size:13px;">
+                Color de botones, categorías y elementos principales.
+            </p>
 
-        </div>
-
-
-        <div class="range-row">
-
-            <label>
-                <span>Tamaño</span>
-                <span id="profileSizeValue">130%</span>
-            </label>
-
-            <input id="profileSize"
-                   type="range"
-                   min="50"
-                   max="200"
-                   value="130"
-                   oninput="previewPosition('profile')">
+            <input id="primaryColor"
+                   type="color"
+                   onchange="markDesignChanged()"
+                   style="width:100%;height:70px;">
 
         </div>
-
-
-        <button class="secondary position-reset"
-                onclick="resetImagePosition('profile')">
-            Restablecer posición
-        </button>
-
-    </div>
-
-</div>
-
-
-<!-- FONDO -->
-
-<div class="design-card">
-
-    <h3>Fondo del menú</h3>
-
-
-    <div class="field">
-
-        <label>Tipo de fondo</label>
-
-        <select id="backgroundType"
-                onchange="markDesignChanged()">
-
-            <option value="color">Color</option>
-            <option value="image">Imagen</option>
-
-        </select>
 
     </div>
 
 
-    <div class="field">
+    <button class="save-all"
+            onclick="saveDesignChanges()">
 
-        <label>Color de fondo</label>
+        💾 GUARDAR CAMBIOS DE DISEÑO
 
-        <input id="backgroundColor"
-               type="color"
-               onchange="markDesignChanged()"
-               style="height:60px;padding:4px;">
-
-    </div>
-
-
-    <label class="file-btn">
-
-        📷 Seleccionar fondo
-
-        <input id="backgroundInput"
-               type="file"
-               accept="image/*"
-               onchange="selectDesignImage('background',this)">
-
-    </label>
-
-
-    <img id="backgroundPreview"
-         class="design-preview"
-         alt="Fondo">
-
-
-    <div class="position-box">
-
-        <div class="position-title">
-            Ajustar fondo
-        </div>
-
-
-        <div class="range-row">
-
-            <label>
-                <span>Horizontal</span>
-                <span id="backgroundXValue">50%</span>
-            </label>
-
-            <input id="backgroundX"
-                   type="range"
-                   min="0"
-                   max="100"
-                   value="50"
-                   oninput="previewPosition('background')">
-
-        </div>
-
-
-        <div class="range-row">
-
-            <label>
-                <span>Vertical</span>
-                <span id="backgroundYValue">50%</span>
-            </label>
-
-            <input id="backgroundY"
-                   type="range"
-                   min="0"
-                   max="100"
-                   value="50"
-                   oninput="previewPosition('background')">
-
-        </div>
-
-
-        <div class="range-row">
-
-            <label>
-                <span>Tamaño</span>
-                <span id="backgroundSizeValue">100%</span>
-            </label>
-
-            <input id="backgroundSize"
-                   type="range"
-                   min="100"
-                   max="200"
-                   value="100"
-                   oninput="previewPosition('background')">
-
-        </div>
-
-
-        <button class="secondary position-reset"
-                onclick="resetImagePosition('background')">
-            Restablecer posición
-        </button>
-
-    </div>
-
-</div>
-
-
-<!-- COLOR -->
-
-<div class="design-card">
-
-    <h3>Color principal</h3>
-
-    <p style="color:#777;font-size:13px;line-height:1.5;">
-        Este color se utilizará en botones, categorías y elementos principales del menú.
-    </p>
-
-    <input id="primaryColor"
-           type="color"
-           onchange="markDesignChanged()"
-           style="width:100%;height:70px;">
-
-</div>
-
-
-</div>
-
-
-<div class="save-bar">
-
-    <button class="secondary"
-            onclick="loadSettings()">
-        Cancelar cambios
     </button>
 
-    <button class="primary"
-            onclick="saveAllDesign()">
-        💾 Guardar cambios de diseño
-    </button>
-
-</div>
-
 </section>
 
 
-<!-- =====================================================
-     NEGOCIO
-===================================================== -->
+<!-- NEGOCIO -->
 
-<section class="tab" id="tab-business">
+<section class="tab"
+         id="tab-business">
 
-<div class="page-title">
+    <div class="page-title">
 
-    <div>
         <h2>Negocio y pagos</h2>
-        <p>Configuración general de tu negocio.</p>
-    </div>
-
-</div>
-
-
-<div class="card">
-
-    <div class="field">
-
-        <label>Descripción del negocio</label>
-
-        <textarea id="businessDescription"></textarea>
 
     </div>
 
 
-    <div class="field">
+    <div class="card">
 
-        <label>Slogan</label>
+        <div class="field">
 
-        <input id="businessSlogan">
+            <label>
+                Descripción del negocio
+            </label>
 
-    </div>
+            <textarea id="businessDescription"></textarea>
 
-
-    <div class="field">
-
-        <label>WhatsApp</label>
-
-        <input id="businessWhatsapp">
-
-    </div>
+        </div>
 
 
-    <div class="field">
+        <div class="field">
 
-        <label>Costo de entrega</label>
+            <label>
+                Slogan
+            </label>
 
-        <input id="businessDeliveryCost"
-               type="number"
-               step="0.01">
+            <input id="businessSlogan">
 
-    </div>
+        </div>
 
 
-    <div class="field">
+        <div class="field">
 
-        <label>Datos para transferencia</label>
+            <label>
+                WhatsApp
+            </label>
 
-        <textarea id="bankDetails"
-                  placeholder="Banco:
+            <input id="businessWhatsapp">
+
+        </div>
+
+
+        <div class="field">
+
+            <label>
+                Costo de entrega
+            </label>
+
+            <input id="businessDeliveryCost"
+                   type="number"
+                   step="0.01">
+
+        </div>
+
+
+        <div class="field">
+
+            <label>
+                Datos para transferencia
+            </label>
+
+            <textarea id="bankDetails"
+                      placeholder="Banco:
 Titular:
 Cuenta:
 CLABE:
 Tarjeta:"></textarea>
 
-    </div>
+        </div>
 
 
-    <div class="save-bar">
-
-        <button class="primary"
+        <button class="save-all"
                 onclick="saveBusiness()">
-            💾 Guardar cambios
+
+            💾 GUARDAR CONFIGURACIÓN
+
         </button>
 
     </div>
 
-</div>
-
 </section>
 
 
-<!-- =====================================================
-     PEDIDOS
-===================================================== -->
+<!-- PEDIDOS -->
 
-<section class="tab" id="tab-orders">
+<section class="tab"
+         id="tab-orders">
 
-<div class="page-title">
+    <div class="page-title">
 
-    <div>
         <h2>Pedidos</h2>
-        <p>Pedidos recibidos.</p>
+
     </div>
 
-    <button class="secondary"
-            onclick="loadOrders()">
-        ↻ Actualizar
-    </button>
+    <div class="card">
 
-</div>
+        <div class="table-wrap">
 
+            <table>
 
-<div class="card">
+                <thead>
 
-<div class="table-wrap">
+                    <tr>
 
-<table>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Entrega</th>
+                        <th>Pago</th>
+                        <th>Total</th>
+                        <th>Estado</th>
 
-<thead>
+                    </tr>
 
-<tr>
-    <th>Fecha</th>
-    <th>Cliente</th>
-    <th>Entrega</th>
-    <th>Pago</th>
-    <th>Total</th>
-    <th>Estado</th>
-</tr>
+                </thead>
 
-</thead>
+                <tbody id="ordersTable"></tbody>
 
-<tbody id="ordersTable"></tbody>
+            </table>
 
-</table>
+        </div>
 
-</div>
-
-</div>
+    </div>
 
 </section>
 
 
-<!-- =====================================================
-     CLIENTES
-===================================================== -->
+<!-- CLIENTES -->
 
-<section class="tab" id="tab-customers">
+<section class="tab"
+         id="tab-customers">
 
-<div class="page-title">
+    <div class="page-title">
 
-    <div>
         <h2>Clientes</h2>
-        <p>Clientes registrados.</p>
+
     </div>
 
-    <button class="secondary"
-            onclick="loadCustomers()">
-        ↻ Actualizar
-    </button>
+    <div class="card">
 
-</div>
+        <div class="table-wrap">
 
+            <table>
 
-<div class="card">
+                <thead>
 
-<div class="table-wrap">
+                    <tr>
 
-<table>
+                        <th>Nombre</th>
+                        <th>Teléfono</th>
+                        <th>Correo</th>
+                        <th>Registro</th>
 
-<thead>
+                    </tr>
 
-<tr>
-    <th>Nombre</th>
-    <th>Teléfono</th>
-    <th>Correo</th>
-    <th>Registro</th>
-</tr>
+                </thead>
 
-</thead>
+                <tbody id="customersTable"></tbody>
 
-<tbody id="customersTable"></tbody>
+            </table>
 
-</table>
+        </div>
 
-</div>
-
-</div>
+    </div>
 
 </section>
 
@@ -1578,51 +1431,17 @@ Tarjeta:"></textarea>
 </section>
 
 
-<!-- MODAL CATEGORÍA -->
-
-<div class="modal" id="categoryModal">
-
-    <div class="modal-box">
-
-        <div class="modal-header">
-
-            <h3>Editar categoría</h3>
-
-            <button class="close"
-                    onclick="closeCategoryModal()">
-                ×
-            </button>
-
-        </div>
-
-        <div class="field">
-
-            <label>Nombre de la categoría</label>
-
-            <input id="editCategoryName">
-
-        </div>
-
-        <button class="primary"
-                style="width:100%;"
-                onclick="saveCategoryEdit()">
-            Guardar categoría
-        </button>
-
-    </div>
-
+<div class="message"
+     id="message">
 </div>
-
-
-<div class="message" id="message"></div>
 
 
 <script>
 
 
-/* =====================================================
+/* =========================
    SUPABASE
-===================================================== */
+========================= */
 
 const SUPABASE_URL =
 "https://cqlywpemisknrxswlmea.supabase.co";
@@ -1637,46 +1456,32 @@ supabase.createClient(
 );
 
 
-/* =====================================================
+/* =========================
    VARIABLES
-===================================================== */
+========================= */
 
 let products = [];
 
-let categories = [];
-
 let editingProductId = null;
 
-let editingCategoryId = null;
+let categories = [
+    "Pastes salados",
+    "Pastes dulces",
+    "Pastes de temporada",
+    "Bebidas",
+    "Promociones"
+];
 
-let designFiles = {
-    cover:null,
-    profile:null,
-    background:null
-};
+let pendingAvailability = {};
 
-let designSettings = {
-    cover:{
-        x:50,
-        y:50,
-        size:100
-    },
-    profile:{
-        x:50,
-        y:50,
-        size:130
-    },
-    background:{
-        x:50,
-        y:50,
-        size:100
-    }
-};
+let pendingDesign = {};
+
+let settingsCache = {};
 
 
-/* =====================================================
+/* =========================
    MENSAJES
-===================================================== */
+========================= */
 
 function notify(text){
 
@@ -1689,15 +1494,15 @@ function notify(text){
 
     setTimeout(
         () => box.classList.remove("show"),
-        2800
+        2500
     );
 
 }
 
 
-/* =====================================================
+/* =========================
    LOGIN
-===================================================== */
+========================= */
 
 async function login(){
 
@@ -1709,22 +1514,12 @@ async function login(){
         document.getElementById("loginPassword")
         .value;
 
-
-    if(!email || !password){
-
-        alert("Escribe tu correo y contraseña.");
-
-        return;
-
-    }
-
-
     const {error} =
-        await supabaseClient.auth.signInWithPassword({
+        await supabaseClient.auth
+        .signInWithPassword({
             email,
             password
         });
-
 
     if(error){
 
@@ -1733,7 +1528,6 @@ async function login(){
         return;
 
     }
-
 
     showApp();
 
@@ -1766,19 +1560,19 @@ async function checkSession(){
 async function showApp(){
 
     document.getElementById("loginScreen")
-        .style.display = "none";
+        .style.display="none";
 
     document.getElementById("app")
-        .style.display = "block";
+        .style.display="block";
 
     await loadAll();
 
 }
 
 
-/* =====================================================
+/* =========================
    TABS
-===================================================== */
+========================= */
 
 function showTab(name,button){
 
@@ -1787,40 +1581,34 @@ function showTab(name,button){
             tab.classList.remove("active")
         );
 
-
     document.getElementById("tab-"+name)
         .classList.add("active");
-
 
     document.querySelectorAll(".nav")
         .forEach(nav =>
             nav.classList.remove("active")
         );
 
-
     button.classList.add("active");
 
-
-    if(name === "orders"){
+    if(name==="orders"){
         loadOrders();
     }
 
-
-    if(name === "customers"){
+    if(name==="customers"){
         loadCustomers();
     }
 
-
-    if(name === "categories"){
-        loadCategories();
+    if(name==="categories"){
+        renderCategories();
     }
 
 }
 
 
-/* =====================================================
-   PRODUCTOS - CARGAR
-===================================================== */
+/* =========================
+   PRODUCTOS
+========================= */
 
 async function loadProducts(){
 
@@ -1831,68 +1619,67 @@ async function loadProducts(){
         .order("sort_order",{ascending:true})
         .order("id",{ascending:true});
 
-
     if(error){
 
         console.error(error);
 
-        document.getElementById("productList").innerHTML =
-            `<div class="card">${escapeHtml(error.message)}</div>`;
+        alert(error.message);
 
         return;
 
     }
 
+    products=data || [];
 
-    products = data || [];
+    pendingAvailability={};
+
+    products.forEach(product=>{
+        pendingAvailability[product.id]=
+            product.available;
+    });
 
     renderProductList();
 
-    populateProductCategories();
+    populateCategorySelect();
 
 }
 
-
-/* =====================================================
-   PRODUCTOS - LISTA
-===================================================== */
 
 function renderProductList(){
 
     const container =
         document.getElementById("productList");
 
+    if(!products.length){
 
-    if(products.length === 0){
-
-        container.innerHTML =
-            `<div class="card">
-                No hay productos.
-            </div>`;
+        container.innerHTML=
+        `<div style="padding:20px;color:#777;">
+            No hay productos.
+        </div>`;
 
         return;
 
     }
 
-
     container.innerHTML =
-        products.map(product => {
+        products.map(product=>{
+
+            const available =
+                pendingAvailability[product.id] ??
+                product.available;
 
             const image =
                 product.image_url ||
                 "https://via.placeholder.com/300x300?text=Sin+foto";
 
-
             return `
 
-            <div class="product-row">
+            <div class="product-row ${available ? "" : "sold"}">
 
                 <img
                     class="product-thumb"
-                    src="${escapeAttribute(image)}"
-                    alt=""
+                    src="${escapeAttr(image)}"
                 >
-
 
                 <div class="product-info">
 
@@ -1901,10 +1688,10 @@ function renderProductList(){
                     </h3>
 
                     <p>
-                        ${escapeHtml(product.category || "Sin categoría")}
+                        ${escapeHtml(product.category || "")}
                     </p>
 
-                    <div class="product-price">
+                    <div class="price">
                         $${money(product.price)}
                     </div>
 
@@ -1913,38 +1700,43 @@ function renderProductList(){
 
                 <div class="product-actions">
 
+                    <div class="switch-line">
 
-                    <div class="toggle-wrap">
-
-                        <label class="toggle">
+                        <label class="switch">
 
                             <input
                                 type="checkbox"
-                                ${product.available ? "checked" : ""}
-                                onchange="toggleProduct(${product.id},this.checked)"
+                                ${available ? "checked" : ""}
+                                onchange="changePendingAvailability(${product.id},this.checked)"
                             >
 
                             <span class="slider"></span>
 
                         </label>
 
-                        <span class="toggle-label">
-                            ${product.available ? "Disponible" : "Agotado"}
+                        <span
+                            id="status-${product.id}"
+                            class="status-text ${available ? "available" : "sold"}">
+
+                            ${available ? "Disponible" : "Agotado"}
+
                         </span>
 
                     </div>
 
 
                     <button
-                        class="small-btn"
+                        class="small-btn dark"
                         onclick="editProduct(${product.id})">
+
                         ✏️ Editar
+
                     </button>
 
 
                     <label class="file-btn">
 
-                        📷 Foto
+                        📷 Cambiar foto
 
                         <input
                             type="file"
@@ -1953,13 +1745,6 @@ function renderProductList(){
                         >
 
                     </label>
-
-
-                    <button
-                        class="small-btn"
-                        onclick="deleteProduct(${product.id})">
-                        🗑️ Eliminar
-                    </button>
 
                 </div>
 
@@ -1972,104 +1757,150 @@ function renderProductList(){
 }
 
 
-/* =====================================================
-   PRODUCTOS - CATEGORÍAS
-===================================================== */
+/* =========================
+   DISPONIBILIDAD PENDIENTE
+========================= */
 
-function populateProductCategories(){
+function changePendingAvailability(id,value){
 
-    const select =
-        document.getElementById("productCategory");
+    pendingAvailability[id]=value;
+
+    const row =
+        document.querySelector(
+            `input[onchange="changePendingAvailability(${id},this.checked)"]`
+        )?.closest(".product-row");
+
+    if(row){
+
+        row.classList.toggle("sold",!value);
+
+    }
+
+    const text =
+        document.getElementById("status-"+id);
+
+    if(text){
+
+        text.textContent =
+            value ? "Disponible" : "Agotado";
+
+        text.className =
+            "status-text " +
+            (value ? "available" : "sold");
+
+    }
+
+}
 
 
-    if(!categories.length){
+async function saveAllProductChanges(){
 
-        select.innerHTML =
-            `<option value="">Sin categorías</option>`;
+    const changes =
+        products.filter(product =>
+            pendingAvailability[product.id] !==
+            product.available
+        );
+
+    if(!changes.length){
+
+        notify("No hay cambios pendientes.");
 
         return;
 
     }
 
+    for(const product of changes){
 
-    select.innerHTML =
-        categories.map(category => `
+        const {error} =
+            await supabaseClient
+            .from("products")
+            .update({
+                available:
+                    pendingAvailability[product.id],
+                updated_at:
+                    new Date().toISOString()
+            })
+            .eq("id",product.id);
 
-            <option value="${escapeAttribute(category.name)}">
-                ${escapeHtml(category.name)}
-            </option>
+        if(error){
 
-        `).join("");
+            alert(
+                "Error guardando " +
+                product.name +
+                ": " +
+                error.message
+            );
+
+            return;
+
+        }
+
+    }
+
+    notify("Cambios guardados correctamente.");
+
+    await loadProducts();
 
 }
 
 
-/* =====================================================
+/* =========================
    NUEVO PRODUCTO
-===================================================== */
+========================= */
 
 function newProduct(){
 
-    editingProductId = null;
+    editingProductId=null;
 
-
-    document.getElementById("productEditorTitle")
-        .textContent = "Nuevo producto";
-
+    document.getElementById("editorTitle")
+        .textContent="Nuevo producto";
 
     document.getElementById("productName")
-        .value = "";
+        .value="";
 
     document.getElementById("productDescription")
-        .value = "";
+        .value="";
 
     document.getElementById("productPrice")
-        .value = "35";
+        .value="35";
 
-    if(categories.length){
+    populateCategorySelect();
 
-        document.getElementById("productCategory")
-            .value = categories[0].name;
-
-    }
+    document.getElementById("productCategory")
+        .value=categories[0] || "";
 
     document.getElementById("productAvailable")
-        .checked = true;
+        .checked=true;
 
+    updateEditorSwitchText();
 
     document.getElementById("productPreview")
-        .src = "";
+        .src="";
 
     document.getElementById("productImage")
-        .value = "";
+        .value="";
 
     document.getElementById("productImageStatus")
-        .textContent = "";
-
-
-    updateEditorToggleLabel();
-
+        .textContent="";
 
     document.getElementById("productEditor")
         .scrollIntoView({
-            behavior:"smooth",
-            block:"start"
+            behavior:"smooth"
         });
 
 }
 
 
-/* =====================================================
+/* =========================
    EDITAR PRODUCTO
-===================================================== */
+========================= */
 
 function editProduct(id){
 
     const product =
         products.find(
-            p => Number(p.id) === Number(id)
+            p=>Number(p.id)===Number(id)
         );
-
 
     if(!product){
 
@@ -2079,67 +1910,42 @@ function editProduct(id){
 
     }
 
+    editingProductId=product.id;
 
-    editingProductId = product.id;
-
-
-    document.getElementById("productEditorTitle")
-        .textContent = "Editar producto";
-
+    document.getElementById("editorTitle")
+        .textContent=
+        "Editar producto: "+product.name;
 
     document.getElementById("productName")
-        .value = product.name || "";
-
+        .value=product.name || "";
 
     document.getElementById("productDescription")
-        .value = product.description || "";
-
+        .value=product.description || "";
 
     document.getElementById("productPrice")
-        .value = product.price ?? "";
+        .value=product.price || "";
 
+    populateCategorySelect();
 
-    const select =
-        document.getElementById("productCategory");
-
-
-    if(
-        product.category &&
-        [...select.options].some(
-            option => option.value === product.category
-        )
-    ){
-
-        select.value = product.category;
-
-    }else if(categories.length){
-
-        select.value = categories[0].name;
-
-    }
-
+    document.getElementById("productCategory")
+        .value=
+        categories.includes(product.category)
+        ? product.category
+        : categories[0];
 
     document.getElementById("productAvailable")
-        .checked = Boolean(product.available);
+        .checked=product.available;
 
+    updateEditorSwitchText();
 
     document.getElementById("productPreview")
-        .src = product.image_url || "";
-
+        .src=product.image_url || "";
 
     document.getElementById("productImage")
-        .value = "";
-
+        .value="";
 
     document.getElementById("productImageStatus")
-        .textContent =
-        product.image_url
-        ? "Foto actual guardada."
-        : "Este producto todavía no tiene foto.";
-
-
-    updateEditorToggleLabel();
-
+        .textContent="";
 
     document.getElementById("productEditor")
         .scrollIntoView({
@@ -2150,29 +1956,9 @@ function editProduct(id){
 }
 
 
-/* =====================================================
-   TOGGLE EDITOR
-===================================================== */
-
-function updateEditorToggleLabel(){
-
-    const available =
-        document.getElementById("productAvailable")
-        .checked;
-
-
-    document.getElementById("editorToggleLabel")
-        .textContent =
-        available
-        ? "Disponible"
-        : "Agotado";
-
-}
-
-
-/* =====================================================
+/* =========================
    GUARDAR PRODUCTO
-===================================================== */
+========================= */
 
 async function saveProduct(){
 
@@ -2180,11 +1966,9 @@ async function saveProduct(){
         document.getElementById("productName")
         .value.trim();
 
-
     const description =
         document.getElementById("productDescription")
         .value.trim();
-
 
     const price =
         Number(
@@ -2192,34 +1976,29 @@ async function saveProduct(){
             .value
         );
 
-
     const category =
         document.getElementById("productCategory")
         .value;
-
 
     const available =
         document.getElementById("productAvailable")
         .checked;
 
-
     if(!name){
 
-        alert("Escribe el nombre del producto.");
+        alert("Escribe el nombre.");
 
         return;
 
     }
 
-
-    if(!price || price < 0){
+    if(!price || price<=0){
 
         alert("Escribe un precio válido.");
 
         return;
 
     }
-
 
     if(!category){
 
@@ -2229,23 +2008,21 @@ async function saveProduct(){
 
     }
 
-
-    const payload = {
+    const payload={
 
         name,
         description,
         price,
         category,
         available,
-        updated_at:new Date().toISOString()
+        updated_at:
+            new Date().toISOString()
 
     };
 
-
     let result;
 
-
-    if(editingProductId !== null){
+    if(editingProductId){
 
         result =
             await supabaseClient
@@ -2255,29 +2032,12 @@ async function saveProduct(){
 
     }else{
 
-        const maxSort =
-            products.length
-            ? Math.max(
-                ...products.map(
-                    p => Number(p.sort_order || 0)
-                )
-              )
-            : 0;
-
-
-        payload.sort_order =
-            maxSort + 1;
-
-
         result =
             await supabaseClient
             .from("products")
-            .insert(payload)
-            .select()
-            .single();
+            .insert(payload);
 
     }
-
 
     if(result.error){
 
@@ -2287,43 +2047,11 @@ async function saveProduct(){
 
     }
 
-
     notify(
-        editingProductId !== null
-        ? "Producto actualizado"
-        : "Producto creado"
+        editingProductId
+        ? "Producto actualizado."
+        : "Producto creado."
     );
-
-
-    const imageInput =
-        document.getElementById("productImage");
-
-
-    const file =
-        imageInput.files[0];
-
-
-    let productId =
-        editingProductId;
-
-
-    if(!productId && result.data){
-
-        productId = result.data.id;
-
-    }
-
-
-    if(file && productId){
-
-        await uploadProductImage(
-            productId,
-            file,
-            false
-        );
-
-    }
-
 
     await loadProducts();
 
@@ -2332,144 +2060,64 @@ async function saveProduct(){
 }
 
 
-/* =====================================================
-   ELIMINAR PRODUCTO
-===================================================== */
+/* =========================
+   SWITCH EDITOR
+========================= */
 
-async function deleteProduct(id){
+function updateEditorSwitchText(){
 
-    const product =
-        products.find(
-            p => Number(p.id) === Number(id)
-        );
+    const checkbox =
+        document.getElementById("productAvailable");
 
+    const text =
+        document.getElementById("editorAvailabilityText");
 
-    if(!product){
-        return;
-    }
+    if(checkbox.checked){
 
+        text.textContent="Disponible";
 
-    const confirmed =
-        confirm(
-            `¿Eliminar "${product.name}"?`
-        );
+        text.className=
+            "status-text available";
 
+    }else{
 
-    if(!confirmed){
-        return;
-    }
+        text.textContent="Agotado";
 
-
-    const {error} =
-        await supabaseClient
-        .from("products")
-        .delete()
-        .eq("id",id);
-
-
-    if(error){
-
-        alert(error.message);
-
-        return;
+        text.className=
+            "status-text sold";
 
     }
-
-
-    notify("Producto eliminado");
-
-    await loadProducts();
 
 }
 
 
-/* =====================================================
-   DISPONIBILIDAD
-===================================================== */
-
-async function toggleProduct(id,available){
-
-    const {error} =
-        await supabaseClient
-        .from("products")
-        .update({
-            available,
-            updated_at:new Date().toISOString()
-        })
-        .eq("id",id);
-
-
-    if(error){
-
-        alert(error.message);
-
-        await loadProducts();
-
-        return;
-
-    }
-
-
-    notify(
-        available
-        ? "Producto disponible"
-        : "Producto marcado como agotado"
-    );
-
-
-    const product =
-        products.find(
-            p => Number(p.id) === Number(id)
-        );
-
-
-    if(product){
-
-        product.available = available;
-
-    }
-
-
-    renderProductList();
-
-}
-
-
-/* =====================================================
-   FOTO PRODUCTO
-===================================================== */
+/* =========================
+   IMÁGENES PRODUCTO
+========================= */
 
 async function productImageSelected(){
-
-    const input =
-        document.getElementById("productImage");
-
-
-    const file =
-        input.files[0];
-
-
-    if(!file){
-        return;
-    }
-
 
     if(!editingProductId){
 
         document.getElementById(
             "productImageStatus"
-        ).textContent =
-        "La foto se guardará al pulsar Guardar cambios.";
+        ).textContent=
+        "Guarda primero el producto.";
 
         return;
 
     }
 
+    const input =
+        document.getElementById("productImage");
+
+    const file=input.files[0];
+
+    if(!file)return;
 
     await uploadProductImage(
         editingProductId,
-        file,
-        true
+        file
     );
 
 }
@@ -2477,46 +2125,31 @@ async function productImageSelected(){
 
 async function replaceProductImage(id,input){
 
-    const file =
-        input.files[0];
+    const file=input.files[0];
 
+    if(!file)return;
 
-    if(!file){
-        return;
-    }
-
-
-    await uploadProductImage(
-        id,
-        file,
-        false
-    );
+    await uploadProductImage(id,file);
 
 }
 
 
-async function uploadProductImage(id,file,refreshEditor){
+async function uploadProductImage(id,file){
 
     const status =
         document.getElementById(
             "productImageStatus"
         );
 
-
     if(status){
-
-        status.textContent =
-            "Subiendo imagen...";
-
+        status.textContent="Subiendo imagen...";
     }
-
 
     const path =
         "products/" +
         Date.now() +
         "-" +
         sanitizeFilename(file.name);
-
 
     const {error:uploadError} =
         await supabaseClient
@@ -2531,19 +2164,13 @@ async function uploadProductImage(id,file,refreshEditor){
             }
         );
 
-
     if(uploadError){
 
         alert(uploadError.message);
 
-        if(status){
-            status.textContent = "";
-        }
-
-        return false;
+        return;
 
     }
-
 
     const {data:urlData} =
         supabaseClient
@@ -2551,178 +2178,108 @@ async function uploadProductImage(id,file,refreshEditor){
         .from("product-images")
         .getPublicUrl(path);
 
-
-    const imageUrl =
-        urlData.publicUrl;
-
+    const imageUrl=urlData.publicUrl;
 
     const {error} =
         await supabaseClient
         .from("products")
         .update({
             image_url:imageUrl,
-            updated_at:new Date().toISOString()
+            updated_at:
+                new Date().toISOString()
         })
         .eq("id",id);
-
 
     if(error){
 
         alert(error.message);
 
-        return false;
+        return;
 
     }
-
 
     if(status){
-
-        status.textContent =
+        status.textContent=
             "Imagen guardada correctamente.";
-
     }
 
+    document.getElementById("productPreview")
+        .src=imageUrl;
 
-    if(refreshEditor){
-
-        document.getElementById("productPreview")
-            .src = imageUrl;
-
-    }
-
-
-    notify("Foto guardada");
+    notify("Foto guardada.");
 
     await loadProducts();
 
-    return true;
-
 }
 
 
-/* =====================================================
-   CATEGORÍAS - CARGAR
-===================================================== */
+/* =========================
+   CATEGORÍAS
+========================= */
 
 async function loadCategories(){
 
-    const {data,error} =
-        await supabaseClient
-        .from("categories")
-        .select("*")
-        .order("sort_order",{ascending:true})
-        .order("id",{ascending:true});
+    const setting =
+        settingsCache.categories;
 
+    if(setting){
 
-    if(error){
+        try{
 
-        console.error(error);
+            const parsed=
+                JSON.parse(setting);
 
-        document.getElementById("categoryList")
-            .innerHTML =
-            `<div>${escapeHtml(error.message)}</div>`;
+            if(Array.isArray(parsed) &&
+               parsed.length){
 
-        return;
+                categories=parsed;
+
+            }
+
+        }catch(e){}
 
     }
 
-
-    categories =
-        data || [];
-
-
     renderCategories();
 
-    populateProductCategories();
+    populateCategorySelect();
 
 }
 
 
-/* =====================================================
-   CATEGORÍAS - MOSTRAR
-===================================================== */
-
 function renderCategories(){
 
-    const container =
+    const container=
         document.getElementById("categoryList");
 
+    container.innerHTML=
+        categories.map((category,index)=>`
 
-    if(!categories.length){
+            <div class="category-item">
 
-        container.innerHTML =
-            `<div style="color:#777;">
-                No hay categorías.
-            </div>`;
-
-        return;
-
-    }
-
-
-    container.innerHTML =
-        categories.map((category,index) => `
-
-        <div class="category-row">
-
-            <div class="category-number">
-                ${index + 1}
-            </div>
-
-            <div class="category-name">
-                ${escapeHtml(category.name)}
-            </div>
-
-            <div class="category-actions">
+                ${escapeHtml(category)}
 
                 <button
-                    class="small-btn"
-                    onclick="moveCategory(${category.id},'up')"
-                    ${index === 0 ? "disabled" : ""}>
-                    ↑
-                </button>
+                    class="category-delete"
+                    onclick="removeCategory(${index})">
 
-                <button
-                    class="small-btn"
-                    onclick="moveCategory(${category.id},'down')"
-                    ${index === categories.length-1 ? "disabled" : ""}>
-                    ↓
-                </button>
+                    ×
 
-                <button
-                    class="small-btn"
-                    onclick="openCategoryEdit(${category.id})">
-                    ✏️
-                </button>
-
-                <button
-                    class="small-btn"
-                    onclick="deleteCategory(${category.id})">
-                    🗑️
                 </button>
 
             </div>
-
-        </div>
 
         `).join("");
 
 }
 
 
-/* =====================================================
-   AGREGAR CATEGORÍA
-===================================================== */
+function addCategory(){
 
-async function addCategory(){
-
-    const input =
+    const input=
         document.getElementById("newCategoryName");
 
-
-    const name =
-        input.value.trim();
-
+    const name=input.value.trim();
 
     if(!name){
 
@@ -2732,681 +2289,296 @@ async function addCategory(){
 
     }
 
+    if(categories.some(
+        c=>c.toLowerCase()===name.toLowerCase()
+    )){
 
-    const maxSort =
-        categories.length
-        ? Math.max(
-            ...categories.map(
-                c => Number(c.sort_order || 0)
-            )
-          )
-        : 0;
-
-
-    const {error} =
-        await supabaseClient
-        .from("categories")
-        .insert({
-            name,
-            sort_order:maxSort + 1
-        });
-
-
-    if(error){
-
-        alert(error.message);
+        alert("Esa categoría ya existe.");
 
         return;
 
     }
 
+    categories.push(name);
 
-    input.value = "";
+    input.value="";
 
-    notify("Categoría agregada");
+    renderCategories();
 
-    await loadCategories();
+    populateCategorySelect();
+
+    notify("Categoría agregada. Pulsa GUARDAR CAMBIOS.");
 
 }
 
 
-/* =====================================================
-   EDITAR CATEGORÍA
-===================================================== */
+function removeCategory(index){
 
-function openCategoryEdit(id){
+    if(categories.length<=1){
 
-    const category =
-        categories.find(
-            c => Number(c.id) === Number(id)
-        );
-
-
-    if(!category){
-        return;
-    }
-
-
-    editingCategoryId =
-        category.id;
-
-
-    document.getElementById("editCategoryName")
-        .value = category.name;
-
-
-    document.getElementById("categoryModal")
-        .classList.add("show");
-
-}
-
-
-function closeCategoryModal(){
-
-    editingCategoryId = null;
-
-    document.getElementById("categoryModal")
-        .classList.remove("show");
-
-}
-
-
-async function saveCategoryEdit(){
-
-    if(!editingCategoryId){
-        return;
-    }
-
-
-    const name =
-        document.getElementById("editCategoryName")
-        .value.trim();
-
-
-    if(!name){
-
-        alert("Escribe un nombre.");
+        alert("Debe existir al menos una categoría.");
 
         return;
 
     }
 
+    const category=categories[index];
 
-    const oldCategory =
-        categories.find(
-            c => Number(c.id) === Number(editingCategoryId)
-        );
-
-
-    const {error} =
-        await supabaseClient
-        .from("categories")
-        .update({
-            name
-        })
-        .eq("id",editingCategoryId);
-
-
-    if(error){
-
-        alert(error.message);
-
-        return;
-
-    }
-
-
-    /*
-       Si cambiaste el nombre de una categoría,
-       también actualizamos los productos que
-       utilizaban el nombre anterior.
-    */
-
-    if(oldCategory && oldCategory.name !== name){
-
-        await supabaseClient
-        .from("products")
-        .update({
-            category:name,
-            updated_at:new Date().toISOString()
-        })
-        .eq("category",oldCategory.name);
-
-    }
-
-
-    closeCategoryModal();
-
-    notify("Categoría actualizada");
-
-    await loadCategories();
-
-    await loadProducts();
-
-}
-
-
-/* =====================================================
-   ELIMINAR CATEGORÍA
-===================================================== */
-
-async function deleteCategory(id){
-
-    const category =
-        categories.find(
-            c => Number(c.id) === Number(id)
-        );
-
-
-    if(!category){
-        return;
-    }
-
-
-    const used =
+    const used=
         products.some(
-            p => p.category === category.name
+            product=>product.category===category
         );
-
 
     if(used){
 
         alert(
-            "Esta categoría tiene productos asociados. Cambia primero esos productos a otra categoría."
+            "No puedes eliminar esta categoría porque tiene productos asignados."
         );
 
         return;
 
     }
 
+    categories.splice(index,1);
 
-    const confirmed =
-        confirm(
-            `¿Eliminar la categoría "${category.name}"?`
-        );
+    renderCategories();
 
+    populateCategorySelect();
 
-    if(!confirmed){
-        return;
-    }
-
-
-    const {error} =
-        await supabaseClient
-        .from("categories")
-        .delete()
-        .eq("id",id);
-
-
-    if(error){
-
-        alert(error.message);
-
-        return;
-
-    }
-
-
-    notify("Categoría eliminada");
-
-    await loadCategories();
+    notify("Categoría eliminada. Pulsa GUARDAR CAMBIOS.");
 
 }
 
 
-/* =====================================================
-   MOVER CATEGORÍA
-===================================================== */
+async function saveCategories(){
 
-async function moveCategory(id,direction){
-
-    const index =
-        categories.findIndex(
-            c => Number(c.id) === Number(id)
+    const {error}=
+        await saveSetting(
+            "categories",
+            JSON.stringify(categories)
         );
 
+    if(error)return;
 
-    if(index < 0){
-        return;
-    }
-
-
-    const targetIndex =
-        direction === "up"
-        ? index - 1
-        : index + 1;
-
-
-    if(targetIndex < 0 ||
-       targetIndex >= categories.length){
-
-        return;
-
-    }
-
-
-    const current =
-        categories[index];
-
-    const target =
-        categories[targetIndex];
-
-
-    const currentSort =
-        current.sort_order;
-
-    const targetSort =
-        target.sort_order;
-
-
-    await supabaseClient
-        .from("categories")
-        .update({
-            sort_order:999999
-        })
-        .eq("id",current.id);
-
-
-    const first =
-        await supabaseClient
-        .from("categories")
-        .update({
-            sort_order:currentSort
-        })
-        .eq("id",target.id);
-
-
-    if(first.error){
-
-        alert(first.error.message);
-
-        return;
-
-    }
-
-
-    const second =
-        await supabaseClient
-        .from("categories")
-        .update({
-            sort_order:targetSort
-        })
-        .eq("id",current.id);
-
-
-    if(second.error){
-
-        alert(second.error.message);
-
-        return;
-
-    }
-
-
-    await loadCategories();
+    notify("Categorías guardadas.");
 
 }
 
 
-/* =====================================================
-   DISEÑO - CARGAR
-===================================================== */
+function populateCategorySelect(){
+
+    const select=
+        document.getElementById("productCategory");
+
+    if(!select)return;
+
+    const current=select.value;
+
+    select.innerHTML=
+        categories.map(category=>`
+
+            <option value="${escapeAttr(category)}">
+                ${escapeHtml(category)}
+            </option>
+
+        `).join("");
+
+    if(categories.includes(current)){
+
+        select.value=current;
+
+    }
+
+}
+
+
+/* =========================
+   DISEÑO
+========================= */
 
 async function loadSettings(){
 
-    const {data,error} =
+    const {data,error}=
         await supabaseClient
         .from("settings")
         .select("key,value");
-
 
     if(error){
 
         console.error(error);
 
-        return {};
+        return;
 
     }
 
+    settingsCache={};
 
-    const settings = {};
-
-
-    (data || []).forEach(item => {
-
-        settings[item.key] =
-            item.value;
-
+    (data || []).forEach(item=>{
+        settingsCache[item.key]=item.value;
     });
 
 
     document.getElementById("backgroundType")
-        .value =
-        settings.background_type || "color";
-
+        .value=
+        settingsCache.background_type ||
+        "color";
 
     document.getElementById("backgroundColor")
-        .value =
-        settings.background_color || "#F5F3EF";
-
+        .value=
+        settingsCache.background_color ||
+        "#F5F3EF";
 
     document.getElementById("primaryColor")
-        .value =
-        settings.primary_color || "#C62828";
+        .value=
+        settingsCache.primary_color ||
+        "#C62828";
 
 
     document.getElementById("businessDescription")
-        .value =
-        settings.description || "";
-
+        .value=
+        settingsCache.description || "";
 
     document.getElementById("businessSlogan")
-        .value =
-        settings.slogan || "Saborea tu tiempo.";
-
+        .value=
+        settingsCache.slogan ||
+        "Saborea tu tiempo.";
 
     document.getElementById("businessWhatsapp")
-        .value =
-        settings.whatsapp || "529902317606";
-
+        .value=
+        settingsCache.whatsapp ||
+        "529902317606";
 
     document.getElementById("businessDeliveryCost")
-        .value =
-        settings.delivery_cost || "0";
-
+        .value=
+        settingsCache.delivery_cost ||
+        "0";
 
     document.getElementById("bankDetails")
-        .value =
-        settings.bank_details || "";
+        .value=
+        settingsCache.bank_details || "";
 
 
     document.getElementById("coverPreview")
-        .src =
-        settings.cover_image || "";
-
+        .src=
+        settingsCache.cover_image || "";
 
     document.getElementById("profilePreview")
-        .src =
-        settings.profile_image || "";
-
+        .src=
+        settingsCache.profile_image || "";
 
     document.getElementById("backgroundPreview")
-        .src =
-        settings.background_image || "";
+        .src=
+        settingsCache.background_image || "";
 
 
-    designSettings.cover.x =
-        Number(settings.cover_x ?? 50);
+    document.getElementById("coverX")
+        .value=
+        settingsCache.cover_position_x || "50";
 
-    designSettings.cover.y =
-        Number(settings.cover_y ?? 50);
-
-    designSettings.cover.size =
-        Number(settings.cover_size ?? 100);
-
-
-    designSettings.profile.x =
-        Number(settings.profile_x ?? 50);
-
-    designSettings.profile.y =
-        Number(settings.profile_y ?? 50);
-
-    designSettings.profile.size =
-        Number(settings.profile_size ?? 130);
+    document.getElementById("coverY")
+        .value=
+        settingsCache.cover_position_y || "50";
 
 
-    designSettings.background.x =
-        Number(settings.background_x ?? 50);
+    document.getElementById("profileX")
+        .value=
+        settingsCache.profile_position_x || "50";
 
-    designSettings.background.y =
-        Number(settings.background_y ?? 50);
-
-    designSettings.background.size =
-        Number(settings.background_size ?? 100);
-
-
-    setPositionControls("cover");
-
-    setPositionControls("profile");
-
-    setPositionControls("background");
+    document.getElementById("profileY")
+        .value=
+        settingsCache.profile_position_y || "50";
 
 
-    applyPreviewPosition("cover");
-
-    applyPreviewPosition("profile");
-
-    applyPreviewPosition("background");
+    document.getElementById("profileSize")
+        .value=
+        settingsCache.profile_size || "200";
 
 
-    return settings;
+    updateProfileSize();
+
+    previewPosition("cover");
+    previewPosition("profile");
+
+    await loadCategories();
 
 }
 
 
-/* =====================================================
-   SELECCIONAR IMAGEN DE DISEÑO
-===================================================== */
-
-function selectDesignImage(type,input){
-
-    const file =
-        input.files[0];
-
-
-    if(!file){
-        return;
-    }
-
-
-    designFiles[type] =
-        file;
-
-
-    const preview =
-        document.getElementById(
-            type === "cover"
-            ? "coverPreview"
-            : type === "profile"
-            ? "profilePreview"
-            : "backgroundPreview"
-        );
-
-
-    const url =
-        URL.createObjectURL(file);
-
-
-    preview.src = url;
-
-
-    markDesignChanged();
-
-}
-
-
-/* =====================================================
-   POSICIÓN
-===================================================== */
-
-function previewPosition(type){
-
-    const x =
-        Number(
-            document.getElementById(type+"X").value
-        );
-
-
-    const y =
-        Number(
-            document.getElementById(type+"Y").value
-        );
-
-
-    const size =
-        Number(
-            document.getElementById(type+"Size").value
-        );
-
-
-    designSettings[type] = {
-        x,
-        y,
-        size
-    };
-
-
-    setPositionLabels(type);
-
-    applyPreviewPosition(type);
-
-    markDesignChanged();
-
-}
-
-
-function applyPreviewPosition(type){
-
-    const preview =
-        document.getElementById(
-            type === "cover"
-            ? "coverPreview"
-            : type === "profile"
-            ? "profilePreview"
-            : "backgroundPreview"
-        );
-
-
-    const data =
-        designSettings[type];
-
-
-    if(!preview){
-        return;
-    }
-
-
-    preview.style.objectPosition =
-        `${data.x}% ${data.y}%`;
-
-
-    preview.style.objectFit =
-        "cover";
-
-
-    preview.style.transform =
-        `scale(${data.size / 100})`;
-
-}
-
-
-function setPositionControls(type){
-
-    const data =
-        designSettings[type];
-
-
-    document.getElementById(type+"X")
-        .value = data.x;
-
-
-    document.getElementById(type+"Y")
-        .value = data.y;
-
-
-    document.getElementById(type+"Size")
-        .value = data.size;
-
-
-    setPositionLabels(type);
-
-}
-
-
-function setPositionLabels(type){
-
-    const data =
-        designSettings[type];
-
-
-    document.getElementById(type+"XValue")
-        .textContent =
-        data.x + "%";
-
-
-    document.getElementById(type+"YValue")
-        .textContent =
-        data.y + "%";
-
-
-    document.getElementById(type+"SizeValue")
-        .textContent =
-        data.size + "%";
-
-}
-
-
-function resetImagePosition(type){
-
-    if(type === "profile"){
-
-        designSettings[type] = {
-            x:50,
-            y:50,
-            size:130
-        };
+async function saveSetting(key,value){
+
+    const existing=
+        settingsCache[key];
+
+    let result;
+
+    if(existing !== undefined){
+
+        result=
+            await supabaseClient
+            .from("settings")
+            .update({
+                value:String(value),
+                updated_at:
+                    new Date().toISOString()
+            })
+            .eq("key",key);
 
     }else{
 
-        designSettings[type] = {
-            x:50,
-            y:50,
-            size:100
+        result=
+            await supabaseClient
+            .from("settings")
+            .insert({
+                key,
+                value:String(value),
+                updated_at:
+                    new Date().toISOString()
+            });
+
+    }
+
+    if(result.error){
+
+        alert(result.error.message);
+
+        return {
+            error:result.error
         };
 
     }
 
+    settingsCache[key]=String(value);
 
-    setPositionControls(type);
-
-    applyPreviewPosition(type);
-
-    markDesignChanged();
-
-}
-
-
-/* =====================================================
-   DISEÑO - CAMBIOS
-===================================================== */
-
-function markDesignChanged(){
-
-    /*
-       Solo marca que existen cambios.
-       Todo se guarda cuando se pulsa
-       "Guardar cambios de diseño".
-    */
+    return {
+        error:null
+    };
 
 }
 
 
-/* =====================================================
-   SUBIR DISEÑO
-===================================================== */
+/* =========================
+   IMAGENES DISEÑO
+========================= */
 
-async function uploadDesignFile(type,file){
+async function saveDesignImage(
+    settingKey,
+    input,
+    previewId
+){
 
-    const path =
+    const file=input.files[0];
+
+    if(!file)return;
+
+    notify("Subiendo imagen...");
+
+    const path=
         "design/" +
-        type +
-        "-" +
         Date.now() +
         "-" +
         sanitizeFilename(file.name);
 
-
-    const {error:uploadError} =
+    const {error:uploadError}=
         await supabaseClient
         .storage
         .from("product-images")
@@ -3419,318 +2591,220 @@ async function uploadDesignFile(type,file){
             }
         );
 
-
     if(uploadError){
 
-        throw new Error(
-            uploadError.message
-        );
+        alert(uploadError.message);
+
+        return;
 
     }
 
-
-    const {data:urlData} =
+    const {data:urlData}=
         supabaseClient
         .storage
         .from("product-images")
         .getPublicUrl(path);
 
+    const imageUrl=
+        urlData.publicUrl;
 
-    return urlData.publicUrl;
+    const result=
+        await saveSetting(
+            settingKey,
+            imageUrl
+        );
+
+    if(result.error)return;
+
+    document.getElementById(previewId)
+        .src=imageUrl;
+
+    notify("Imagen guardada.");
 
 }
 
 
-/* =====================================================
-   GUARDAR TODO EL DISEÑO
-===================================================== */
+function markDesignChanged(){
 
-async function saveAllDesign(){
+    notify("Cambio pendiente. Pulsa GUARDAR CAMBIOS.");
 
-    try{
-
-        notify("Guardando diseño...");
+}
 
 
-        /*
-           PORTADA
-        */
+function previewPosition(type){
 
-        if(designFiles.cover){
+    let x;
+    let y;
 
-            const url =
-                await uploadDesignFile(
-                    "cover",
-                    designFiles.cover
-                );
+    if(type==="cover"){
 
+        x=document.getElementById("coverX").value;
+        y=document.getElementById("coverY").value;
 
-            await upsertSetting(
-                "cover_image",
-                url
-            );
+        document.getElementById("coverXValue")
+            .textContent=x+"%";
 
+        document.getElementById("coverYValue")
+            .textContent=y+"%";
 
-            designFiles.cover = null;
+        const preview=
+            document.getElementById("coverPreview");
 
-        }
+        preview.style.objectPosition=
+            `${x}% ${y}%`;
 
+    }else{
 
-        /*
-           PERFIL
-        */
+        x=document.getElementById("profileX").value;
+        y=document.getElementById("profileY").value;
 
-        if(designFiles.profile){
+        document.getElementById("profileXValue")
+            .textContent=x+"%";
 
-            const url =
-                await uploadDesignFile(
-                    "profile",
-                    designFiles.profile
-                );
+        document.getElementById("profileYValue")
+            .textContent=y+"%";
 
+        const preview=
+            document.getElementById("profilePreview");
 
-            await upsertSetting(
-                "profile_image",
-                url
-            );
-
-
-            designFiles.profile = null;
-
-        }
-
-
-        /*
-           FONDO
-        */
-
-        if(designFiles.background){
-
-            const url =
-                await uploadDesignFile(
-                    "background",
-                    designFiles.background
-                );
-
-
-            await upsertSetting(
-                "background_image",
-                url
-            );
-
-
-            designFiles.background = null;
-
-        }
-
-
-        /*
-           FONDO
-        */
-
-        await upsertSetting(
-            "background_type",
-            document.getElementById(
-                "backgroundType"
-            ).value
-        );
-
-
-        await upsertSetting(
-            "background_color",
-            document.getElementById(
-                "backgroundColor"
-            ).value
-        );
-
-
-        await upsertSetting(
-            "primary_color",
-            document.getElementById(
-                "primaryColor"
-            ).value
-        );
-
-
-        /*
-           POSICIONES
-        */
-
-        await upsertSetting(
-            "cover_x",
-            designSettings.cover.x
-        );
-
-        await upsertSetting(
-            "cover_y",
-            designSettings.cover.y
-        );
-
-        await upsertSetting(
-            "cover_size",
-            designSettings.cover.size
-        );
-
-
-        await upsertSetting(
-            "profile_x",
-            designSettings.profile.x
-        );
-
-        await upsertSetting(
-            "profile_y",
-            designSettings.profile.y
-        );
-
-        await upsertSetting(
-            "profile_size",
-            designSettings.profile.size
-        );
-
-
-        await upsertSetting(
-            "background_x",
-            designSettings.background.x
-        );
-
-        await upsertSetting(
-            "background_y",
-            designSettings.background.y
-        );
-
-        await upsertSetting(
-            "background_size",
-            designSettings.background.size
-        );
-
-
-        notify("Diseño guardado correctamente");
-
-        await loadSettings();
-
-    }catch(error){
-
-        console.error(error);
-
-        alert(
-            "No se pudo guardar el diseño: " +
-            error.message
-        );
+        preview.style.objectPosition=
+            `${x}% ${y}%`;
 
     }
 
+    markDesignChanged();
+
 }
 
 
-/* =====================================================
-   CONFIGURACIÓN
-===================================================== */
+function updateProfileSize(){
 
-async function upsertSetting(key,value){
+    const value=
+        document.getElementById("profileSize").value;
 
-    const {error} =
-        await supabaseClient
-        .from("settings")
-        .upsert(
-            {
+    document.getElementById("profileSizeValue")
+        .textContent=value+"%";
+
+    document.getElementById("profilePreview")
+        .style.objectFit="contain";
+
+    document.getElementById("profilePreview")
+        .style.transform=
+        `scale(${Number(value)/100})`;
+
+    notify("Tamaño pendiente. Pulsa GUARDAR CAMBIOS.");
+
+}
+
+
+async function saveDesignChanges(){
+
+    const values={
+
+        background_type:
+            document.getElementById("backgroundType").value,
+
+        background_color:
+            document.getElementById("backgroundColor").value,
+
+        primary_color:
+            document.getElementById("primaryColor").value,
+
+        cover_position_x:
+            document.getElementById("coverX").value,
+
+        cover_position_y:
+            document.getElementById("coverY").value,
+
+        profile_position_x:
+            document.getElementById("profileX").value,
+
+        profile_position_y:
+            document.getElementById("profileY").value,
+
+        profile_size:
+            document.getElementById("profileSize").value
+
+    };
+
+    for(const key in values){
+
+        const result=
+            await saveSetting(
                 key,
-                value:String(value),
-                updated_at:new Date().toISOString()
-            },
-            {
-                onConflict:"key"
-            }
-        );
+                values[key]
+            );
 
-
-    if(error){
-
-        throw new Error(
-            error.message
-        );
+        if(result.error)return;
 
     }
+
+    notify("Diseño guardado correctamente.");
 
 }
 
 
-/* =====================================================
+/* =========================
    NEGOCIO
-===================================================== */
+========================= */
 
 async function saveBusiness(){
 
-    try{
+    const values={
 
-        notify("Guardando configuración...");
-
-
-        await upsertSetting(
-            "description",
+        description:
             document.getElementById(
                 "businessDescription"
-            ).value
-        );
+            ).value,
 
-
-        await upsertSetting(
-            "slogan",
+        slogan:
             document.getElementById(
                 "businessSlogan"
-            ).value
-        );
+            ).value,
 
-
-        await upsertSetting(
-            "whatsapp",
+        whatsapp:
             document.getElementById(
                 "businessWhatsapp"
-            ).value
-        );
+            ).value,
 
-
-        await upsertSetting(
-            "delivery_cost",
+        delivery_cost:
             document.getElementById(
                 "businessDeliveryCost"
-            ).value
-        );
+            ).value,
 
-
-        await upsertSetting(
-            "bank_details",
+        bank_details:
             document.getElementById(
                 "bankDetails"
             ).value
-        );
 
+    };
 
-        notify(
-            "Configuración guardada correctamente"
-        );
+    for(const key in values){
 
-    }catch(error){
+        const result=
+            await saveSetting(
+                key,
+                values[key]
+            );
 
-        alert(error.message);
+        if(result.error)return;
 
     }
+
+    notify(
+        "Configuración guardada correctamente."
+    );
 
 }
 
 
-/* =====================================================
+/* =========================
    PEDIDOS
-===================================================== */
+========================= */
 
 async function loadOrders(){
 
-    const tbody =
-        document.getElementById(
-            "ordersTable"
-        );
-
-
-    const {data,error} =
+    const {data,error}=
         await supabaseClient
         .from("orders")
         .select("*")
@@ -3739,84 +2813,86 @@ async function loadOrders(){
             {ascending:false}
         );
 
+    const tbody=
+        document.getElementById("ordersTable");
 
     if(error){
 
-        tbody.innerHTML =
-            `<tr>
-                <td colspan="6">
-                    ${escapeHtml(error.message)}
-                </td>
-            </tr>`;
+        tbody.innerHTML=
+        `<tr>
+            <td colspan="6">
+                ${escapeHtml(error.message)}
+            </td>
+        </tr>`;
 
         return;
 
     }
 
+    if(!data || !data.length){
 
-    if(!data || data.length === 0){
-
-        tbody.innerHTML =
-            `<tr>
-                <td colspan="6">
-                    No hay pedidos.
-                </td>
-            </tr>`;
+        tbody.innerHTML=
+        `<tr>
+            <td colspan="6">
+                No hay pedidos.
+            </td>
+        </tr>`;
 
         return;
 
     }
 
+    tbody.innerHTML=
+        data.map(order=>`
 
-    tbody.innerHTML =
-        data.map(order => `
+            <tr>
 
-        <tr>
+                <td>
+                    ${formatDate(order.created_at)}
+                </td>
 
-            <td>
-                ${formatDate(order.created_at)}
-            </td>
+                <td>
+                    ${escapeHtml(
+                        order.customer_name || ""
+                    )}
+                </td>
 
-            <td>
-                ${escapeHtml(order.customer_name || "")}
-            </td>
+                <td>
+                    ${escapeHtml(
+                        order.delivery_type || ""
+                    )}
+                </td>
 
-            <td>
-                ${escapeHtml(order.delivery_type || "")}
-            </td>
+                <td>
+                    ${escapeHtml(
+                        order.payment_method || ""
+                    )}
+                </td>
 
-            <td>
-                ${escapeHtml(order.payment_method || "")}
-            </td>
+                <td>
+                    $${money(order.total)}
+                </td>
 
-            <td>
-                $${money(order.total)}
-            </td>
+                <td>
+                    ${escapeHtml(
+                        order.order_status || ""
+                    )}
+                </td>
 
-            <td>
-                ${escapeHtml(order.order_status || "")}
-            </td>
-
-        </tr>
+            </tr>
 
         `).join("");
 
 }
 
 
-/* =====================================================
+/* =========================
    CLIENTES
-===================================================== */
+========================= */
 
 async function loadCustomers(){
 
-    const tbody =
-        document.getElementById(
-            "customersTable"
-        );
-
-
-    const {data,error} =
+    const {data,error}=
         await supabaseClient
         .from("customers")
         .select("*")
@@ -3825,81 +2901,83 @@ async function loadCustomers(){
             {ascending:false}
         );
 
+    const tbody=
+        document.getElementById("customersTable");
 
     if(error){
 
-        tbody.innerHTML =
-            `<tr>
-                <td colspan="4">
-                    ${escapeHtml(error.message)}
-                </td>
-            </tr>`;
+        tbody.innerHTML=
+        `<tr>
+            <td colspan="4">
+                ${escapeHtml(error.message)}
+            </td>
+        </tr>`;
 
         return;
 
     }
 
+    if(!data || !data.length){
 
-    if(!data || data.length === 0){
-
-        tbody.innerHTML =
-            `<tr>
-                <td colspan="4">
-                    No hay clientes.
-                </td>
-            </tr>`;
+        tbody.innerHTML=
+        `<tr>
+            <td colspan="4">
+                No hay clientes.
+            </td>
+        </tr>`;
 
         return;
 
     }
 
+    tbody.innerHTML=
+        data.map(customer=>`
 
-    tbody.innerHTML =
-        data.map(customer => `
+            <tr>
 
-        <tr>
+                <td>
+                    ${escapeHtml(
+                        customer.name || ""
+                    )}
+                </td>
 
-            <td>
-                ${escapeHtml(customer.name || "")}
-            </td>
+                <td>
+                    ${escapeHtml(
+                        customer.phone || ""
+                    )}
+                </td>
 
-            <td>
-                ${escapeHtml(customer.phone || "")}
-            </td>
+                <td>
+                    ${escapeHtml(
+                        customer.email || ""
+                    )}
+                </td>
 
-            <td>
-                ${escapeHtml(customer.email || "")}
-            </td>
+                <td>
+                    ${formatDate(
+                        customer.created_at
+                    )}
+                </td>
 
-            <td>
-                ${formatDate(customer.created_at)}
-            </td>
-
-        </tr>
+            </tr>
 
         `).join("");
 
 }
 
 
-/* =====================================================
-   CARGAR TODO
-===================================================== */
+/* =========================
+   UTILIDADES
+========================= */
 
 async function loadAll(){
 
-    await loadCategories();
+    await loadSettings();
 
     await loadProducts();
 
-    await loadSettings();
-
 }
 
-
-/* =====================================================
-   UTILIDADES
-===================================================== */
 
 function money(value){
 
@@ -3917,10 +2995,7 @@ function money(value){
 
 function formatDate(value){
 
-    if(!value){
-        return "";
-    }
-
+    if(!value)return "";
 
     return new Date(value)
         .toLocaleString("es-MX");
@@ -3933,7 +3008,10 @@ function sanitizeFilename(name){
     return String(name)
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g,"")
-        .replace(/[^a-zA-Z0-9._-]/g,"-");
+        .replace(
+            /[^a-zA-Z0-9._-]/g,
+            "-"
+        );
 
 }
 
@@ -3950,7 +3028,7 @@ function escapeHtml(value){
 }
 
 
-function escapeAttribute(value){
+function escapeAttr(value){
 
     return escapeHtml(value);
 
@@ -3962,4 +3040,5 @@ checkSession();
 </script>
 
 </body>
+
 </html>
