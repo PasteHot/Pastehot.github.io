@@ -2310,7 +2310,7 @@ s.background_y || 0;
 
 async function saveDesign(){
 
-const values={
+const values = {
 
 cover_scale:
 document.getElementById("coverScale").value,
@@ -2344,6 +2344,38 @@ document.getElementById("backgroundX").value,
 
 background_y:
 document.getElementById("backgroundY").value
+
+};
+
+
+for(const key in values){
+
+const ok =
+await saveSetting(
+key,
+values[key]
+);
+
+if(!ok){
+
+showMessage(
+"No se pudo guardar "+key
+);
+
+return;
+
+}
+
+}
+
+
+await loadDesign();
+
+showMessage(
+"Diseño guardado correctamente"
+);
+
+}
 
 };
 
