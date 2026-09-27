@@ -278,7 +278,7 @@ margin-top:10px;
 
 .design-grid{
 display:grid;
-grid-template-columns:repeat(3,1fr);
+grid-template-columns:1fr 1fr;
 gap:20px;
 }
 
@@ -286,14 +286,6 @@ gap:20px;
 border:1px solid #ddd;
 padding:18px;
 border-radius:12px;
-}
-
-.range{
-margin-top:15px;
-}
-
-.range input{
-margin:4px 0;
 }
 
 .category-row{
@@ -331,6 +323,253 @@ display:none;
 z-index:9999;
 }
 
+
+/* =====================================================
+   EDITOR VISUAL
+===================================================== */
+
+.editor-title{
+margin-top:0;
+margin-bottom:8px;
+}
+
+.editor-description{
+color:#666;
+line-height:1.5;
+margin-top:0;
+}
+
+.editor-toolbar{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+margin-bottom:18px;
+}
+
+.editor-toolbar .file-button{
+margin:0;
+}
+
+
+/* MONITOR */
+
+.preview-monitor{
+width:100%;
+max-width:850px;
+margin:0 auto;
+background:#171717;
+border-radius:18px;
+padding:14px;
+box-shadow:
+0 12px 35px rgba(0,0,0,.22);
+}
+
+
+/* PANTALLA */
+
+.preview-screen{
+position:relative;
+width:100%;
+aspect-ratio:16 / 9;
+background:#ddd;
+overflow:hidden;
+border-radius:10px;
+touch-action:none;
+user-select:none;
+}
+
+
+/* PORTADA */
+
+.editor-cover{
+position:absolute;
+left:50%;
+top:50%;
+width:100%;
+height:100%;
+object-fit:cover;
+transform:
+translate(-50%,-50%)
+scale(1);
+transform-origin:center center;
+cursor:grab;
+user-select:none;
+touch-action:none;
+}
+
+.editor-cover.dragging{
+cursor:grabbing;
+}
+
+
+/* ZONA SEGURA */
+
+.safe-zone{
+position:absolute;
+left:5%;
+top:7%;
+width:90%;
+height:86%;
+border:2px dashed rgba(255,255,255,.75);
+border-radius:5px;
+pointer-events:none;
+z-index:10;
+}
+
+.safe-zone-label{
+position:absolute;
+left:10px;
+top:10px;
+background:rgba(0,0,0,.6);
+color:white;
+font-size:11px;
+font-weight:bold;
+padding:5px 8px;
+border-radius:5px;
+z-index:11;
+pointer-events:none;
+}
+
+
+/* PERFIL */
+
+.editor-profile{
+position:absolute;
+left:50%;
+top:50%;
+width:135px;
+height:135px;
+border-radius:50%;
+overflow:hidden;
+background:white;
+border:5px solid white;
+box-shadow:0 5px 20px rgba(0,0,0,.35);
+transform:
+translate(-50%,-50%);
+cursor:move;
+z-index:20;
+touch-action:none;
+user-select:none;
+}
+
+.editor-profile img{
+width:100%;
+height:100%;
+object-fit:cover;
+display:block;
+pointer-events:none;
+}
+
+
+/* CONTROL SELECCIONADO */
+
+.editor-profile.selected{
+outline:3px solid #e51b23;
+outline-offset:3px;
+}
+
+
+/* MANIJAS DE REDIMENSIONAMIENTO */
+
+.resize-handle{
+position:absolute;
+width:18px;
+height:18px;
+background:#e51b23;
+border:3px solid white;
+border-radius:50%;
+box-shadow:0 2px 7px rgba(0,0,0,.35);
+display:none;
+z-index:50;
+}
+
+.editor-profile.selected .resize-handle{
+display:block;
+}
+
+.resize-handle.br{
+right:-8px;
+bottom:-8px;
+cursor:nwse-resize;
+}
+
+
+/* CONTROLES INFERIORES */
+
+.editor-info{
+margin-top:15px;
+padding:15px;
+background:#f5f5f5;
+border-radius:10px;
+display:flex;
+justify-content:space-between;
+gap:15px;
+flex-wrap:wrap;
+}
+
+.editor-info strong{
+color:#111;
+}
+
+.editor-help{
+margin-top:12px;
+color:#666;
+font-size:14px;
+line-height:1.5;
+}
+
+.dimension-box{
+margin-top:18px;
+background:#111;
+color:white;
+padding:18px;
+border-radius:12px;
+text-align:center;
+}
+
+.dimension-box .dimension{
+font-size:25px;
+font-weight:900;
+margin-bottom:5px;
+}
+
+.dimension-box .ratio{
+font-size:14px;
+opacity:.8;
+}
+
+
+/* FONDO */
+
+.background-controls{
+margin-top:20px;
+padding-top:20px;
+border-top:1px solid #ddd;
+}
+
+.range-simple{
+margin-top:12px;
+}
+
+.range-simple input{
+margin:5px 0 12px;
+}
+
+
+/* BOTON GUARDAR */
+
+.save-design-button{
+width:100%;
+font-size:17px;
+padding:15px;
+margin-top:20px;
+}
+
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
 @media(max-width:850px){
 
 .design-grid{
@@ -343,6 +582,16 @@ align-items:flex-start;
 
 .actions{
 width:100%;
+}
+
+.preview-monitor{
+padding:8px;
+border-radius:12px;
+}
+
+.editor-profile{
+width:105px;
+height:105px;
 }
 
 }
@@ -370,6 +619,26 @@ width:100%;
 flex:1;
 }
 
+.preview-monitor{
+padding:5px;
+border-radius:10px;
+}
+
+.editor-profile{
+width:85px;
+height:85px;
+border-width:4px;
+}
+
+.safe-zone{
+left:5%;
+width:90%;
+}
+
+.dimension-box .dimension{
+font-size:20px;
+}
+
 }
 
 </style>
@@ -379,9 +648,9 @@ flex:1;
 <body>
 
 
-<!-- =========================
+<!-- =====================================================
      LOGIN
-========================= -->
+===================================================== -->
 
 <div id="loginScreen" class="login">
 
@@ -417,9 +686,9 @@ Entrar
 </div>
 
 
-<!-- =========================
+<!-- =====================================================
      ADMINISTRADOR
-========================= -->
+===================================================== -->
 
 <div id="adminScreen" style="display:none">
 
@@ -437,9 +706,9 @@ Cerrar sesión
 <div class="container">
 
 
-<!-- =========================
-     PESTAÑAS
-========================= -->
+<!-- =====================================================
+     TABS
+===================================================== -->
 
 <div class="tabs">
 
@@ -481,9 +750,9 @@ Clientes
 </div>
 
 
-<!-- =========================
+<!-- =====================================================
      PRODUCTOS
-========================= -->
+===================================================== -->
 
 <section id="products" class="section active">
 
@@ -579,30 +848,29 @@ Cargando...
 </section>
 
 
-<!-- =========================
+<!-- =====================================================
      DISEÑO
-========================= -->
+===================================================== -->
 
 <section id="design" class="section">
 
 
 <div class="card">
 
-<h2>Diseño</h2>
+<h2 class="editor-title">
+Diseñador visual
+</h2>
+
+<p class="editor-description">
+Selecciona la portada y la foto de perfil. Después puedes moverlas y cambiar su tamaño directamente sobre la previsualización.
+</p>
 
 
-<div class="design-grid">
-
-
-<!-- PORTADA -->
-
-<div class="design-box">
-
-<h3>Portada</h3>
+<div class="editor-toolbar">
 
 <label class="file-button">
 
-Seleccionar imagen
+Seleccionar portada
 
 <input
 id="coverFile"
@@ -613,68 +881,10 @@ onchange="uploadDesign('cover')"
 
 </label>
 
-<img
-id="coverPreview"
-class="preview"
->
-
-
-<div class="range">
-
-<label>Tamaño</label>
-
-<input
-id="coverScale"
-type="range"
-min="50"
-max="250"
-value="100"
->
-
-</div>
-
-
-<div class="range">
-
-<label>Horizontal</label>
-
-<input
-id="coverX"
-type="range"
-min="-100"
-max="100"
-value="0"
->
-
-</div>
-
-
-<div class="range">
-
-<label>Vertical</label>
-
-<input
-id="coverY"
-type="range"
-min="-100"
-max="100"
-value="0"
->
-
-</div>
-
-</div>
-
-
-<!-- PERFIL -->
-
-<div class="design-box">
-
-<h3>Foto de perfil</h3>
 
 <label class="file-button">
 
-Seleccionar imagen
+Seleccionar foto de perfil
 
 <input
 id="profileFile"
@@ -685,54 +895,102 @@ onchange="uploadDesign('profile')"
 
 </label>
 
+</div>
+
+
+<!-- MONITOR -->
+
+<div class="preview-monitor">
+
+<div
+id="previewScreen"
+class="preview-screen"
+>
+
+
 <img
-id="profilePreview"
-class="preview"
+id="editorCover"
+class="editor-cover"
+style="display:none"
 >
 
 
-<div class="range">
-
-<label>Tamaño</label>
-
-<input
-id="profileScale"
-type="range"
-min="50"
-max="250"
-value="130"
+<div
+id="safeZone"
+class="safe-zone"
 >
+</div>
+
+<div
+class="safe-zone-label"
+>
+ZONA SEGURA
+</div>
+
+
+<div
+id="editorProfile"
+class="editor-profile"
+style="display:none"
+>
+
+<img
+id="editorProfileImage"
+>
+
+<div
+class="resize-handle br"
+>
+</div>
 
 </div>
 
 
-<div class="range">
-
-<label>Horizontal</label>
-
-<input
-id="profileX"
-type="range"
-min="-100"
-max="100"
-value="0"
->
+</div>
 
 </div>
 
 
-<div class="range">
+<div class="editor-info">
 
-<label>Vertical</label>
+<div>
+<strong>Portada:</strong>
+<span id="coverPositionInfo">
+No seleccionada
+</span>
+</div>
 
-<input
-id="profileY"
-type="range"
-min="-100"
-max="100"
-value="0"
->
+<div>
+<strong>Perfil:</strong>
+<span id="profilePositionInfo">
+No seleccionada
+</span>
+</div>
 
+</div>
+
+
+<div class="editor-help">
+
+<strong>Cómo utilizarlo:</strong><br>
+
+Arrastra la portada para cambiar su posición.
+Haz clic sobre la foto de perfil y arrástrala para colocarla.
+Arrastra el punto rojo de la esquina de la foto de perfil para cambiar su tamaño.
+
+</div>
+
+
+<!-- MEDIDA RECOMENDADA -->
+
+<div class="dimension-box">
+
+<div class="dimension">
+1080 × 608 px
+</div>
+
+<div class="ratio">
+Portada horizontal recomendada · Relación 16:9 · Optimizada para visualizarse correctamente en smartphones y computadoras
 </div>
 
 </div>
@@ -740,11 +998,16 @@ value="0"
 
 <!-- FONDO -->
 
-<div class="design-box">
+<div class="background-controls">
 
-<h3>Fondo</h3>
+<h3>
+Fondo de la página
+</h3>
 
-<label>Tipo</label>
+
+<label>
+Tipo de fondo
+</label>
 
 <select id="backgroundType">
 
@@ -759,7 +1022,9 @@ Imagen
 </select>
 
 
-<label>Color</label>
+<label>
+Color de fondo
+</label>
 
 <input
 id="backgroundColor"
@@ -787,9 +1052,11 @@ class="preview"
 >
 
 
-<div class="range">
+<div class="range-simple">
 
-<label>Tamaño</label>
+<label>
+Tamaño del fondo
+</label>
 
 <input
 id="backgroundScale"
@@ -802,9 +1069,11 @@ value="100"
 </div>
 
 
-<div class="range">
+<div class="range-simple">
 
-<label>Horizontal</label>
+<label>
+Posición horizontal
+</label>
 
 <input
 id="backgroundX"
@@ -817,9 +1086,11 @@ value="0"
 </div>
 
 
-<div class="range">
+<div class="range-simple">
 
-<label>Vertical</label>
+<label>
+Posición vertical
+</label>
 
 <input
 id="backgroundY"
@@ -833,13 +1104,9 @@ value="0"
 
 </div>
 
-</div>
-
-
-<br>
 
 <button
-class="primary"
+class="primary save-design-button"
 onclick="saveDesign()"
 >
 Guardar diseño
@@ -848,19 +1115,21 @@ Guardar diseño
 </div>
 
 
-<!-- =========================
-     CATEGORÍAS
-========================= -->
+<!-- CATEGORÍAS -->
 
 <div class="card">
 
-<h2>Categorías</h2>
+<h2>
+Categorías
+</h2>
 
 <div id="categoryList"></div>
 
 <br>
 
-<h3>Nueva categoría</h3>
+<h3>
+Nueva categoría
+</h3>
 
 <div class="add-category">
 
@@ -884,36 +1153,50 @@ Nueva categoría
 </section>
 
 
-<!-- =========================
+<!-- =====================================================
      NEGOCIO
-========================= -->
+===================================================== -->
 
 <section id="business" class="section">
 
 
 <div class="card">
 
-<h2>Negocio y pagos</h2>
+<h2>
+Negocio y pagos
+</h2>
 
-<label>Descripción</label>
+
+<label>
+Descripción
+</label>
 
 <textarea
 id="businessDescription"
 ></textarea>
 
-<label>Slogan</label>
+
+<label>
+Slogan
+</label>
 
 <input
 id="businessSlogan"
 >
 
-<label>WhatsApp</label>
+
+<label>
+WhatsApp
+</label>
 
 <input
 id="businessWhatsapp"
 >
 
-<label>Costo de entrega</label>
+
+<label>
+Costo de entrega
+</label>
 
 <input
 id="deliveryCost"
@@ -921,11 +1204,15 @@ type="number"
 step="0.01"
 >
 
-<label>Datos bancarios para transferencia</label>
+
+<label>
+Datos bancarios para transferencia
+</label>
 
 <textarea
 id="bankDetails"
 ></textarea>
+
 
 <label>
 Enlace exacto de Google Maps para recoger pedido
@@ -935,6 +1222,7 @@ Enlace exacto de Google Maps para recoger pedido
 id="pickupMapsUrl"
 placeholder="Pega aquí el enlace de Google Maps"
 >
+
 
 <button
 class="primary"
@@ -948,15 +1236,17 @@ Guardar información
 </section>
 
 
-<!-- =========================
+<!-- =====================================================
      PEDIDOS
-========================= -->
+===================================================== -->
 
 <section id="orders" class="section">
 
 <div class="card">
 
-<h2>Pedidos</h2>
+<h2>
+Pedidos
+</h2>
 
 <div id="ordersList">
 Cargando...
@@ -967,15 +1257,17 @@ Cargando...
 </section>
 
 
-<!-- =========================
+<!-- =====================================================
      CLIENTES
-========================= -->
+===================================================== -->
 
 <section id="customers" class="section">
 
 <div class="card">
 
-<h2>Clientes</h2>
+<h2>
+Clientes
+</h2>
 
 <div id="customersList">
 Cargando...
@@ -1002,9 +1294,9 @@ class="message"
 
 <script>
 
-/* =========================
+/* =====================================================
    SUPABASE
-========================= */
+===================================================== */
 
 const SUPABASE_URL =
 "https://cqlywpemisknrxswlmea.supabase.co";
@@ -1019,9 +1311,9 @@ SUPABASE_KEY
 );
 
 
-/* =========================
+/* =====================================================
    VARIABLES
-========================= */
+===================================================== */
 
 let products=[];
 
@@ -1034,9 +1326,37 @@ let categories=[
 ];
 
 
-/* =========================
+/* =====================================================
+   EDITOR VISUAL
+===================================================== */
+
+let editorState={
+
+cover:{
+x:0,
+y:0,
+scale:1
+},
+
+profile:{
+x:0,
+y:0,
+size:135
+}
+
+};
+
+
+let activeDrag=null;
+
+let dragStart={};
+
+let editorStart={};
+
+
+/* =====================================================
    LOGIN
-========================= */
+===================================================== */
 
 async function login(){
 
@@ -1077,11 +1397,14 @@ return;
 
 
 const button =
-document.getElementById("loginButton");
+document.getElementById(
+"loginButton"
+);
 
 button.disabled=true;
 
-button.innerText="Entrando...";
+button.innerText=
+"Entrando...";
 
 
 const result =
@@ -1096,15 +1419,20 @@ password:password
 
 button.disabled=false;
 
-button.innerText="Entrar";
+button.innerText=
+"Entrar";
 
 
 if(result.error){
 
-console.error(result.error);
+console.error(
+result.error
+);
 
 document
-.getElementById("loginError")
+.getElementById(
+"loginError"
+)
 .innerText =
 result.error.message;
 
@@ -1114,17 +1442,23 @@ return;
 
 
 document
-.getElementById("loginError")
+.getElementById(
+"loginError"
+)
 .innerText="";
 
 
 document
-.getElementById("loginScreen")
+.getElementById(
+"loginScreen"
+)
 .style.display="none";
 
 
 document
-.getElementById("adminScreen")
+.getElementById(
+"adminScreen"
+)
 .style.display="block";
 
 
@@ -1133,9 +1467,9 @@ await init();
 }
 
 
-/* =========================
+/* =====================================================
    LOGOUT
-========================= */
+===================================================== */
 
 async function logout(){
 
@@ -1146,9 +1480,9 @@ location.reload();
 }
 
 
-/* =========================
-   INICIO
-========================= */
+/* =====================================================
+   INIT
+===================================================== */
 
 async function init(){
 
@@ -1164,12 +1498,14 @@ await loadOrders();
 
 await loadCustomers();
 
+initEditorEvents();
+
 }
 
 
-/* =========================
-   PESTAÑAS
-========================= */
+/* =====================================================
+   TABS
+===================================================== */
 
 function showTab(id,button){
 
@@ -1194,9 +1530,9 @@ button.classList.add("active");
 }
 
 
-/* =========================
+/* =====================================================
    PRODUCTOS
-========================= */
+===================================================== */
 
 async function loadProducts(){
 
@@ -1263,13 +1599,17 @@ products.forEach(
 product=>{
 
 const row =
-document.createElement("div");
+document.createElement(
+"div"
+);
 
 row.className="product";
 
 
 const img =
-document.createElement("img");
+document.createElement(
+"img"
+);
 
 img.src =
 product.image_url ||
@@ -1285,37 +1625,49 @@ this.src =
 
 
 const info =
-document.createElement("div");
+document.createElement(
+"div"
+);
 
 info.className =
 "product-info";
 
 
 const title =
-document.createElement("h3");
+document.createElement(
+"h3"
+);
 
 title.innerText =
 product.name || "";
 
 
 const desc =
-document.createElement("p");
+document.createElement(
+"p"
+);
 
 desc.innerText =
 product.description || "";
 
 
 const price =
-document.createElement("p");
+document.createElement(
+"p"
+);
 
 price.innerText =
 "$"+
-Number(product.price || 0)
+Number(
+product.price || 0
+)
 .toFixed(2);
 
 
 const category =
-document.createElement("p");
+document.createElement(
+"p"
+);
 
 category.innerText =
 product.category || "";
@@ -1331,7 +1683,9 @@ info.appendChild(category);
 
 
 const actions =
-document.createElement("div");
+document.createElement(
+"div"
+);
 
 actions.className="actions";
 
@@ -1339,17 +1693,23 @@ actions.className="actions";
 /* INTERRUPTOR */
 
 const switchBox =
-document.createElement("div");
+document.createElement(
+"div"
+);
 
 
 const label =
-document.createElement("label");
+document.createElement(
+"label"
+);
 
 label.className="switch";
 
 
 const checkbox =
-document.createElement("input");
+document.createElement(
+"input"
+);
 
 checkbox.type="checkbox";
 
@@ -1371,7 +1731,9 @@ this.checked
 
 
 const slider =
-document.createElement("span");
+document.createElement(
+"span"
+);
 
 slider.className="slider";
 
@@ -1386,20 +1748,26 @@ slider
 
 
 const status =
-document.createElement("div");
+document.createElement(
+"div"
+);
 
 status.className =
 "status "+
 (
 product.available
-?"on"
-:"off"
+?
+"on"
+:
+"off"
 );
 
 status.innerText =
 product.available
-?"DISPONIBLE"
-:"AGOTADO";
+?
+"DISPONIBLE"
+:
+"AGOTADO";
 
 
 switchBox.appendChild(
@@ -1414,11 +1782,14 @@ status
 /* EDITAR */
 
 const edit =
-document.createElement("button");
+document.createElement(
+"button"
+);
 
 edit.className="dark";
 
-edit.innerText="Editar";
+edit.innerText=
+"Editar";
 
 
 edit.addEventListener(
@@ -1433,14 +1804,16 @@ product.id
 );
 
 
-/* CAMBIAR FOTO */
+/* FOTO */
 
 const photo =
-document.createElement("button");
+document.createElement(
+"button"
+);
 
 photo.className="dark";
 
-photo.innerText =
+photo.innerText=
 "Cambiar foto";
 
 
@@ -1459,12 +1832,14 @@ product.id
 /* BORRAR */
 
 const deleteButton =
-document.createElement("button");
+document.createElement(
+"button"
+);
 
-deleteButton.className =
+deleteButton.className=
 "delete";
 
-deleteButton.innerText =
+deleteButton.innerText=
 "Borrar";
 
 
@@ -1510,9 +1885,9 @@ box.appendChild(row);
 }
 
 
-/* =========================
+/* =====================================================
    ACTIVAR / DESACTIVAR
-========================= */
+===================================================== */
 
 async function toggleProduct(
 id,
@@ -1558,14 +1933,15 @@ available
 "Producto apagado"
 );
 
+
 await loadProducts();
 
 }
 
 
-/* =========================
+/* =====================================================
    EDITAR PRODUCTO
-========================= */
+===================================================== */
 
 function editProduct(id){
 
@@ -1589,25 +1965,33 @@ return;
 
 
 document
-.getElementById("productId")
+.getElementById(
+"productId"
+)
 .value =
 product.id;
 
 
 document
-.getElementById("productName")
+.getElementById(
+"productName"
+)
 .value =
 product.name || "";
 
 
 document
-.getElementById("productDescription")
+.getElementById(
+"productDescription"
+)
 .value =
 product.description || "";
 
 
 document
-.getElementById("productPrice")
+.getElementById(
+"productPrice"
+)
 .value =
 product.price || "";
 
@@ -1616,7 +2000,9 @@ populateCategories();
 
 
 document
-.getElementById("productCategory")
+.getElementById(
+"productCategory"
+)
 .value =
 product.category ||
 categories[0];
@@ -1633,19 +2019,21 @@ if(product.image_url){
 preview.src =
 product.image_url;
 
-preview.style.display =
+preview.style.display=
 "block";
 
 }else{
 
-preview.style.display =
+preview.style.display=
 "none";
 
 }
 
 
 document
-.getElementById("formTitle")
+.getElementById(
+"formTitle"
+)
 .innerText =
 "Editar producto";
 
@@ -1666,28 +2054,34 @@ showMessage(
 }
 
 
-/* =========================
+/* =====================================================
    GUARDAR PRODUCTO
-========================= */
+===================================================== */
 
 async function saveProduct(){
 
 const id =
 document
-.getElementById("productId")
+.getElementById(
+"productId"
+)
 .value;
 
 
 const name =
 document
-.getElementById("productName")
+.getElementById(
+"productName"
+)
 .value
 .trim();
 
 
 const description =
 document
-.getElementById("productDescription")
+.getElementById(
+"productDescription"
+)
 .value
 .trim();
 
@@ -1695,14 +2089,18 @@ document
 const price =
 Number(
 document
-.getElementById("productPrice")
+.getElementById(
+"productPrice"
+)
 .value
 );
 
 
 const category =
 document
-.getElementById("productCategory")
+.getElementById(
+"productCategory"
+)
 .value;
 
 
@@ -1757,7 +2155,9 @@ new Date().toISOString()
 
 if(result.error){
 
-console.error(result.error);
+console.error(
+result.error
+);
 
 showMessage(
 "Error: "+
@@ -1799,7 +2199,9 @@ products.length
 
 if(result.error){
 
-console.error(result.error);
+console.error(
+result.error
+);
 
 showMessage(
 "Error: "+
@@ -1819,7 +2221,9 @@ result.data;
 
 const file =
 document
-.getElementById("productImage")
+.getElementById(
+"productImage"
+)
 .files[0];
 
 
@@ -1834,24 +2238,15 @@ product.id
 
 if(imageUrl){
 
-const result =
 await db
 .from("products")
 .update({
-
 image_url:imageUrl
-
 })
-.eq("id",product.id);
-
-
-if(result.error){
-
-console.error(
-result.error
+.eq(
+"id",
+product.id
 );
-
-}
 
 }
 
@@ -1874,9 +2269,9 @@ await loadProducts();
 }
 
 
-/* =========================
-   SUBIR FOTO DE PRODUCTO
-========================= */
+/* =====================================================
+   SUBIR FOTO PRODUCTO
+===================================================== */
 
 async function uploadProductImage(
 file,
@@ -1895,7 +2290,8 @@ const path =
 String(id)+
 "-"+
 Date.now()+
-"."+ext;
+"."+
+ext;
 
 
 const upload =
@@ -1932,7 +2328,9 @@ const url =
 db
 .storage
 .from("product-images")
-.getPublicUrl(path);
+.getPublicUrl(
+path
+);
 
 
 return url.data.publicUrl;
@@ -1940,9 +2338,9 @@ return url.data.publicUrl;
 }
 
 
-/* =========================
+/* =====================================================
    CAMBIAR FOTO
-========================= */
+===================================================== */
 
 function changePhoto(id){
 
@@ -1953,7 +2351,8 @@ document.createElement(
 
 input.type="file";
 
-input.accept="image/*";
+input.accept=
+"image/*";
 
 
 input.onchange =
@@ -1986,7 +2385,10 @@ updated_at:
 new Date().toISOString()
 
 })
-.eq("id",id);
+.eq(
+"id",
+id
+);
 
 
 if(result.error){
@@ -2018,9 +2420,9 @@ input.click();
 }
 
 
-/* =========================
+/* =====================================================
    BORRAR PRODUCTO
-========================= */
+===================================================== */
 
 async function deleteProduct(id){
 
@@ -2050,7 +2452,10 @@ const result =
 await db
 .from("products")
 .delete()
-.eq("id",id);
+.eq(
+"id",
+id
+);
 
 
 if(result.error){
@@ -2078,39 +2483,51 @@ await loadProducts();
 }
 
 
-/* =========================
+/* =====================================================
    NUEVO PRODUCTO
-========================= */
+===================================================== */
 
 function newProduct(){
 
 document
-.getElementById("productId")
+.getElementById(
+"productId"
+)
 .value="";
 
 
 document
-.getElementById("productName")
+.getElementById(
+"productName"
+)
 .value="";
 
 
 document
-.getElementById("productDescription")
+.getElementById(
+"productDescription"
+)
 .value="";
 
 
 document
-.getElementById("productPrice")
+.getElementById(
+"productPrice"
+)
 .value="";
 
 
 document
-.getElementById("productImage")
+.getElementById(
+"productImage"
+)
 .value="";
 
 
 document
-.getElementById("productPreview")
+.getElementById(
+"productPreview"
+)
 .style.display="none";
 
 
@@ -2118,16 +2535,18 @@ populateCategories();
 
 
 document
-.getElementById("formTitle")
+.getElementById(
+"formTitle"
+)
 .innerText =
 "Agregar producto";
 
 }
 
 
-/* =========================
+/* =====================================================
    CATEGORÍAS
-========================= */
+===================================================== */
 
 async function loadCategories(){
 
@@ -2135,7 +2554,10 @@ const result =
 await db
 .from("settings")
 .select("value")
-.eq("key","categories")
+.eq(
+"key",
+"categories"
+)
 .maybeSingle();
 
 
@@ -2225,7 +2647,7 @@ document.createElement(
 "div"
 );
 
-row.className =
+row.className=
 "category-row";
 
 
@@ -2234,10 +2656,10 @@ document.createElement(
 "div"
 );
 
-name.className =
+name.className=
 "category-name";
 
-name.innerText =
+name.innerText=
 category;
 
 
@@ -2246,35 +2668,43 @@ document.createElement(
 "button"
 );
 
-button.className =
+button.className=
 "delete";
 
-button.innerText =
+button.innerText=
 "Borrar";
 
 
 button.onclick =
 function(){
 
-deleteCategory(index);
+deleteCategory(
+index
+);
 
 };
 
 
-row.appendChild(name);
+row.appendChild(
+name
+);
 
-row.appendChild(button);
+row.appendChild(
+button
+);
 
-box.appendChild(row);
+box.appendChild(
+row
+);
 
 });
 
 }
 
 
-/* =========================
-   GUARDAR SETTING
-========================= */
+/* =====================================================
+   SETTINGS
+===================================================== */
 
 async function saveSetting(
 key,
@@ -2285,7 +2715,10 @@ const existing =
 await db
 .from("settings")
 .select("id")
-.eq("key",key)
+.eq(
+"key",
+key
+)
 .maybeSingle();
 
 
@@ -2313,7 +2746,10 @@ updated_at:
 new Date().toISOString()
 
 })
-.eq("id",existing.data.id);
+.eq(
+"id",
+existing.data.id
+);
 
 
 if(result.error){
@@ -2358,9 +2794,9 @@ return true;
 }
 
 
-/* =========================
+/* =====================================================
    NUEVA CATEGORÍA
-========================= */
+===================================================== */
 
 async function addCategory(){
 
@@ -2402,7 +2838,9 @@ return;
 }
 
 
-categories.push(name);
+categories.push(
+name
+);
 
 
 const ok =
@@ -2440,13 +2878,17 @@ showMessage(
 }
 
 
-/* =========================
+/* =====================================================
    BORRAR CATEGORÍA
-========================= */
+===================================================== */
 
-async function deleteCategory(index){
+async function deleteCategory(
+index
+){
 
-if(categories.length<=1){
+if(
+categories.length<=1
+){
 
 showMessage(
 "Debe quedar al menos una categoría"
@@ -2542,11 +2984,13 @@ showMessage(
 }
 
 
-/* =========================
-   SUBIR IMÁGENES DE DISEÑO
-========================= */
+/* =====================================================
+   SUBIR IMAGEN DE DISEÑO
+===================================================== */
 
-async function uploadDesign(type){
+async function uploadDesign(
+type
+){
 
 let input;
 
@@ -2602,7 +3046,8 @@ const path =
 type+
 "-"+
 Date.now()+
-"."+ext;
+"."+
+ext;
 
 
 const upload =
@@ -2639,13 +3084,19 @@ const url =
 db
 .storage
 .from("product-images")
-.getPublicUrl(path);
+.getPublicUrl(
+path
+);
+
+
+const publicUrl =
+url.data.publicUrl;
 
 
 const ok =
 await saveSetting(
 type+"_image",
-url.data.publicUrl
+publicUrl
 );
 
 
@@ -2660,44 +3111,80 @@ return;
 }
 
 
-let preview;
-
+/* MOSTRAR EN EDITOR */
 
 if(type==="cover"){
 
-preview =
+const img =
 document.getElementById(
-"coverPreview"
+"editorCover"
 );
+
+img.src =
+publicUrl;
+
+img.style.display=
+"block";
+
+editorState.cover.x=0;
+
+editorState.cover.y=0;
+
+editorState.cover.scale=1;
+
+updateEditor();
 
 }
 
 
 if(type==="profile"){
 
-preview =
+const img =
 document.getElementById(
-"profilePreview"
+"editorProfileImage"
 );
+
+img.src =
+publicUrl;
+
+
+document
+.getElementById(
+"editorProfile"
+)
+.style.display=
+"block";
+
+
+editorState.profile.x=0;
+
+editorState.profile.y=0;
+
+editorState.profile.size=
+135;
+
+updateEditor();
 
 }
 
 
 if(type==="background"){
 
-preview =
+const preview =
 document.getElementById(
 "backgroundPreview"
 );
 
+preview.src =
+publicUrl;
+
+preview.style.display=
+"block";
+
 }
 
 
-preview.src =
-url.data.publicUrl;
-
-preview.style.display =
-"block";
+input.value="";
 
 
 showMessage(
@@ -2707,9 +3194,9 @@ showMessage(
 }
 
 
-/* =========================
+/* =====================================================
    CARGAR DISEÑO
-========================= */
+===================================================== */
 
 async function loadDesign(){
 
@@ -2741,36 +3228,123 @@ s[row.key]=row.value;
 );
 
 
+/* PORTADA */
+
 if(s.cover_image){
 
-const preview =
+const cover =
 document.getElementById(
-"coverPreview"
+"editorCover"
 );
 
-preview.src =
+cover.src =
 s.cover_image;
 
-preview.style.display =
+cover.style.display=
 "block";
+
+editorState.cover.scale =
+Number(
+s.cover_scale || 1
+);
+
+editorState.cover.x =
+Number(
+s.cover_x || 0
+);
+
+editorState.cover.y =
+Number(
+s.cover_y || 0
+);
 
 }
 
+
+/* PERFIL */
 
 if(s.profile_image){
 
-const preview =
+const profile =
 document.getElementById(
-"profilePreview"
+"editorProfile"
 );
 
-preview.src =
+const profileImage =
+document.getElementById(
+"editorProfileImage"
+);
+
+profileImage.src =
 s.profile_image;
 
-preview.style.display =
+profile.style.display=
 "block";
 
+
+editorState.profile.size =
+Number(
+s.profile_size || 135
+);
+
+editorState.profile.x =
+Number(
+s.profile_x || 0
+);
+
+editorState.profile.y =
+Number(
+s.profile_y || 0
+);
+
 }
+
+
+/* FONDO */
+
+document
+.getElementById(
+"backgroundType"
+)
+.value =
+s.background_type ||
+"color";
+
+
+document
+.getElementById(
+"backgroundColor"
+)
+.value =
+s.background_color ||
+"#f4f4f4";
+
+
+document
+.getElementById(
+"backgroundScale"
+)
+.value =
+s.background_scale ||
+100;
+
+
+document
+.getElementById(
+"backgroundX"
+)
+.value =
+s.background_x ||
+0;
+
+
+document
+.getElementById(
+"backgroundY"
+)
+.value =
+s.background_y ||
+0;
 
 
 if(s.background_image){
@@ -2783,141 +3357,587 @@ document.getElementById(
 preview.src =
 s.background_image;
 
-preview.style.display =
+preview.style.display=
 "block";
 
 }
 
 
-document
-.getElementById("coverScale")
-.value =
-s.cover_scale || 100;
-
-
-document
-.getElementById("coverX")
-.value =
-s.cover_x || 0;
-
-
-document
-.getElementById("coverY")
-.value =
-s.cover_y || 0;
-
-
-document
-.getElementById("profileScale")
-.value =
-s.profile_scale || 130;
-
-
-document
-.getElementById("profileX")
-.value =
-s.profile_x || 0;
-
-
-document
-.getElementById("profileY")
-.value =
-s.profile_y || 0;
-
-
-document
-.getElementById("backgroundType")
-.value =
-s.background_type || "color";
-
-
-document
-.getElementById("backgroundColor")
-.value =
-s.background_color || "#f4f4f4";
-
-
-document
-.getElementById("backgroundScale")
-.value =
-s.background_scale || 100;
-
-
-document
-.getElementById("backgroundX")
-.value =
-s.background_x || 0;
-
-
-document
-.getElementById("backgroundY")
-.value =
-s.background_y || 0;
+updateEditor();
 
 }
 
 
-/* =========================
-   GUARDAR DISEÑO
-========================= */
+/* =====================================================
+   ACTUALIZAR EDITOR
+===================================================== */
+
+function updateEditor(){
+
+const screen =
+document.getElementById(
+"previewScreen"
+);
+
+if(!screen)return;
+
+
+const cover =
+document.getElementById(
+"editorCover"
+);
+
+
+if(
+cover.style.display !==
+"none"
+){
+
+cover.style.left =
+`calc(50% + ${
+editorState.cover.x
+}px)`;
+
+cover.style.top =
+`calc(50% + ${
+editorState.cover.y
+}px)`;
+
+cover.style.transform =
+`translate(-50%,-50%) scale(${
+editorState.cover.scale
+})`;
+
+}
+
+
+/* PERFIL */
+
+const profile =
+document.getElementById(
+"editorProfile"
+);
+
+
+if(
+profile.style.display !==
+"none"
+){
+
+profile.style.width =
+editorState.profile.size+
+"px";
+
+profile.style.height =
+editorState.profile.size+
+"px";
+
+profile.style.left =
+`calc(50% + ${
+editorState.profile.x
+}px)`;
+
+profile.style.top =
+`calc(50% + ${
+editorState.profile.y
+}px)`;
+
+}
+
+
+updateEditorInfo();
+
+}
+
+
+/* =====================================================
+   INFORMACIÓN EDITOR
+===================================================== */
+
+function updateEditorInfo(){
+
+const coverInfo =
+document.getElementById(
+"coverPositionInfo"
+);
+
+const profileInfo =
+document.getElementById(
+"profilePositionInfo"
+);
+
+
+const cover =
+document.getElementById(
+"editorCover"
+);
+
+const profile =
+document.getElementById(
+"editorProfile"
+);
+
+
+if(
+cover.style.display ===
+"none"
+){
+
+coverInfo.innerText =
+"No seleccionada";
+
+}else{
+
+coverInfo.innerText =
+"Posición "+
+Math.round(editorState.cover.x)+
+", "+
+Math.round(editorState.cover.y)+
+" · Zoom "+
+Math.round(
+editorState.cover.scale*100
+)+
+"%";
+
+}
+
+
+if(
+profile.style.display ===
+"none"
+){
+
+profileInfo.innerText =
+"No seleccionada";
+
+}else{
+
+profileInfo.innerText =
+"Posición "+
+Math.round(editorState.profile.x)+
+", "+
+Math.round(editorState.profile.y)+
+" · Tamaño "+
+Math.round(
+editorState.profile.size
+)+
+" px";
+
+}
+
+}
+
+
+/* =====================================================
+   INICIAR EVENTOS DEL EDITOR
+===================================================== */
+
+function initEditorEvents(){
+
+const screen =
+document.getElementById(
+"previewScreen"
+);
+
+const cover =
+document.getElementById(
+"editorCover"
+);
+
+const profile =
+document.getElementById(
+"editorProfile"
+);
+
+const handle =
+profile.querySelector(
+".resize-handle"
+);
+
+
+/* PORTADA */
+
+cover.addEventListener(
+"pointerdown",
+function(event){
+
+if(
+event.target !== cover
+)return;
+
+activeDrag="cover";
+
+cover.setPointerCapture(
+event.pointerId
+);
+
+dragStart={
+x:event.clientX,
+y:event.clientY
+};
+
+editorStart={
+x:editorState.cover.x,
+y:editorState.cover.y
+};
+
+cover.classList.add(
+"dragging"
+);
+
+event.preventDefault();
+
+}
+);
+
+
+cover.addEventListener(
+"pointermove",
+function(event){
+
+if(
+activeDrag !== "cover"
+)return;
+
+
+const rect =
+screen.getBoundingClientRect();
+
+
+const scaleX =
+rect.width /
+screen.offsetWidth;
+
+
+const dx =
+(event.clientX -
+dragStart.x) /
+scaleX;
+
+
+const dy =
+(event.clientY -
+dragStart.y) /
+scaleX;
+
+
+editorState.cover.x =
+editorStart.x +
+dx;
+
+editorState.cover.y =
+editorStart.y +
+dy;
+
+
+updateEditor();
+
+}
+);
+
+
+cover.addEventListener(
+"pointerup",
+function(){
+
+activeDrag=null;
+
+cover.classList.remove(
+"dragging"
+);
+
+}
+);
+
+
+/* PERFIL */
+
+profile.addEventListener(
+"pointerdown",
+function(event){
+
+if(
+event.target === handle
+){
+
+return;
+
+}
+
+
+activeDrag="profile";
+
+profile.setPointerCapture(
+event.pointerId
+);
+
+dragStart={
+x:event.clientX,
+y:event.clientY
+};
+
+editorStart={
+x:editorState.profile.x,
+y:editorState.profile.y
+};
+
+profile.classList.add(
+"selected"
+);
+
+event.preventDefault();
+
+}
+);
+
+
+profile.addEventListener(
+"pointermove",
+function(event){
+
+if(
+activeDrag !== "profile"
+)return;
+
+
+const rect =
+screen.getBoundingClientRect();
+
+
+const scaleX =
+rect.width /
+screen.offsetWidth;
+
+
+const dx =
+(event.clientX -
+dragStart.x) /
+scaleX;
+
+
+const dy =
+(event.clientY -
+dragStart.y) /
+scaleX;
+
+
+editorState.profile.x =
+editorStart.x +
+dx;
+
+editorState.profile.y =
+editorStart.y +
+dy;
+
+
+updateEditor();
+
+}
+);
+
+
+profile.addEventListener(
+"pointerup",
+function(){
+
+activeDrag=null;
+
+}
+);
+
+
+/* REDIMENSIONAR PERFIL */
+
+handle.addEventListener(
+"pointerdown",
+function(event){
+
+activeDrag="profileResize";
+
+handle.setPointerCapture(
+event.pointerId
+);
+
+dragStart={
+x:event.clientX,
+y:event.clientY
+};
+
+editorStart={
+size:editorState.profile.size
+};
+
+event.preventDefault();
+
+event.stopPropagation();
+
+}
+);
+
+
+handle.addEventListener(
+"pointermove",
+function(event){
+
+if(
+activeDrag !==
+"profileResize"
+)
+return;
+
+
+const rect =
+screen.getBoundingClientRect();
+
+
+const scaleX =
+rect.width /
+screen.offsetWidth;
+
+
+const dx =
+(event.clientX -
+dragStart.x) /
+scaleX;
+
+
+let newSize =
+editorStart.size +
+dx;
+
+
+newSize =
+Math.max(
+60,
+Math.min(
+280,
+newSize
+)
+);
+
+
+editorState.profile.size =
+newSize;
+
+
+updateEditor();
+
+}
+);
+
+
+handle.addEventListener(
+"pointerup",
+function(){
+
+activeDrag=null;
+
+}
+);
+
+
+/* SELECCIONAR PERFIL */
+
+profile.addEventListener(
+"click",
+function(){
+
+profile.classList.add(
+"selected"
+);
+
+}
+);
+
+
+/* CLICK FUERA */
+
+screen.addEventListener(
+"click",
+function(event){
+
+if(
+event.target !== profile &&
+event.target !==
+document.getElementById(
+"editorProfileImage"
+)
+){
+
+profile.classList.remove(
+"selected"
+);
+
+}
+
+});
+
+}
+
+
+/* =====================================================
+   GUARDAR DISEÑO VISUAL
+===================================================== */
 
 async function saveDesign(){
 
-const values = {
+const values={
 
 cover_scale:
-document
-.getElementById("coverScale")
-.value,
+editorState.cover.scale,
 
 cover_x:
-document
-.getElementById("coverX")
-.value,
+editorState.cover.x,
 
 cover_y:
-document
-.getElementById("coverY")
-.value,
+editorState.cover.y,
 
 profile_scale:
-document
-.getElementById("profileScale")
-.value,
+editorState.profile.size /
+135,
+
+profile_size:
+editorState.profile.size,
 
 profile_x:
-document
-.getElementById("profileX")
-.value,
+editorState.profile.x,
 
 profile_y:
-document
-.getElementById("profileY")
-.value,
+editorState.profile.y,
 
 background_type:
 document
-.getElementById("backgroundType")
+.getElementById(
+"backgroundType"
+)
 .value,
 
 background_color:
 document
-.getElementById("backgroundColor")
+.getElementById(
+"backgroundColor"
+)
 .value,
 
 background_scale:
 document
-.getElementById("backgroundScale")
+.getElementById(
+"backgroundScale"
+)
 .value,
 
 background_x:
 document
-.getElementById("backgroundX")
+.getElementById(
+"backgroundX"
+)
 .value,
 
 background_y:
 document
-.getElementById("backgroundY")
+.getElementById(
+"backgroundY"
+)
 .value
 
 };
@@ -2948,9 +3968,6 @@ return;
 }
 
 
-await loadDesign();
-
-
 showMessage(
 "Diseño guardado correctamente"
 );
@@ -2958,9 +3975,9 @@ showMessage(
 }
 
 
-/* =========================
+/* =====================================================
    NEGOCIO
-========================= */
+===================================================== */
 
 async function loadBusiness(){
 
@@ -2997,7 +4014,8 @@ document
 "businessDescription"
 )
 .value =
-s.business_description || "";
+s.business_description ||
+"";
 
 
 document
@@ -3005,7 +4023,8 @@ document
 "businessSlogan"
 )
 .value =
-s.slogan || "";
+s.slogan ||
+"";
 
 
 document
@@ -3013,7 +4032,8 @@ document
 "businessWhatsapp"
 )
 .value =
-s.whatsapp || "";
+s.whatsapp ||
+"";
 
 
 document
@@ -3021,7 +4041,8 @@ document
 "deliveryCost"
 )
 .value =
-s.delivery_cost || 0;
+s.delivery_cost ||
+0;
 
 
 document
@@ -3029,7 +4050,8 @@ document
 "bankDetails"
 )
 .value =
-s.bank_details || "";
+s.bank_details ||
+"";
 
 
 document
@@ -3037,18 +4059,19 @@ document
 "pickupMapsUrl"
 )
 .value =
-s.pickup_maps_url || "";
+s.pickup_maps_url ||
+"";
 
 }
 
 
-/* =========================
+/* =====================================================
    GUARDAR NEGOCIO
-========================= */
+===================================================== */
 
 async function saveBusiness(){
 
-const values = {
+const values={
 
 business_description:
 document
@@ -3127,9 +4150,9 @@ showMessage(
 }
 
 
-/* =========================
+/* =====================================================
    PEDIDOS
-========================= */
+===================================================== */
 
 async function loadOrders(){
 
@@ -3159,7 +4182,9 @@ return;
 }
 
 
-if(!result.data.length){
+if(
+!result.data.length
+){
 
 box.innerText =
 "No hay pedidos.";
@@ -3176,7 +4201,9 @@ order=>`
 
 <div class="card">
 
-<strong>Pedido</strong>
+<strong>
+Pedido
+</strong>
 
 <p>
 ${escapeHtml(
@@ -3191,7 +4218,8 @@ order.customer_phone || ""
 </p>
 
 <p>
-Total: $${Number(
+Total:
+$${Number(
 order.total || 0
 ).toFixed(2)}
 </p>
@@ -3205,9 +4233,9 @@ order.total || 0
 }
 
 
-/* =========================
+/* =====================================================
    CLIENTES
-========================= */
+===================================================== */
 
 async function loadCustomers(){
 
@@ -3237,7 +4265,9 @@ return;
 }
 
 
-if(!result.data.length){
+if(
+!result.data.length
+){
 
 box.innerText =
 "No hay clientes.";
@@ -3281,9 +4311,9 @@ customer.email || ""
 }
 
 
-/* =========================
+/* =====================================================
    ESCAPE HTML
-========================= */
+===================================================== */
 
 function escapeHtml(value){
 
@@ -3314,9 +4344,9 @@ value ?? ""
 }
 
 
-/* =========================
+/* =====================================================
    MENSAJES
-========================= */
+===================================================== */
 
 function showMessage(text){
 
@@ -3328,7 +4358,7 @@ document.getElementById(
 box.innerText =
 text;
 
-box.style.display =
+box.style.display=
 "block";
 
 
@@ -3340,7 +4370,8 @@ window.msgTimer
 window.msgTimer =
 setTimeout(
 ()=>{
-box.style.display="none";
+box.style.display=
+"none";
 },
 3000
 );
@@ -3348,9 +4379,9 @@ box.style.display="none";
 }
 
 
-/* =========================
+/* =====================================================
    COMPROBAR SESIÓN
-========================= */
+===================================================== */
 
 db.auth.getSession()
 .then(
@@ -3365,14 +4396,16 @@ document
 .getElementById(
 "loginScreen"
 )
-.style.display="none";
+.style.display=
+"none";
 
 
 document
 .getElementById(
 "adminScreen"
 )
-.style.display="block";
+.style.display=
+"block";
 
 
 await init();
@@ -3383,26 +4416,28 @@ await init();
 );
 
 
-/* =========================
-   ENTER PARA INICIAR SESIÓN
-========================= */
+/* =====================================================
+   ENTER PARA LOGIN
+===================================================== */
 
 document
-.getElementById("password")
+.getElementById(
+"password"
+)
 .addEventListener(
 "keydown",
 function(event){
 
 if(
-event.key === "Enter"
+event.key ===
+"Enter"
 ){
 
 login();
 
 }
 
-}
-);
+});
 
 </script>
 
