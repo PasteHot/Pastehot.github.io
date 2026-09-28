@@ -12,16 +12,50 @@
   box-sizing:border-box;
 }
 
-html,body{
+html,
+body{
   margin:0;
   padding:0;
   font-family:Arial,Helvetica,sans-serif;
   color:#171717;
-  background:#f4f4f4;
+  background:transparent;
 }
 
 body{
   min-height:100vh;
+}
+
+/* =========================
+   CAPAS DEL FONDO
+========================= */
+
+#pageBackground{
+  position:fixed;
+  inset:0;
+  z-index:0;
+  background:#f4f4f4;
+  background-position:center;
+  background-size:cover;
+  background-repeat:no-repeat;
+}
+
+#backgroundOverlay{
+  position:fixed;
+  inset:0;
+  z-index:1;
+  background:rgba(255,255,255,.08);
+  pointer-events:none;
+}
+
+/*
+  Todo el contenido normal queda
+  por encima del fondo.
+*/
+
+.hero,
+.page{
+  position:relative;
+  z-index:2;
 }
 
 button,
@@ -32,37 +66,27 @@ textarea{
 }
 
 /* =========================
-   FONDO
-========================= */
-
-#pageBackground{
-  position:fixed;
-  inset:0;
-  z-index:-5;
-  background:#f4f4f4;
-  background-position:center;
-  background-size:cover;
-  background-repeat:no-repeat;
-}
-
-#backgroundOverlay{
-  position:fixed;
-  inset:0;
-  z-index:-4;
-  background:rgba(255,255,255,.08);
-  pointer-events:none;
-}
-
-/* =========================
    PORTADA
 ========================= */
+
+/*
+  Antes:
+  16:9 = 1920 × 1080
+
+  Ahora:
+  32:9 = 1920 × 540
+
+  La altura queda aproximadamente
+  reducida al 50% manteniendo
+  una proporción exacta.
+*/
 
 .hero{
   position:relative;
   width:100%;
-  aspect-ratio:16 / 9;
-  min-height:220px;
-  max-height:700px;
+  aspect-ratio:32 / 9;
+  min-height:0;
+  max-height:500px;
   overflow:hidden;
   background:#111;
 }
@@ -107,6 +131,7 @@ textarea{
   width:min(1180px,94%);
   margin:0 auto;
   padding:25px 0 50px;
+  background:transparent;
 }
 
 .menu-title{
@@ -651,6 +676,41 @@ textarea{
   display:block;
 }
 
+.transfer-proof{
+  margin-top:14px;
+  padding-top:12px;
+  border-top:1px solid #ddd;
+}
+
+.transfer-proof strong{
+  display:block;
+  margin-bottom:5px;
+}
+
+.transfer-proof-text{
+  display:block;
+  color:#555;
+  margin-bottom:10px;
+}
+
+.transfer-whatsapp{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  width:100%;
+  padding:11px 14px;
+  border-radius:11px;
+  background:#20b957;
+  color:white;
+  text-decoration:none;
+  font-weight:800;
+}
+
+.transfer-whatsapp:hover{
+  background:#189d49;
+}
+
 /* =========================
    WHATSAPP
 ========================= */
@@ -692,6 +752,7 @@ textarea{
   .hero{
     min-height:0;
     max-height:none;
+    aspect-ratio:32 / 9;
   }
 
   .hero-profile{
@@ -1217,6 +1278,11 @@ function applyDesign(){
     profile.style.display =
       "none";
   }
+
+  /*
+    El fondo seleccionado en el administrador
+    ahora se aplica a la capa visible del menú.
+  */
 
   if(
     settings.background_type === "image" &&
@@ -2387,6 +2453,35 @@ function updatePaymentUI(){
   const holder =
     settings.bank_holder || "";
 
+  /*
+    Número de WhatsApp configurado
+    en el administrador.
+  */
+
+  const whatsapp =
+    String(
+      settings.whatsapp || ""
+    ).replace(
+      /\D/g,
+      ""
+    );
+
+  let proofLink = "";
+
+  if(whatsapp){
+
+    const proofMessage =
+      "Hola, te envío mi comprobante de pago de mi pedido de PasteHot.";
+
+    proofLink =
+      "https://wa.me/" +
+      whatsapp +
+      "?text=" +
+      encodeURIComponent(
+        proofMessage
+      );
+  }
+
   panel.innerHTML = `
 
     <strong>
@@ -2425,6 +2520,50 @@ function updatePaymentUI(){
           escapeHtml(clabe) +
           "<br>"
         : ""
+    }
+
+    ${
+      whatsapp
+        ? `
+          <div class="transfer-proof">
+
+            <strong>
+              Envía tu comprobante de pago por WhatsApp
+            </strong>
+
+            <span class="transfer-proof-text">
+              Después de realizar la transferencia,
+              envía tu comprobante de pago por WhatsApp
+              para confirmar tu pedido.
+            </span>
+
+            <a
+              class="transfer-whatsapp"
+              href="${proofLink}"
+              target="_blank"
+              rel="noopener">
+
+              📲 Enviar comprobante por WhatsApp
+
+            </a>
+
+          </div>
+        `
+        : `
+          <div class="transfer-proof">
+
+            <strong>
+              Envía tu comprobante de pago por WhatsApp
+            </strong>
+
+            <span class="transfer-proof-text">
+              Después de realizar la transferencia,
+              envía tu comprobante de pago por WhatsApp
+              para confirmar tu pedido.
+            </span>
+
+          </div>
+        `
     }
 
   `;
