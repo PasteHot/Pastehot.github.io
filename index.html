@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Menú</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -280,7 +280,7 @@ textarea{
 }
 
 /* =========================
-   CONTROLES DE CANTIDAD
+   CONTROLES
 ========================= */
 
 .add-controls{
@@ -481,7 +481,7 @@ textarea{
 }
 
 /* =========================
-   RESUMEN DE COSTOS
+   RESUMEN
 ========================= */
 
 .cart-summary{
@@ -532,7 +532,7 @@ textarea{
 }
 
 /* =========================
-   OPCIONES DE ENTREGA
+   ENTREGA
 ========================= */
 
 .delivery-option{
@@ -816,18 +816,33 @@ textarea{
 <div id="backgroundOverlay"></div>
 
 <header class="hero" id="hero">
-  <img id="heroCover" class="hero-cover" alt="">
-  <img id="heroProfile" class="hero-profile" alt="">
+
+  <img
+    id="heroCover"
+    class="hero-cover"
+    alt="">
+
+  <img
+    id="heroProfile"
+    class="hero-profile"
+    alt="">
+
 </header>
 
 <main class="page">
 
   <div class="menu-title">
+
     <h1 id="menuTitle"></h1>
+
     <p id="menuSlogan"></p>
+
   </div>
 
-  <div class="categories" id="categories"></div>
+  <div
+    class="categories"
+    id="categories">
+  </div>
 
   <div id="menu"></div>
 
@@ -839,21 +854,46 @@ textarea{
   type="button"
   aria-label="Carrito">
 
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-    <circle cx="9" cy="20" r="1"></circle>
-    <circle cx="18" cy="20" r="1"></circle>
-    <path d="M3 4h2l2.4 11.3a2 2 0 0 0 2 1.7h7.9a2 2 0 0 0 1.9-1.4L21 8H6"></path>
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2">
+
+    <circle
+      cx="9"
+      cy="20"
+      r="1">
+    </circle>
+
+    <circle
+      cx="18"
+      cy="20"
+      r="1">
+    </circle>
+
+    <path
+      d="M3 4h2l2.4 11.3a2 2 0 0 0 2 1.7h7.9a2 2 0 0 0 1.9-1.4L21 8H6">
+    </path>
+
   </svg>
 
-  <span class="cart-count" id="cartCount">0</span>
+  <span
+    class="cart-count"
+    id="cartCount">
+    0
+  </span>
 
 </button>
 
-<div class="cart-panel" id="cartPanel">
+<div
+  class="cart-panel"
+  id="cartPanel">
 
   <div class="cart-box">
 
     <div class="cart-header">
+
       <h2>Tu pedido</h2>
 
       <button
@@ -862,6 +902,7 @@ textarea{
         type="button">
         ×
       </button>
+
     </div>
 
     <div id="cartItems"></div>
@@ -869,8 +910,13 @@ textarea{
     <div class="cart-summary">
 
       <div class="cart-summary-line">
+
         <span>Productos</span>
-        <span id="cartProductsTotal">$0.00</span>
+
+        <span id="cartProductsTotal">
+          $0.00
+        </span>
+
       </div>
 
       <div
@@ -878,15 +924,23 @@ textarea{
         id="cartDeliveryLine">
 
         <span>Envío</span>
-        <span id="cartDeliveryFee">$30.00</span>
+
+        <span id="cartDeliveryFee">
+          $30.00
+        </span>
 
       </div>
 
     </div>
 
     <div class="cart-total">
+
       <span>Total</span>
-      <span id="cartTotal">$0.00</span>
+
+      <span id="cartTotal">
+        $0.00
+      </span>
+
     </div>
 
     <div class="order-form">
@@ -911,14 +965,24 @@ textarea{
             value="delivery"
             checked>
 
-          <span class="delivery-icon">🛵</span>
-
-          <span class="delivery-text">
-            <strong>Envío a domicilio</strong>
-            <small id="deliverySubtitle">+$30 de envío</small>
+          <span class="delivery-icon">
+            🛵
           </span>
 
-          <span class="delivery-check"></span>
+          <span class="delivery-text">
+
+            <strong>
+              Envío a domicilio
+            </strong>
+
+            <small id="deliverySubtitle">
+              +$30 de envío
+            </small>
+
+          </span>
+
+          <span class="delivery-check">
+          </span>
 
         </label>
 
@@ -929,14 +993,24 @@ textarea{
             name="deliveryType"
             value="pickup">
 
-          <span class="delivery-icon">🛍️</span>
-
-          <span class="delivery-text">
-            <strong>Pasar a recoger mi pedido</strong>
-            <small>Recoge tu pedido en nuestro punto de venta</small>
+          <span class="delivery-icon">
+            🛍️
           </span>
 
-          <span class="delivery-check"></span>
+          <span class="delivery-text">
+
+            <strong>
+              Pasar a recoger mi pedido
+            </strong>
+
+            <small>
+              Recoge tu pedido en nuestro punto de venta
+            </small>
+
+          </span>
+
+          <span class="delivery-check">
+          </span>
 
         </label>
 
@@ -960,7 +1034,9 @@ textarea{
 
       <select id="paymentMethod">
 
-        <option value="cash">Efectivo</option>
+        <option value="cash">
+          Efectivo
+        </option>
 
         <option value="transfer">
           Transferencia
@@ -988,9 +1064,13 @@ textarea{
           stroke="currentColor"
           stroke-width="2">
 
-          <path d="M20 11.5a8.4 8.4 0 0 1-12.7 7.3L3 20l1.3-4.1A8.5 8.5 0 1 1 20 11.5Z"></path>
+          <path
+            d="M20 11.5a8.4 8.4 0 0 1-12.7 7.3L3 20l1.3-4.1A8.5 8.5 0 1 1 20 11.5Z">
+          </path>
 
-          <path d="M8.5 8.5c.2-.5.4-.5.7-.5h.5c.2 0 .4.1.5.4l.7 1.6c.1.3.1.5-.1.7l-.5.6c.6 1.1 1.5 1.9 2.6 2.4l.5-.6c.2-.2.4-.2.7-.1l1.5.7c.3.1.4.3.4.5v.5c0 .3-.1.5-.4.7-.4.2-.9.3-1.3.2-2.3-.5-4.6-2.8-5.1-5.1-.1-.4 0-.9.2-1.3Z"></path>
+          <path
+            d="M8.5 8.5c.2-.5.4-.5.7-.5h.5c.2 0 .4.1.5.4l.7 1.6c.1.3.1.5-.1.7l-.5.6c.6 1.1 1.5 1.9 2.6 2.4l.5-.6c.2-.2.4-.2.7-.1l1.5.7c.3.1.4.3.4.5v.5c0 .3-.1.5-.4.7-.4.2-.9.3-1.3.2-2.3-.5-4.6-2.8-5.1-5.1-.1-.4 0-.9.2-1.3Z">
+          </path>
 
         </svg>
 
@@ -1006,108 +1086,27 @@ textarea{
 
 <script>
 
+/* =========================
+   SUPABASE
+========================= */
+
 const SUPABASE_URL =
   "https://cqlywpemisknrxswlmea.supabase.co";
 
 const SUPABASE_ANON_KEY =
   "sb_publishable_wDu6p-CtnQtYu7KWH1YS1A_h7LeL0SX";
 
-const db = supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY
-);
+const db =
+  supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
 
 let products = [];
 let settings = {};
 let cart = {};
 
 const DEFAULT_DELIVERY_FEE = 30;
-
-const categoriesOrder = [
-  "Pastes salados",
-  "Pastes dulces",
-  "Pastes de temporada",
-  "Bebidas",
-  "Promociones"
-];
-
-/* =========================
-   UTILIDADES DE ID
-========================= */
-
-function normalizeId(id){
-  return String(id ?? "");
-}
-
-function findProductById(id){
-
-  const key =
-    normalizeId(id);
-
-  return products.find(
-    product =>
-      normalizeId(product.id) === key
-  );
-}
-
-function isAvailable(product){
-
-  if(!product){
-    return false;
-  }
-
-  const value =
-    product.available;
-
-  return (
-    value === true ||
-    value === 1 ||
-    value === "1" ||
-    value === "true" ||
-    value === "TRUE"
-  );
-}
-
-/* =========================
-   COSTO DE ENVÍO
-========================= */
-
-function getDeliveryFee(){
-
-  const configured =
-    Number(settings.delivery_cost);
-
-  if(
-    Number.isFinite(configured) &&
-    configured >= 0
-  ){
-
-    return configured;
-  }
-
-  return DEFAULT_DELIVERY_FEE;
-}
-
-function getDeliveryType(){
-
-  return document.querySelector(
-    'input[name="deliveryType"]:checked'
-  )?.value || "delivery";
-}
-
-function getAppliedDeliveryFee(){
-
-  return getDeliveryType() === "delivery"
-    ? getDeliveryFee()
-    : 0;
-}
-
-function formatMoney(amount){
-
-  return "$" +
-    Number(amount || 0)
-      .toFixed(2);
-}
 
 /* =========================
    CARGAR
@@ -1123,12 +1122,19 @@ async function init(){
     db
       .from("products")
       .select("*")
-      .order("sort_order",{ascending:true})
-      .order("id",{ascending:true}),
+      .order(
+        "sort_order",
+        {ascending:true}
+      )
+      .order(
+        "id",
+        {ascending:true}
+      ),
 
     db
       .from("settings")
       .select("*")
+
   ]);
 
   if(productsResult.error){
@@ -1161,8 +1167,11 @@ async function init(){
     of settingsResult.data || []
   ){
 
-    settings[row.key] =
+    settings[
+      row.key
+    ] =
       row.value;
+
   }
 
   applyDesign();
@@ -1176,6 +1185,7 @@ async function init(){
   updatePaymentUI();
 
   updateDeliveryUI();
+
 }
 
 /* =========================
@@ -1208,13 +1218,19 @@ function applyDesign(){
       "block";
 
     const scale =
-      Number(settings.cover_scale) || 1;
+      Number(
+        settings.cover_scale
+      ) || 1;
 
     const x =
-      Number(settings.cover_x) || 0;
+      Number(
+        settings.cover_x
+      ) || 0;
 
     const y =
-      Number(settings.cover_y) || 0;
+      Number(
+        settings.cover_y
+      ) || 0;
 
     cover.style.left =
       `calc(50% + ${x}%)`;
@@ -1229,6 +1245,7 @@ function applyDesign(){
 
     cover.style.display =
       "none";
+
   }
 
   if(settings.profile_image){
@@ -1240,13 +1257,19 @@ function applyDesign(){
       "block";
 
     const scale =
-      Number(settings.profile_scale) || 1.3;
+      Number(
+        settings.profile_scale
+      ) || 1.3;
 
     const x =
-      Number(settings.profile_x) || 0;
+      Number(
+        settings.profile_x
+      ) || 0;
 
     const y =
-      Number(settings.profile_y) || 0;
+      Number(
+        settings.profile_y
+      ) || 0;
 
     profile.style.left =
       `calc(50% + ${x}%)`;
@@ -1261,10 +1284,12 @@ function applyDesign(){
 
     profile.style.display =
       "none";
+
   }
 
   if(
-    settings.background_type === "image" &&
+    settings.background_type ===
+      "image" &&
     settings.background_image
   ){
 
@@ -1275,6 +1300,7 @@ function applyDesign(){
 
     background.style.backgroundImage =
       "none";
+
   }
 
   background.style.backgroundColor =
@@ -1290,6 +1316,190 @@ function applyDesign(){
     "menuSlogan"
   ).textContent =
     settings.slogan || "";
+
+  applyTypography();
+
+}
+
+/* =========================
+   TIPOGRAFÍA
+========================= */
+
+function getTypography(){
+
+  let result = {
+
+    slogan:{
+      font:
+        "Arial,Helvetica,sans-serif",
+
+      size:16,
+
+      color:"#666666",
+
+      weight:400,
+
+      style:"normal",
+
+      align:"center",
+
+      letterSpacing:0
+    },
+
+    categories:{}
+
+  };
+
+  if(
+    settings.typography
+  ){
+
+    try{
+
+      const parsed =
+        JSON.parse(
+          settings.typography
+        );
+
+      if(
+        parsed &&
+        typeof parsed ===
+        "object"
+      ){
+
+        result = {
+
+          ...result,
+
+          ...parsed,
+
+          slogan:{
+            ...result.slogan,
+            ...(parsed.slogan || {})
+          },
+
+          categories:{
+            ...(parsed.categories || {})
+          }
+
+        };
+
+      }
+
+    }catch(error){
+
+      console.error(
+        "Error leyendo tipografía:",
+        error
+      );
+
+    }
+
+  }
+
+  return result;
+}
+
+function getDefaultCategoryTypography(){
+
+  return {
+
+    font:
+      "Arial,Helvetica,sans-serif",
+
+    size:25,
+
+    color:"#171717",
+
+    weight:800,
+
+    style:"normal",
+
+    align:"left",
+
+    letterSpacing:0
+
+  };
+}
+
+function applyTypography(){
+
+  const typography =
+    getTypography();
+
+  const slogan =
+    document.getElementById(
+      "menuSlogan"
+    );
+
+  applyTypographyStyle(
+    slogan,
+    typography.slogan
+  );
+
+}
+
+function applyTypographyStyle(
+  element,
+  config
+){
+
+  if(!element || !config){
+    return;
+  }
+
+  element.style.fontFamily =
+    config.font ||
+    "Arial,Helvetica,sans-serif";
+
+  element.style.fontSize =
+    Number(
+      config.size || 16
+    ) +
+    "px";
+
+  element.style.color =
+    config.color ||
+    "#171717";
+
+  element.style.fontWeight =
+    String(
+      config.weight || 400
+    );
+
+  element.style.fontStyle =
+    config.style ||
+    "normal";
+
+  element.style.textAlign =
+    config.align ||
+    "left";
+
+  element.style.letterSpacing =
+    Number(
+      config.letterSpacing || 0
+    ) +
+    "px";
+}
+
+function getCategoryTypography(
+  category
+){
+
+  const typography =
+    getTypography();
+
+  return {
+
+    ...getDefaultCategoryTypography(),
+
+    ...(
+      typography.categories?.[
+        category
+      ] || {}
+    )
+
+  };
 }
 
 /* =========================
@@ -1305,35 +1515,19 @@ function getCategories(){
     product=>{
 
       if(product.category){
-        found.add(product.category);
+
+        found.add(
+          product.category
+        );
+
       }
 
     }
   );
 
-  const result = [];
-
-  categoriesOrder.forEach(
-    category=>{
-
-      if(found.has(category)){
-        result.push(category);
-      }
-
-    }
+  return Array.from(
+    found
   );
-
-  found.forEach(
-    category=>{
-
-      if(!result.includes(category)){
-        result.push(category);
-      }
-
-    }
-  );
-
-  return result;
 }
 
 function renderCategories(){
@@ -1459,6 +1653,13 @@ function renderMenu(){
       title.textContent =
         category;
 
+      applyTypographyStyle(
+        title,
+        getCategoryTypography(
+          category
+        )
+      );
+
       const grid =
         document.createElement(
           "div"
@@ -1476,7 +1677,9 @@ function renderMenu(){
         .forEach(
           product =>
             grid.appendChild(
-              createProduct(product)
+              createProduct(
+                product
+              )
             )
         );
 
@@ -1516,7 +1719,9 @@ function createProduct(product){
     );
 
   card.dataset.productId =
-    normalizeId(product.id);
+    normalizeId(
+      product.id
+    );
 
   const imageWrap =
     document.createElement(
@@ -1560,6 +1765,7 @@ function createProduct(product){
     imageWrap.appendChild(
       soldout
     );
+
   }
 
   const body =
@@ -1610,8 +1816,9 @@ function createProduct(product){
 
   price.textContent =
     "$" +
-    Number(product.price || 0)
-      .toFixed(2);
+    Number(
+      product.price || 0
+    ).toFixed(2);
 
   const controls =
     document.createElement(
@@ -1622,7 +1829,9 @@ function createProduct(product){
     "add-controls";
 
   controls.dataset.productId =
-    normalizeId(product.id);
+    normalizeId(
+      product.id
+    );
 
   renderProductControls(
     controls,
@@ -1661,7 +1870,7 @@ function createProduct(product){
 }
 
 /* =========================
-   CONTROLES DEL PRODUCTO
+   CONTROLES PRODUCTO
 ========================= */
 
 function renderProductControls(
@@ -1672,7 +1881,9 @@ function renderProductControls(
   controls.innerHTML = "";
 
   const key =
-    normalizeId(product.id);
+    normalizeId(
+      product.id
+    );
 
   const quantity =
     cart[key]?.quantity || 0;
@@ -1752,11 +1963,6 @@ function renderProductControls(
   minus.textContent =
     "−";
 
-  minus.setAttribute(
-    "aria-label",
-    "Disminuir cantidad"
-  );
-
   const quantityElement =
     document.createElement(
       "span"
@@ -1785,11 +1991,6 @@ function renderProductControls(
   plus.textContent =
     "+";
 
-  plus.setAttribute(
-    "aria-label",
-    "Aumentar cantidad"
-  );
-
   controls.appendChild(
     minus
   );
@@ -1804,7 +2005,7 @@ function renderProductControls(
 }
 
 /* =========================
-   AGREGAR / CAMBIAR CANTIDAD
+   CARRITO
 ========================= */
 
 function addToCart(id){
@@ -1813,17 +2014,14 @@ function addToCart(id){
     normalizeId(id);
 
   const product =
-    findProductById(key);
+    findProductById(
+      key
+    );
 
   if(
     !product ||
     !isAvailable(product)
   ){
-
-    console.warn(
-      "No se pudo agregar el producto:",
-      id
-    );
 
     return;
   }
@@ -1831,13 +2029,16 @@ function addToCart(id){
   if(!cart[key]){
 
     cart[key] = {
-      product:product,
+
+      product,
       quantity:1
+
     };
 
   }else{
 
     cart[key].quantity += 1;
+
   }
 
   updateCart();
@@ -1852,7 +2053,9 @@ function changeQuantity(
     normalizeId(id);
 
   const product =
-    findProductById(key);
+    findProductById(
+      key
+    );
 
   if(
     !product ||
@@ -1866,7 +2069,8 @@ function changeQuantity(
     cart[key]?.quantity || 0;
 
   const next =
-    current + Number(amount);
+    current +
+    Number(amount);
 
   if(next <= 0){
 
@@ -1875,17 +2079,16 @@ function changeQuantity(
   }else{
 
     cart[key] = {
-      product:product,
+
+      product,
       quantity:next
+
     };
+
   }
 
   updateCart();
 }
-
-/* =========================
-   EVENTOS DE PRODUCTOS
-========================= */
 
 document
   .getElementById("menu")
@@ -1905,61 +2108,43 @@ document
       const id =
         button.dataset.productId;
 
-      const action =
-        button.dataset.cartAction;
-
-      if(action === "add"){
+      if(
+        button.dataset.cartAction ===
+        "add"
+      ){
 
         addToCart(id);
 
-      }else if(
-        action === "minus"
-      ){
+      }else{
 
         changeQuantity(
           id,
           -1
         );
+
       }
+
     }
   );
-
-/* =========================
-   ACTUALIZAR TARJETA
-========================= */
 
 function updateProductCard(id){
 
   const key =
     normalizeId(id);
 
-  const cards =
-    document.querySelectorAll(
-      ".product[data-product-id]"
+  const card =
+    document.querySelector(
+      `.product[data-product-id="${CSS.escape(key)}"]`
     );
-
-  let card = null;
-
-  cards.forEach(
-    candidate=>{
-
-      if(
-        candidate.dataset.productId ===
-        key
-      ){
-
-        card = candidate;
-      }
-
-    }
-  );
 
   if(!card){
     return;
   }
 
   const product =
-    findProductById(key);
+    findProductById(
+      key
+    );
 
   if(!product){
     return;
@@ -1970,37 +2155,14 @@ function updateProductCard(id){
       ".add-controls"
     );
 
-  if(!controls){
-    return;
-  }
+  if(controls){
 
-  renderProductControls(
-    controls,
-    product
-  );
-}
-
-/* =========================
-   ACTUALIZAR TEXTO DE ENVÍO
-========================= */
-
-function updateDeliverySubtitle(){
-
-  const subtitle =
-    document.getElementById(
-      "deliverySubtitle"
+    renderProductControls(
+      controls,
+      product
     );
 
-  if(!subtitle){
-    return;
   }
-
-  subtitle.textContent =
-    "+" +
-    formatMoney(
-      getDeliveryFee()
-    ) +
-    " de envío";
 }
 
 /* =========================
@@ -2010,7 +2172,9 @@ function updateDeliverySubtitle(){
 function updateCart(){
 
   const items =
-    Object.values(cart);
+    Object.values(
+      cart
+    );
 
   const container =
     document.getElementById(
@@ -2027,7 +2191,8 @@ function updateCart(){
 
       const price =
         Number(
-          item.product.price || 0
+          item.product.price ||
+          0
         );
 
       const subtotal =
@@ -2119,8 +2284,8 @@ function updateCart(){
 
       const quantity =
         document.createElement(
-        "strong"
-      );
+          "strong"
+        );
 
       quantity.textContent =
         item.quantity;
@@ -2167,6 +2332,7 @@ function updateCart(){
       container.appendChild(
         row
       );
+
     }
   );
 
@@ -2204,22 +2370,17 @@ function updateCart(){
     count;
 
   products.forEach(
-    product=>{
-
+    product =>
       updateProductCard(
         product.id
-      );
-
-    }
+      )
   );
 }
 
-/* =========================
-   EVENTOS DEL CARRITO
-========================= */
-
 document
-  .getElementById("cartItems")
+  .getElementById(
+    "cartItems"
+  )
   .addEventListener(
     "click",
     function(event){
@@ -2236,45 +2397,51 @@ document
       const id =
         button.dataset.productId;
 
-      const action =
-        button.dataset.cartAction;
-
-      if(action === "add"){
+      if(
+        button.dataset.cartAction ===
+        "add"
+      ){
 
         addToCart(id);
 
-      }else if(
-        action === "minus"
-      ){
+      }else{
 
         changeQuantity(
           id,
           -1
         );
+
       }
+
     }
   );
 
 /* =========================
-   ABRIR / CERRAR CARRITO
+   CARRITO ABRIR
 ========================= */
 
 document
-  .getElementById("cartButton")
+  .getElementById(
+    "cartButton"
+  )
   .addEventListener(
     "click",
     openCart
   );
 
 document
-  .getElementById("closeCartButton")
+  .getElementById(
+    "closeCartButton"
+  )
   .addEventListener(
     "click",
     closeCart
   );
 
 document
-  .getElementById("cartPanel")
+  .getElementById(
+    "cartPanel"
+  )
   .addEventListener(
     "click",
     function(event){
@@ -2287,7 +2454,9 @@ document
       ){
 
         closeCart();
+
       }
+
     }
   );
 
@@ -2316,7 +2485,7 @@ function closeCart(){
 }
 
 /* =========================
-   ENTREGA / RECOGER
+   ENTREGA
 ========================= */
 
 document
@@ -2333,6 +2502,42 @@ document
 
     }
   );
+
+function getDeliveryType(){
+
+  return document.querySelector(
+    'input[name="deliveryType"]:checked'
+  )?.value ||
+  "delivery";
+}
+
+function getAppliedDeliveryFee(){
+
+  return getDeliveryType() ===
+    "delivery"
+      ? getDeliveryFee()
+      : 0;
+}
+
+function getDeliveryFee(){
+
+  const configured =
+    Number(
+      settings.delivery_cost
+    );
+
+  if(
+    Number.isFinite(
+      configured
+    ) &&
+    configured >= 0
+  ){
+
+    return configured;
+  }
+
+  return DEFAULT_DELIVERY_FEE;
+}
 
 function updateDeliveryUI(){
 
@@ -2357,7 +2562,9 @@ function updateDeliveryUI(){
     address.value =
       "";
 
-    if(settings.pickup_maps_url){
+    if(
+      settings.pickup_maps_url
+    ){
 
       maps.style.display =
         "block";
@@ -2369,6 +2576,7 @@ function updateDeliveryUI(){
 
       maps.style.display =
         "none";
+
     }
 
   }else{
@@ -2378,9 +2586,29 @@ function updateDeliveryUI(){
 
     maps.style.display =
       "none";
+
   }
 
   updateCart();
+}
+
+function updateDeliverySubtitle(){
+
+  const subtitle =
+    document.getElementById(
+      "deliverySubtitle"
+    );
+
+  if(!subtitle){
+    return;
+  }
+
+  subtitle.textContent =
+    "+" +
+    formatMoney(
+      getDeliveryFee()
+    ) +
+    " de envío";
 }
 
 /* =========================
@@ -2388,7 +2616,9 @@ function updateDeliveryUI(){
 ========================= */
 
 document
-  .getElementById("paymentMethod")
+  .getElementById(
+    "paymentMethod"
+  )
   .addEventListener(
     "change",
     updatePaymentUI
@@ -2454,6 +2684,7 @@ function updatePaymentUI(){
       encodeURIComponent(
         proofMessage
       );
+
   }
 
   panel.innerHTML = `
@@ -2552,7 +2783,9 @@ function updatePaymentUI(){
 ========================= */
 
 document
-  .getElementById("whatsappButton")
+  .getElementById(
+    "whatsappButton"
+  )
   .addEventListener(
     "click",
     sendOrder
@@ -2561,7 +2794,9 @@ document
 function sendOrder(){
 
   const items =
-    Object.values(cart);
+    Object.values(
+      cart
+    );
 
   if(items.length === 0){
 
@@ -2600,9 +2835,11 @@ function sendOrder(){
       .trim();
 
   const payment =
-    document.getElementById(
-      "paymentMethod"
-    ).value;
+    document
+      .getElementById(
+        "paymentMethod"
+      )
+      .value;
 
   const notes =
     document
@@ -2632,7 +2869,7 @@ function sendOrder(){
 
   if(
     deliveryType ===
-    "delivery" &&
+      "delivery" &&
     !address
   ){
 
@@ -2694,6 +2931,7 @@ function sendOrder(){
       "*Dirección:* " +
       address +
       "\n";
+
   }
 
   message +=
@@ -2704,7 +2942,8 @@ function sendOrder(){
 
       const subtotal =
         Number(
-          item.product.price || 0
+          item.product.price ||
+          0
         ) *
         item.quantity;
 
@@ -2723,7 +2962,8 @@ function sendOrder(){
   );
 
   const deliveryFee =
-    deliveryType === "delivery"
+    deliveryType ===
+    "delivery"
       ? getDeliveryFee()
       : 0;
 
@@ -2736,18 +2976,10 @@ function sendOrder(){
     productsTotal.toFixed(2) +
     "*\n";
 
-  if(deliveryType === "delivery"){
-
-    message +=
-      "*Envío: $" +
-      deliveryFee.toFixed(2) +
-      "*\n";
-
-  }else{
-
-    message +=
-      "*Envío: $0.00*\n";
-  }
+  message +=
+    "*Envío: $" +
+    deliveryFee.toFixed(2) +
+    "*\n";
 
   message +=
     "*TOTAL: $" +
@@ -2770,6 +3002,7 @@ function sendOrder(){
       "*Notas:* " +
       notes +
       "\n";
+
   }
 
   const url =
@@ -2789,6 +3022,52 @@ function sendOrder(){
 /* =========================
    UTILIDADES
 ========================= */
+
+function normalizeId(id){
+
+  return String(
+    id ?? ""
+  );
+}
+
+function findProductById(id){
+
+  const key =
+    normalizeId(id);
+
+  return products.find(
+    product =>
+      normalizeId(
+        product.id
+      ) === key
+  );
+}
+
+function isAvailable(product){
+
+  if(!product){
+    return false;
+  }
+
+  const value =
+    product.available;
+
+  return (
+    value === true ||
+    value === 1 ||
+    value === "1" ||
+    value === "true" ||
+    value === "TRUE"
+  );
+}
+
+function formatMoney(amount){
+
+  return "$" +
+    Number(
+      amount || 0
+    ).toFixed(2);
+}
 
 function slug(text){
 
