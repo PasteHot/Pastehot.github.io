@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -279,7 +278,9 @@ textarea{
 .add-controls{
   display:flex;
   align-items:center;
+  justify-content:flex-end;
   gap:7px;
+  min-width:42px;
 }
 
 .add-controls button{
@@ -291,12 +292,13 @@ textarea{
   color:white;
   font-size:23px;
   font-weight:700;
-  line-height:38px;
+  line-height:1;
   cursor:pointer;
   display:flex;
   align-items:center;
   justify-content:center;
   padding:0;
+  flex-shrink:0;
 }
 
 .add-controls button:active{
@@ -308,14 +310,6 @@ textarea{
   text-align:center;
   font-size:17px;
   font-weight:900;
-}
-
-.add-controls .minus{
-  display:none;
-}
-
-.add-controls.has-items .minus{
-  display:flex;
 }
 
 @media(max-width:650px){
@@ -427,6 +421,7 @@ textarea{
 .cart-item{
   display:flex;
   justify-content:space-between;
+  align-items:center;
   gap:15px;
   padding:13px 0;
   border-bottom:1px solid #eee;
@@ -434,6 +429,7 @@ textarea{
 
 .cart-item-info{
   flex:1;
+  min-width:0;
 }
 
 .cart-item-name{
@@ -443,12 +439,14 @@ textarea{
 .cart-item-price{
   color:#666;
   margin-top:4px;
+  font-size:14px;
 }
 
 .qty-controls{
   display:flex;
   align-items:center;
   gap:8px;
+  flex-shrink:0;
 }
 
 .qty-controls button{
@@ -460,6 +458,13 @@ textarea{
   cursor:pointer;
   font-weight:bold;
   font-size:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.qty-controls button:active{
+  transform:scale(.94);
 }
 
 .qty-controls strong{
@@ -495,31 +500,119 @@ textarea{
   resize:vertical;
 }
 
+/* =========================
+   OPCIONES DE ENTREGA
+========================= */
+
 .delivery-option{
   display:grid;
-  gap:8px;
+  gap:10px;
 }
 
 .delivery-row{
-  display:flex;
-  gap:10px;
+  position:relative;
+  display:grid;
+  grid-template-columns:42px 1fr 24px;
   align-items:center;
-  padding:12px;
-  border:1px solid #ddd;
-  border-radius:12px;
+  gap:12px;
+  padding:15px 16px;
+  border:1.5px solid #ddd;
+  border-radius:16px;
+  background:#fff;
   cursor:pointer;
-  font-weight:700;
+  transition:.18s ease;
+  min-height:70px;
+}
+
+.delivery-row:hover{
+  border-color:#aaa;
+  background:#fafafa;
+}
+
+.delivery-row:has(input:checked){
+  border-color:#111;
+  background:#f7f7f7;
+  box-shadow:0 3px 12px rgba(0,0,0,.07);
+}
+
+.delivery-row input{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
 }
 
 .delivery-icon{
-  font-size:23px;
-  width:28px;
+  width:42px;
+  height:42px;
+  border-radius:12px;
+  background:#f0f0f0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:24px;
+}
+
+.delivery-row:has(input:checked) .delivery-icon{
+  background:#111;
+}
+
+.delivery-text{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  min-width:0;
+}
+
+.delivery-text strong{
+  font-size:15px;
+  line-height:1.2;
+}
+
+.delivery-text small{
+  color:#777;
+  font-size:12px;
+  font-weight:400;
+  line-height:1.3;
+}
+
+.delivery-check{
+  width:20px;
+  height:20px;
+  border:2px solid #bbb;
+  border-radius:50%;
+  position:relative;
+}
+
+.delivery-row:has(input:checked) .delivery-check{
+  border-color:#111;
+  background:#111;
+}
+
+.delivery-row:has(input:checked) .delivery-check::after{
+  content:"";
+  position:absolute;
+  width:6px;
+  height:6px;
+  background:white;
+  border-radius:50%;
+  left:5px;
+  top:5px;
+}
+
+.maps-button{
+  display:none;
+  text-decoration:none;
+  background:#eee;
+  color:#111;
+  padding:11px 13px;
+  border-radius:11px;
+  font-weight:700;
   text-align:center;
 }
 
-.delivery-extra{
-  display:none;
-}
+/* =========================
+   TRANSFERENCIA
+========================= */
 
 .transfer-panel{
   display:none;
@@ -535,16 +628,9 @@ textarea{
   display:block;
 }
 
-.maps-button{
-  display:none;
-  text-decoration:none;
-  background:#eee;
-  color:#111;
-  padding:11px 13px;
-  border-radius:11px;
-  font-weight:700;
-  text-align:center;
-}
+/* =========================
+   WHATSAPP
+========================= */
 
 .whatsapp-button{
   width:100%;
@@ -631,6 +717,20 @@ textarea{
     right:16px;
     bottom:16px;
   }
+
+  .cart-box{
+    padding:20px;
+  }
+
+  .delivery-row{
+    grid-template-columns:40px 1fr 22px;
+    padding:14px;
+  }
+
+  .delivery-icon{
+    width:40px;
+    height:40px;
+  }
 }
 
 @media(max-width:390px){
@@ -665,7 +765,11 @@ textarea{
 
 </main>
 
-<button class="cart-button" onclick="openCart()" aria-label="Carrito">
+<button
+  class="cart-button"
+  id="cartButton"
+  type="button"
+  aria-label="Carrito">
 
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
     <circle cx="9" cy="20" r="1"></circle>
@@ -683,7 +787,13 @@ textarea{
 
     <div class="cart-header">
       <h2>Tu pedido</h2>
-      <button class="close-cart" onclick="closeCart()">×</button>
+
+      <button
+        class="close-cart"
+        id="closeCartButton"
+        type="button">
+        ×
+      </button>
     </div>
 
     <div id="cartItems"></div>
@@ -713,12 +823,16 @@ textarea{
             type="radio"
             name="deliveryType"
             value="delivery"
-            checked
-            onchange="updateDeliveryUI()">
+            checked>
 
           <span class="delivery-icon">🛵</span>
 
-          <span>Envío a domicilio</span>
+          <span class="delivery-text">
+            <strong>Envío a domicilio</strong>
+            <small>Recibe tu pedido en tu domicilio</small>
+          </span>
+
+          <span class="delivery-check"></span>
 
         </label>
 
@@ -727,12 +841,16 @@ textarea{
           <input
             type="radio"
             name="deliveryType"
-            value="pickup"
-            onchange="updateDeliveryUI()">
+            value="pickup">
 
           <span class="delivery-icon">🛍️</span>
 
-          <span>Pasar a recoger mi pedido</span>
+          <span class="delivery-text">
+            <strong>Pasar a recoger mi pedido</strong>
+            <small>Recoge tu pedido en nuestro punto de venta</small>
+          </span>
+
+          <span class="delivery-check"></span>
 
         </label>
 
@@ -747,18 +865,20 @@ textarea{
         id="mapsButton"
         class="maps-button"
         href="#"
-        target="_blank">
+        target="_blank"
+        rel="noopener">
 
         📍 Ver ubicación para recoger
 
       </a>
 
-      <select
-        id="paymentMethod"
-        onchange="updatePaymentUI()">
+      <select id="paymentMethod">
 
         <option value="cash">Efectivo</option>
-        <option value="transfer">Transferencia</option>
+
+        <option value="transfer">
+          Transferencia
+        </option>
 
       </select>
 
@@ -769,12 +889,12 @@ textarea{
 
       <textarea
         id="orderNotes"
-        placeholder="Notas del pedido">
-      </textarea>
+        placeholder="Notas del pedido"></textarea>
 
       <button
         class="whatsapp-button"
-        onclick="sendOrder()">
+        id="whatsappButton"
+        type="button">
 
         <svg
           viewBox="0 0 24 24"
@@ -824,6 +944,43 @@ const categoriesOrder = [
 ];
 
 /* =========================
+   UTILIDADES DE ID
+========================= */
+
+function normalizeId(id){
+  return String(id ?? "");
+}
+
+function findProductById(id){
+
+  const key =
+    normalizeId(id);
+
+  return products.find(
+    product =>
+      normalizeId(product.id) === key
+  );
+}
+
+function isAvailable(product){
+
+  if(!product){
+    return false;
+  }
+
+  const value =
+    product.available;
+
+  return (
+    value === true ||
+    value === 1 ||
+    value === "1" ||
+    value === "true" ||
+    value === "TRUE"
+  );
+}
+
+/* =========================
    CARGAR
 ========================= */
 
@@ -847,14 +1004,20 @@ async function init(){
 
   if(productsResult.error){
 
-    console.error(productsResult.error);
+    console.error(
+      "Error cargando productos:",
+      productsResult.error
+    );
 
     return;
   }
 
   if(settingsResult.error){
 
-    console.error(settingsResult.error);
+    console.error(
+      "Error cargando configuración:",
+      settingsResult.error
+    );
 
     return;
   }
@@ -864,7 +1027,10 @@ async function init(){
 
   settings = {};
 
-  for(const row of settingsResult.data || []){
+  for(
+    const row
+    of settingsResult.data || []
+  ){
 
     settings[row.key] =
       row.value;
@@ -888,13 +1054,19 @@ async function init(){
 function applyDesign(){
 
   const cover =
-    document.getElementById("heroCover");
+    document.getElementById(
+      "heroCover"
+    );
 
   const profile =
-    document.getElementById("heroProfile");
+    document.getElementById(
+      "heroProfile"
+    );
 
   const background =
-    document.getElementById("pageBackground");
+    document.getElementById(
+      "pageBackground"
+    );
 
   if(settings.cover_image){
 
@@ -998,31 +1170,37 @@ function getCategories(){
   const found =
     new Set();
 
-  products.forEach(p=>{
+  products.forEach(
+    product=>{
 
-    if(p.category){
-      found.add(p.category);
+      if(product.category){
+        found.add(product.category);
+      }
+
     }
-
-  });
+  );
 
   const result = [];
 
-  categoriesOrder.forEach(category=>{
+  categoriesOrder.forEach(
+    category=>{
 
-    if(found.has(category)){
-      result.push(category);
+      if(found.has(category)){
+        result.push(category);
+      }
+
     }
+  );
 
-  });
+  found.forEach(
+    category=>{
 
-  found.forEach(category=>{
+      if(!result.includes(category)){
+        result.push(category);
+      }
 
-    if(!result.includes(category)){
-      result.push(category);
     }
-
-  });
+  );
 
   return result;
 }
@@ -1047,47 +1225,56 @@ function renderCategories(){
           "button"
         );
 
+      button.type =
+        "button";
+
       button.className =
         "category-btn" +
-        (index === 0
-          ? " active"
-          : "");
+        (
+          index === 0
+            ? " active"
+            : ""
+        );
 
       button.textContent =
         category;
 
-      button.onclick = ()=>{
+      button.addEventListener(
+        "click",
+        ()=>{
 
-        document
-          .querySelectorAll(
-            ".category-btn"
-          )
-          .forEach(btn=>
-            btn.classList.remove(
-              "active"
+          document
+            .querySelectorAll(
+              ".category-btn"
             )
+            .forEach(
+              btn =>
+                btn.classList.remove(
+                  "active"
+                )
+            );
+
+          button.classList.add(
+            "active"
           );
 
-        button.classList.add(
-          "active"
-        );
+          const section =
+            document.getElementById(
+              "category-" +
+              slug(category)
+            );
 
-        const section =
-          document.getElementById(
-            "category-" +
-            slug(category)
-          );
+          if(section){
 
-        if(section){
+            section.scrollIntoView({
+              behavior:"smooth",
+              block:"start"
+            });
 
-          section.scrollIntoView({
-            behavior:"smooth",
-            block:"start"
-          });
+          }
 
         }
-
-      };
+      );
 
       container.appendChild(
         button
@@ -1162,11 +1349,17 @@ function renderMenu(){
             )
         );
 
-      section.appendChild(title);
+      section.appendChild(
+        title
+      );
 
-      section.appendChild(grid);
+      section.appendChild(
+        grid
+      );
 
-      menu.appendChild(section);
+      menu.appendChild(
+        section
+      );
 
     }
   );
@@ -1186,13 +1379,13 @@ function createProduct(product){
   card.className =
     "product" +
     (
-      product.available
+      isAvailable(product)
         ? ""
         : " soldout"
     );
 
   card.dataset.productId =
-    String(product.id);
+    normalizeId(product.id);
 
   const imageWrap =
     document.createElement(
@@ -1220,7 +1413,7 @@ function createProduct(product){
     image
   );
 
-  if(!product.available){
+  if(!isAvailable(product)){
 
     const soldout =
       document.createElement(
@@ -1255,7 +1448,7 @@ function createProduct(product){
     "product-name";
 
   name.textContent =
-    product.name;
+    product.name || "";
 
   const description =
     document.createElement(
@@ -1286,7 +1479,7 @@ function createProduct(product){
 
   price.textContent =
     "$" +
-    Number(product.price)
+    Number(product.price || 0)
       .toFixed(2);
 
   const controls =
@@ -1297,107 +1490,13 @@ function createProduct(product){
   controls.className =
     "add-controls";
 
-  if(!product.available){
+  controls.dataset.productId =
+    normalizeId(product.id);
 
-    const plus =
-      document.createElement(
-        "button"
-      );
-
-    plus.textContent =
-      "+";
-
-    plus.disabled =
-      true;
-
-    plus.style.cursor =
-      "not-allowed";
-
-    controls.appendChild(
-      plus
-    );
-
-  }else{
-
-    const minus =
-      document.createElement(
-        "button"
-      );
-
-    minus.className =
-      "minus";
-
-    minus.type =
-      "button";
-
-    minus.textContent =
-      "−";
-
-    const quantity =
-      document.createElement(
-        "span"
-      );
-
-    quantity.className =
-      "quantity";
-
-    const plus =
-      document.createElement(
-        "button"
-      );
-
-    plus.className =
-      "plus";
-
-    plus.type =
-      "button";
-
-    plus.textContent =
-      "+";
-
-    const currentQuantity =
-      cart[String(product.id)]
-        ?.quantity || 0;
-
-    quantity.textContent =
-      currentQuantity;
-
-    if(currentQuantity > 0){
-
-      controls.classList.add(
-        "has-items"
-      );
-    }
-
-    plus.onclick = function(){
-
-      addToCart(
-        product.id
-      );
-
-    };
-
-    minus.onclick = function(){
-
-      changeQuantity(
-        product.id,
-        -1
-      );
-
-    };
-
-    controls.appendChild(
-      minus
-    );
-
-    controls.appendChild(
-      quantity
-    );
-
-    controls.appendChild(
-      plus
-    );
-  }
+  renderProductControls(
+    controls,
+    product
+  );
 
   bottom.appendChild(
     price
@@ -1431,28 +1530,172 @@ function createProduct(product){
 }
 
 /* =========================
-   AGREGAR AL CARRITO
+   CONTROLES DEL PRODUCTO
 ========================= */
 
-function addToCart(id){
+function renderProductControls(
+  controls,
+  product
+){
 
-  const product =
-    products.find(
-      p =>
-        Number(p.id) ===
-        Number(id)
+  controls.innerHTML = "";
+
+  const key =
+    normalizeId(product.id);
+
+  const quantity =
+    cart[key]?.quantity || 0;
+
+  if(!isAvailable(product)){
+
+    const plus =
+      document.createElement(
+        "button"
+      );
+
+    plus.type =
+      "button";
+
+    plus.textContent =
+      "+";
+
+    plus.disabled =
+      true;
+
+    plus.style.cursor =
+      "not-allowed";
+
+    controls.appendChild(
+      plus
     );
-
-  if(
-    !product ||
-    !product.available
-  ){
 
     return;
   }
 
+  if(quantity <= 0){
+
+    const plus =
+      document.createElement(
+        "button"
+      );
+
+    plus.type =
+      "button";
+
+    plus.dataset.cartAction =
+      "add";
+
+    plus.dataset.productId =
+      key;
+
+    plus.textContent =
+      "+";
+
+    plus.setAttribute(
+      "aria-label",
+      "Agregar " +
+      (product.name || "producto")
+    );
+
+    controls.appendChild(
+      plus
+    );
+
+    return;
+  }
+
+  const minus =
+    document.createElement(
+      "button"
+    );
+
+  minus.type =
+    "button";
+
+  minus.dataset.cartAction =
+    "minus";
+
+  minus.dataset.productId =
+    key;
+
+  minus.textContent =
+    "−";
+
+  minus.setAttribute(
+    "aria-label",
+    "Disminuir cantidad"
+  );
+
+  const quantityElement =
+    document.createElement(
+      "span"
+    );
+
+  quantityElement.className =
+    "quantity";
+
+  quantityElement.textContent =
+    quantity;
+
+  const plus =
+    document.createElement(
+      "button"
+    );
+
+  plus.type =
+    "button";
+
+  plus.dataset.cartAction =
+    "add";
+
+  plus.dataset.productId =
+    key;
+
+  plus.textContent =
+    "+";
+
+  plus.setAttribute(
+    "aria-label",
+    "Aumentar cantidad"
+  );
+
+  controls.appendChild(
+    minus
+  );
+
+  controls.appendChild(
+    quantityElement
+  );
+
+  controls.appendChild(
+    plus
+  );
+}
+
+/* =========================
+   AGREGAR / CAMBIAR CANTIDAD
+========================= */
+
+function addToCart(id){
+
   const key =
-    String(product.id);
+    normalizeId(id);
+
+  const product =
+    findProductById(key);
+
+  if(
+    !product ||
+    !isAvailable(product)
+  ){
+
+    console.warn(
+      "No se pudo agregar el producto:",
+      id
+    );
+
+    return;
+  }
 
   if(!cart[key]){
 
@@ -1463,19 +1706,11 @@ function addToCart(id){
 
   }else{
 
-    cart[key].quantity++;
+    cart[key].quantity += 1;
   }
 
   updateCart();
-
-  updateProductCard(
-    product.id
-  );
 }
-
-/* =========================
-   CAMBIAR CANTIDAD
-========================= */
 
 function changeQuantity(
   id,
@@ -1483,26 +1718,80 @@ function changeQuantity(
 ){
 
   const key =
-    String(id);
+    normalizeId(id);
 
-  if(!cart[key]){
+  const product =
+    findProductById(key);
+
+  if(
+    !product ||
+    !isAvailable(product)
+  ){
+
     return;
   }
 
-  cart[key].quantity +=
-    amount;
+  const current =
+    cart[key]?.quantity || 0;
 
-  if(
-    cart[key].quantity <= 0
-  ){
+  const next =
+    current + Number(amount);
+
+  if(next <= 0){
 
     delete cart[key];
+
+  }else{
+
+    cart[key] = {
+      product:product,
+      quantity:next
+    };
   }
 
   updateCart();
-
-  updateProductCard(id);
 }
+
+/* =========================
+   EVENTOS DE PRODUCTOS
+========================= */
+
+document
+  .getElementById("menu")
+  .addEventListener(
+    "click",
+    function(event){
+
+      const button =
+        event.target.closest(
+          "[data-cart-action]"
+        );
+
+      if(!button){
+        return;
+      }
+
+      const id =
+        button.dataset.productId;
+
+      const action =
+        button.dataset.cartAction;
+
+      if(action === "add"){
+
+        addToCart(id);
+
+      }else if(
+        action === "minus"
+      ){
+
+        changeQuantity(
+          id,
+          -1
+        );
+      }
+    }
+  );
 
 /* =========================
    ACTUALIZAR TARJETA
@@ -1510,52 +1799,54 @@ function changeQuantity(
 
 function updateProductCard(id){
 
-  const card =
-    document.querySelector(
-      `.product[data-product-id="${id}"]`
+  const key =
+    normalizeId(id);
+
+  const cards =
+    document.querySelectorAll(
+      ".product[data-product-id]"
     );
+
+  let card = null;
+
+  cards.forEach(
+    candidate=>{
+
+      if(
+        candidate.dataset.productId ===
+        key
+      ){
+
+        card = candidate;
+      }
+
+    }
+  );
 
   if(!card){
     return;
   }
 
-  const quantityElement =
-    card.querySelector(
-      ".quantity"
-    );
+  const product =
+    findProductById(key);
+
+  if(!product){
+    return;
+  }
 
   const controls =
     card.querySelector(
       ".add-controls"
     );
 
-  if(!quantityElement ||
-     !controls){
-
+  if(!controls){
     return;
   }
 
-  const key =
-    String(id);
-
-  const quantity =
-    cart[key]?.quantity || 0;
-
-  quantityElement.textContent =
-    quantity;
-
-  if(quantity > 0){
-
-    controls.classList.add(
-      "has-items"
-    );
-
-  }else{
-
-    controls.classList.remove(
-      "has-items"
-    );
-  }
+  renderProductControls(
+    controls,
+    product
+  );
 }
 
 /* =========================
@@ -1577,85 +1868,153 @@ function updateCart(){
   let total = 0;
   let count = 0;
 
-  items.forEach(item=>{
+  items.forEach(
+    item=>{
 
-    const subtotal =
-      Number(item.product.price) *
-      item.quantity;
+      const price =
+        Number(
+          item.product.price || 0
+        );
 
-    total += subtotal;
+      const subtotal =
+        price *
+        item.quantity;
 
-    count +=
-      item.quantity;
+      total +=
+        subtotal;
 
-    const row =
-      document.createElement(
-        "div"
+      count +=
+        item.quantity;
+
+      const row =
+        document.createElement(
+          "div"
+        );
+
+      row.className =
+        "cart-item";
+
+      const info =
+        document.createElement(
+          "div"
+        );
+
+      info.className =
+        "cart-item-info";
+
+      const name =
+        document.createElement(
+          "div"
+        );
+
+      name.className =
+        "cart-item-name";
+
+      name.textContent =
+        item.product.name || "";
+
+      const itemPrice =
+        document.createElement(
+          "div"
+        );
+
+      itemPrice.className =
+        "cart-item-price";
+
+      itemPrice.textContent =
+        item.quantity +
+        " × $" +
+        price.toFixed(2) +
+        " = $" +
+        subtotal.toFixed(2);
+
+      info.appendChild(
+        name
       );
 
-    row.className =
-      "cart-item";
+      info.appendChild(
+        itemPrice
+      );
 
-    row.innerHTML = `
+      const controls =
+        document.createElement(
+          "div"
+        );
 
-      <div class="cart-item-info">
+      controls.className =
+        "qty-controls";
 
-        <div class="cart-item-name">
-          ${escapeHtml(
-            item.product.name
-          )}
-        </div>
+      const minus =
+        document.createElement(
+          "button"
+        );
 
-        <div class="cart-item-price">
+      minus.type =
+        "button";
 
-          ${item.quantity}
-          ×
-          $${Number(
-            item.product.price
-          ).toFixed(2)}
+      minus.dataset.cartAction =
+        "minus";
 
-          =
-          $${subtotal.toFixed(2)}
+      minus.dataset.productId =
+        normalizeId(
+          item.product.id
+        );
 
-        </div>
+      minus.textContent =
+        "−";
 
-      </div>
+      const quantity =
+        document.createElement(
+          "strong"
+        );
 
-      <div class="qty-controls">
+      quantity.textContent =
+        item.quantity;
 
-        <button
-          onclick="changeQuantity(
-            ${item.product.id},
-            -1
-          )">
+      const plus =
+        document.createElement(
+          "button"
+        );
 
-          −
+      plus.type =
+        "button";
 
-        </button>
+      plus.dataset.cartAction =
+        "add";
 
-        <strong>
-          ${item.quantity}
-        </strong>
+      plus.dataset.productId =
+        normalizeId(
+          item.product.id
+        );
 
-        <button
-          onclick="changeQuantity(
-            ${item.product.id},
-            1
-          )">
+      plus.textContent =
+        "+";
 
-          +
+      controls.appendChild(
+        minus
+      );
 
-        </button>
+      controls.appendChild(
+        quantity
+      );
 
-      </div>
+      controls.appendChild(
+        plus
+      );
 
-    `;
+      row.appendChild(
+        info
+      );
 
-    container.appendChild(
-      row
-    );
+      row.appendChild(
+        controls
+      );
 
-  });
+      container.appendChild(
+        row
+      );
+    }
+  );
 
   document.getElementById(
     "cartTotal"
@@ -1668,30 +2027,93 @@ function updateCart(){
   ).textContent =
     count;
 
-  items.forEach(item=>{
-
-    updateProductCard(
-      item.product.id
-    );
-
-  });
-
-  products.forEach(product=>{
-
-    if(!cart[String(product.id)]){
+  products.forEach(
+    product=>{
 
       updateProductCard(
         product.id
       );
 
     }
-
-  });
+  );
 }
 
 /* =========================
-   ABRIR CARRITO
+   EVENTOS DEL CARRITO
 ========================= */
+
+document
+  .getElementById("cartItems")
+  .addEventListener(
+    "click",
+    function(event){
+
+      const button =
+        event.target.closest(
+          "[data-cart-action]"
+        );
+
+      if(!button){
+        return;
+      }
+
+      const id =
+        button.dataset.productId;
+
+      const action =
+        button.dataset.cartAction;
+
+      if(action === "add"){
+
+        addToCart(id);
+
+      }else if(
+        action === "minus"
+      ){
+
+        changeQuantity(
+          id,
+          -1
+        );
+      }
+    }
+  );
+
+/* =========================
+   ABRIR / CERRAR CARRITO
+========================= */
+
+document
+  .getElementById("cartButton")
+  .addEventListener(
+    "click",
+    openCart
+  );
+
+document
+  .getElementById("closeCartButton")
+  .addEventListener(
+    "click",
+    closeCart
+  );
+
+document
+  .getElementById("cartPanel")
+  .addEventListener(
+    "click",
+    function(event){
+
+      if(
+        event.target ===
+        document.getElementById(
+          "cartPanel"
+        )
+      ){
+
+        closeCart();
+      }
+    }
+  );
 
 function openCart(){
 
@@ -1721,6 +2143,21 @@ function closeCart(){
    ENTREGA / RECOGER
 ========================= */
 
+document
+  .querySelectorAll(
+    'input[name="deliveryType"]'
+  )
+  .forEach(
+    radio=>{
+
+      radio.addEventListener(
+        "change",
+        updateDeliveryUI
+      );
+
+    }
+  );
+
 function updateDeliveryUI(){
 
   const type =
@@ -1742,6 +2179,9 @@ function updateDeliveryUI(){
 
     address.style.display =
       "none";
+
+    address.value =
+      "";
 
     if(settings.pickup_maps_url){
 
@@ -1771,6 +2211,13 @@ function updateDeliveryUI(){
    TRANSFERENCIA
 ========================= */
 
+document
+  .getElementById("paymentMethod")
+  .addEventListener(
+    "change",
+    updatePaymentUI
+  );
+
 function updatePaymentUI(){
 
   const method =
@@ -1799,7 +2246,9 @@ function updatePaymentUI(){
     settings.bank_name || "";
 
   const account =
-    settings.bank_account || "";
+    settings.bank_account ||
+    settings.bank_card ||
+    "";
 
   const clabe =
     settings.bank_clabe || "";
@@ -1857,6 +2306,13 @@ function updatePaymentUI(){
 /* =========================
    WHATSAPP
 ========================= */
+
+document
+  .getElementById("whatsappButton")
+  .addEventListener(
+    "click",
+    sendOrder
+  );
 
 function sendOrder(){
 
@@ -2001,26 +2457,28 @@ function sendOrder(){
   message +=
     "\n*PRODUCTOS*\n";
 
-  items.forEach(item=>{
+  items.forEach(
+    item=>{
 
-    const subtotal =
-      Number(
-        item.product.price
-      ) *
-      item.quantity;
+      const subtotal =
+        Number(
+          item.product.price || 0
+        ) *
+        item.quantity;
 
-    total +=
-      subtotal;
+      total +=
+        subtotal;
 
-    message +=
-      item.quantity +
-      " x " +
-      item.product.name +
-      " — $" +
-      subtotal.toFixed(2) +
-      "\n";
+      message +=
+        item.quantity +
+        " x " +
+        item.product.name +
+        " — $" +
+        subtotal.toFixed(2) +
+        "\n";
 
-  });
+    }
+  );
 
   message +=
     "\n*TOTAL: $" +
@@ -2129,4 +2587,3 @@ init();
 
 </body>
 </html>
-```
