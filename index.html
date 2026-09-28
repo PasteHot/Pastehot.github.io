@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Menú</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -24,6 +24,10 @@ body{
 body{
   min-height:100vh;
 }
+
+/* =========================
+   CAPAS DEL FONDO
+========================= */
 
 #pageBackground{
   position:fixed;
@@ -126,6 +130,7 @@ textarea{
 
 .menu-title p{
   margin:8px 0 0;
+  color:#666;
 }
 
 /* =========================
@@ -175,6 +180,7 @@ textarea{
 }
 
 .category-title{
+  font-size:25px;
   margin:0 0 16px;
   font-weight:800;
 }
@@ -274,7 +280,7 @@ textarea{
 }
 
 /* =========================
-   CONTROLES
+   CONTROLES DE CANTIDAD
 ========================= */
 
 .add-controls{
@@ -475,7 +481,7 @@ textarea{
 }
 
 /* =========================
-   RESUMEN
+   RESUMEN DE COSTOS
 ========================= */
 
 .cart-summary{
@@ -526,7 +532,7 @@ textarea{
 }
 
 /* =========================
-   ENTREGA
+   OPCIONES DE ENTREGA
 ========================= */
 
 .delivery-option{
@@ -810,33 +816,18 @@ textarea{
 <div id="backgroundOverlay"></div>
 
 <header class="hero" id="hero">
-
-  <img
-    id="heroCover"
-    class="hero-cover"
-    alt="">
-
-  <img
-    id="heroProfile"
-    class="hero-profile"
-    alt="">
-
+  <img id="heroCover" class="hero-cover" alt="">
+  <img id="heroProfile" class="hero-profile" alt="">
 </header>
 
 <main class="page">
 
   <div class="menu-title">
-
     <h1 id="menuTitle"></h1>
-
     <p id="menuSlogan"></p>
-
   </div>
 
-  <div
-    class="categories"
-    id="categories">
-  </div>
+  <div class="categories" id="categories"></div>
 
   <div id="menu"></div>
 
@@ -848,46 +839,21 @@ textarea{
   type="button"
   aria-label="Carrito">
 
-  <svg
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2">
-
-    <circle
-      cx="9"
-      cy="20"
-      r="1">
-    </circle>
-
-    <circle
-      cx="18"
-      cy="20"
-      r="1">
-    </circle>
-
-    <path
-      d="M3 4h2l2.4 11.3a2 2 0 0 0 2 1.7h7.9a2 2 0 0 0 1.9-1.4L21 8H6">
-    </path>
-
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <circle cx="9" cy="20" r="1"></circle>
+    <circle cx="18" cy="20" r="1"></circle>
+    <path d="M3 4h2l2.4 11.3a2 2 0 0 0 2 1.7h7.9a2 2 0 0 0 1.9-1.4L21 8H6"></path>
   </svg>
 
-  <span
-    class="cart-count"
-    id="cartCount">
-    0
-  </span>
+  <span class="cart-count" id="cartCount">0</span>
 
 </button>
 
-<div
-  class="cart-panel"
-  id="cartPanel">
+<div class="cart-panel" id="cartPanel">
 
   <div class="cart-box">
 
     <div class="cart-header">
-
       <h2>Tu pedido</h2>
 
       <button
@@ -896,7 +862,6 @@ textarea{
         type="button">
         ×
       </button>
-
     </div>
 
     <div id="cartItems"></div>
@@ -904,13 +869,8 @@ textarea{
     <div class="cart-summary">
 
       <div class="cart-summary-line">
-
         <span>Productos</span>
-
-        <span id="cartProductsTotal">
-          $0.00
-        </span>
-
+        <span id="cartProductsTotal">$0.00</span>
       </div>
 
       <div
@@ -918,23 +878,15 @@ textarea{
         id="cartDeliveryLine">
 
         <span>Envío</span>
-
-        <span id="cartDeliveryFee">
-          $30.00
-        </span>
+        <span id="cartDeliveryFee">$30.00</span>
 
       </div>
 
     </div>
 
     <div class="cart-total">
-
       <span>Total</span>
-
-      <span id="cartTotal">
-        $0.00
-      </span>
-
+      <span id="cartTotal">$0.00</span>
     </div>
 
     <div class="order-form">
@@ -959,24 +911,14 @@ textarea{
             value="delivery"
             checked>
 
-          <span class="delivery-icon">
-            🛵
-          </span>
+          <span class="delivery-icon">🛵</span>
 
           <span class="delivery-text">
-
-            <strong>
-              Envío a domicilio
-            </strong>
-
-            <small id="deliverySubtitle">
-              +$30 de envío
-            </small>
-
+            <strong>Envío a domicilio</strong>
+            <small id="deliverySubtitle">+$30 de envío</small>
           </span>
 
-          <span class="delivery-check">
-          </span>
+          <span class="delivery-check"></span>
 
         </label>
 
@@ -987,24 +929,14 @@ textarea{
             name="deliveryType"
             value="pickup">
 
-          <span class="delivery-icon">
-            🛍️
-          </span>
+          <span class="delivery-icon">🛍️</span>
 
           <span class="delivery-text">
-
-            <strong>
-              Pasar a recoger mi pedido
-            </strong>
-
-            <small>
-              Recoge tu pedido en nuestro punto de venta
-            </small>
-
+            <strong>Pasar a recoger mi pedido</strong>
+            <small>Recoge tu pedido en nuestro punto de venta</small>
           </span>
 
-          <span class="delivery-check">
-          </span>
+          <span class="delivery-check"></span>
 
         </label>
 
@@ -1028,9 +960,7 @@ textarea{
 
       <select id="paymentMethod">
 
-        <option value="cash">
-          Efectivo
-        </option>
+        <option value="cash">Efectivo</option>
 
         <option value="transfer">
           Transferencia
@@ -1058,13 +988,9 @@ textarea{
           stroke="currentColor"
           stroke-width="2">
 
-          <path
-            d="M20 11.5a8.4 8.4 0 0 1-12.7 7.3L3 20l1.3-4.1A8.5 8.5 0 1 1 20 11.5Z">
-          </path>
+          <path d="M20 11.5a8.4 8.4 0 0 1-12.7 7.3L3 20l1.3-4.1A8.5 8.5 0 1 1 20 11.5Z"></path>
 
-          <path
-            d="M8.5 8.5c.2-.5.4-.5.7-.5h.5c.2 0 .4.1.5.4l.7 1.6c.1.3.1.5-.1.7l-.5.6c.6 1.1 1.5 1.9 2.6 2.4l.5-.6c.2-.2.4-.2.7-.1l1.5.7c.3.1.4.3.4.5v.5c0 .3-.1.5-.4.7-.4.2-.9.3-1.3.2-2.3-.5-4.6-2.8-5.1-5.1-.1-.4 0-.9.2-1.3Z">
-          </path>
+          <path d="M8.5 8.5c.2-.5.4-.5.7-.5h.5c.2 0 .4.1.5.4l.7 1.6c.1.3.1.5-.1.7l-.5.6c.6 1.1 1.5 1.9 2.6 2.4l.5-.6c.2-.2.4-.2.7-.1l1.5.7c.3.1.4.3.4.5v.5c0 .3-.1.5-.4.7-.4.2-.9.3-1.3.2-2.3-.5-4.6-2.8-5.1-5.1-.1-.4 0-.9.2-1.3Z"></path>
 
         </svg>
 
@@ -1080,21 +1006,16 @@ textarea{
 
 <script>
 
-/* =========================
-   SUPABASE
-========================= */
-
 const SUPABASE_URL =
   "https://cqlywpemisknrxswlmea.supabase.co";
 
 const SUPABASE_ANON_KEY =
   "sb_publishable_wDu6p-CtnQtYu7KWH1YS1A_h7LeL0SX";
 
-const db =
-  supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-  );
+const db = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
 
 let products = [];
 let settings = {};
@@ -1102,43 +1023,91 @@ let cart = {};
 
 const DEFAULT_DELIVERY_FEE = 30;
 
-const DEFAULT_SLOGAN_TYPOGRAPHY = {
+const categoriesOrder = [
+  "Pastes salados",
+  "Pastes dulces",
+  "Pastes de temporada",
+  "Bebidas",
+  "Promociones"
+];
 
-  font:
-    "Arial,Helvetica,sans-serif",
+/* =========================
+   UTILIDADES DE ID
+========================= */
 
-  size:16,
+function normalizeId(id){
+  return String(id ?? "");
+}
 
-  color:"#666666",
+function findProductById(id){
 
-  weight:400,
+  const key =
+    normalizeId(id);
 
-  style:"normal",
+  return products.find(
+    product =>
+      normalizeId(product.id) === key
+  );
+}
 
-  align:"center",
+function isAvailable(product){
 
-  letterSpacing:0
+  if(!product){
+    return false;
+  }
 
-};
+  const value =
+    product.available;
 
-const DEFAULT_CATEGORY_TYPOGRAPHY = {
+  return (
+    value === true ||
+    value === 1 ||
+    value === "1" ||
+    value === "true" ||
+    value === "TRUE"
+  );
+}
 
-  font:
-    "Arial,Helvetica,sans-serif",
+/* =========================
+   COSTO DE ENVÍO
+========================= */
 
-  size:25,
+function getDeliveryFee(){
 
-  color:"#171717",
+  const configured =
+    Number(settings.delivery_cost);
 
-  weight:800,
+  if(
+    Number.isFinite(configured) &&
+    configured >= 0
+  ){
 
-  style:"normal",
+    return configured;
+  }
 
-  align:"left",
+  return DEFAULT_DELIVERY_FEE;
+}
 
-  letterSpacing:0
+function getDeliveryType(){
 
-};
+  return document.querySelector(
+    'input[name="deliveryType"]:checked'
+  )?.value || "delivery";
+}
+
+function getAppliedDeliveryFee(){
+
+  return getDeliveryType() === "delivery"
+    ? getDeliveryFee()
+    : 0;
+}
+
+function formatMoney(amount){
+
+  return "$" +
+    Number(amount || 0)
+      .toFixed(2);
+}
 
 /* =========================
    CARGAR
@@ -1154,19 +1123,12 @@ async function init(){
     db
       .from("products")
       .select("*")
-      .order(
-        "sort_order",
-        {ascending:true}
-      )
-      .order(
-        "id",
-        {ascending:true}
-      ),
+      .order("sort_order",{ascending:true})
+      .order("id",{ascending:true}),
 
     db
       .from("settings")
       .select("*")
-
   ]);
 
   if(productsResult.error){
@@ -1177,7 +1139,6 @@ async function init(){
     );
 
     return;
-
   }
 
   if(settingsResult.error){
@@ -1188,7 +1149,6 @@ async function init(){
     );
 
     return;
-
   }
 
   products =
@@ -1201,11 +1161,8 @@ async function init(){
     of settingsResult.data || []
   ){
 
-    settings[
-      row.key
-    ] =
+    settings[row.key] =
       row.value;
-
   }
 
   applyDesign();
@@ -1219,7 +1176,6 @@ async function init(){
   updatePaymentUI();
 
   updateDeliveryUI();
-
 }
 
 /* =========================
@@ -1252,19 +1208,13 @@ function applyDesign(){
       "block";
 
     const scale =
-      Number(
-        settings.cover_scale
-      ) || 1;
+      Number(settings.cover_scale) || 1;
 
     const x =
-      Number(
-        settings.cover_x
-      ) || 0;
+      Number(settings.cover_x) || 0;
 
     const y =
-      Number(
-        settings.cover_y
-      ) || 0;
+      Number(settings.cover_y) || 0;
 
     cover.style.left =
       `calc(50% + ${x}%)`;
@@ -1279,7 +1229,6 @@ function applyDesign(){
 
     cover.style.display =
       "none";
-
   }
 
   if(settings.profile_image){
@@ -1291,19 +1240,13 @@ function applyDesign(){
       "block";
 
     const scale =
-      Number(
-        settings.profile_scale
-      ) || 1.3;
+      Number(settings.profile_scale) || 1.3;
 
     const x =
-      Number(
-        settings.profile_x
-      ) || 0;
+      Number(settings.profile_x) || 0;
 
     const y =
-      Number(
-        settings.profile_y
-      ) || 0;
+      Number(settings.profile_y) || 0;
 
     profile.style.left =
       `calc(50% + ${x}%)`;
@@ -1318,12 +1261,10 @@ function applyDesign(){
 
     profile.style.display =
       "none";
-
   }
 
   if(
-    settings.background_type ===
-      "image" &&
+    settings.background_type === "image" &&
     settings.background_image
   ){
 
@@ -1334,7 +1275,6 @@ function applyDesign(){
 
     background.style.backgroundImage =
       "none";
-
   }
 
   background.style.backgroundColor =
@@ -1344,172 +1284,12 @@ function applyDesign(){
   document.getElementById(
     "menuTitle"
   ).textContent =
-    settings.menu_title ||
-    settings.business_name ||
-    "";
+    settings.menu_title || "";
 
   document.getElementById(
     "menuSlogan"
   ).textContent =
-    settings.slogan ||
-    "";
-
-  applyTypography();
-
-}
-
-/* =========================
-   TIPOGRAFÍA
-========================= */
-
-function parseTypography(){
-
-  const fallback = {
-
-    slogan:{
-      ...DEFAULT_SLOGAN_TYPOGRAPHY
-    },
-
-    categories:{}
-
-  };
-
-  if(!settings.typography){
-
-    return fallback;
-
-  }
-
-  try{
-
-    const parsed =
-      typeof settings.typography ===
-      "string"
-        ? JSON.parse(
-            settings.typography
-          )
-        : settings.typography;
-
-    if(
-      !parsed ||
-      typeof parsed !== "object"
-    ){
-
-      return fallback;
-
-    }
-
-    return {
-
-      slogan:{
-        ...DEFAULT_SLOGAN_TYPOGRAPHY,
-        ...(parsed.slogan || {})
-      },
-
-      categories:{
-        ...(parsed.categories || {})
-      }
-
-    };
-
-  }catch(error){
-
-    console.error(
-      "Error leyendo tipografía:",
-      error
-    );
-
-    return fallback;
-
-  }
-
-}
-
-function applyTypography(){
-
-  const typography =
-    parseTypography();
-
-  const slogan =
-    document.getElementById(
-      "menuSlogan"
-    );
-
-  applyTypographyStyle(
-    slogan,
-    typography.slogan
-  );
-
-}
-
-function applyTypographyStyle(
-  element,
-  config
-){
-
-  if(
-    !element ||
-    !config
-  ){
-
-    return;
-
-  }
-
-  element.style.fontFamily =
-    config.font ||
-    "Arial,Helvetica,sans-serif";
-
-  element.style.fontSize =
-    Number(
-      config.size ?? 16
-    ) +
-    "px";
-
-  element.style.color =
-    config.color ||
-    "#171717";
-
-  element.style.fontWeight =
-    String(
-      config.weight ?? 400
-    );
-
-  element.style.fontStyle =
-    config.style ||
-    "normal";
-
-  element.style.textAlign =
-    config.align ||
-    "left";
-
-  element.style.letterSpacing =
-    Number(
-      config.letterSpacing ?? 0
-    ) +
-    "px";
-
-}
-
-function getCategoryConfig(
-  category
-){
-
-  const typography =
-    parseTypography();
-
-  return {
-
-    ...DEFAULT_CATEGORY_TYPOGRAPHY,
-
-    ...(
-      typography.categories?.[
-        category
-      ] || {}
-    )
-
-  };
-
+    settings.slogan || "";
 }
 
 /* =========================
@@ -1518,61 +1298,42 @@ function getCategoryConfig(
 
 function getCategories(){
 
-  const configured =
-    parseJSON(
-      settings.categories,
-      []
-    );
+  const found =
+    new Set();
 
-  const productCategories =
-    [
-      ...new Set(
-        products
-          .map(
-            product =>
-              product.category
-          )
-          .filter(Boolean)
-      )
-    ];
+  products.forEach(
+    product=>{
 
-  if(
-    Array.isArray(configured) &&
-    configured.length
-  ){
+      if(product.category){
+        found.add(product.category);
+      }
 
-    /*
-      Mantiene el orden definido
-      desde el administrador.
-    */
-
-    return configured.filter(
-      category =>
-        productCategories.includes(
-          category
-        )
-    );
-
-  }
-
-  return productCategories;
-
-}
-
-function getCategoryDisplayText(
-  category
-){
-
-  const config =
-    getCategoryConfig(
-      category
-    );
-
-  return (
-    config.displayText ||
-    category
+    }
   );
 
+  const result = [];
+
+  categoriesOrder.forEach(
+    category=>{
+
+      if(found.has(category)){
+        result.push(category);
+      }
+
+    }
+  );
+
+  found.forEach(
+    category=>{
+
+      if(!result.includes(category)){
+        result.push(category);
+      }
+
+    }
+  );
+
+  return result;
 }
 
 function renderCategories(){
@@ -1582,17 +1343,13 @@ function renderCategories(){
       "categories"
     );
 
-  container.innerHTML =
-    "";
+  container.innerHTML = "";
 
   const categories =
     getCategories();
 
   categories.forEach(
-    (
-      category,
-      index
-    ) => {
+    (category,index)=>{
 
       const button =
         document.createElement(
@@ -1611,13 +1368,11 @@ function renderCategories(){
         );
 
       button.textContent =
-        getCategoryDisplayText(
-          category
-        );
+        category;
 
       button.addEventListener(
         "click",
-        () => {
+        ()=>{
 
           document
             .querySelectorAll(
@@ -1658,7 +1413,6 @@ function renderCategories(){
 
     }
   );
-
 }
 
 /* =========================
@@ -1674,14 +1428,13 @@ function renderMenu(){
       "menu"
     );
 
-  menu.innerHTML =
-    "";
+  menu.innerHTML = "";
 
   const categories =
     getCategories();
 
   categories.forEach(
-    category => {
+    category=>{
 
       const section =
         document.createElement(
@@ -1704,16 +1457,7 @@ function renderMenu(){
         "category-title";
 
       title.textContent =
-        getCategoryDisplayText(
-          category
-        );
-
-      applyTypographyStyle(
-        title,
-        getCategoryConfig(
-          category
-        )
-      );
+        category;
 
       const grid =
         document.createElement(
@@ -1732,9 +1476,7 @@ function renderMenu(){
         .forEach(
           product =>
             grid.appendChild(
-              createProduct(
-                product
-              )
+              createProduct(product)
             )
         );
 
@@ -1752,7 +1494,6 @@ function renderMenu(){
 
     }
   );
-
 }
 
 /* =========================
@@ -1775,9 +1516,7 @@ function createProduct(product){
     );
 
   card.dataset.productId =
-    normalizeId(
-      product.id
-    );
+    normalizeId(product.id);
 
   const imageWrap =
     document.createElement(
@@ -1796,12 +1535,10 @@ function createProduct(product){
     "product-image";
 
   image.src =
-    product.image_url ||
-    "";
+    product.image_url || "";
 
   image.alt =
-    product.name ||
-    "";
+    product.name || "";
 
   imageWrap.appendChild(
     image
@@ -1823,7 +1560,6 @@ function createProduct(product){
     imageWrap.appendChild(
       soldout
     );
-
   }
 
   const body =
@@ -1843,8 +1579,7 @@ function createProduct(product){
     "product-name";
 
   name.textContent =
-    product.name ||
-    "";
+    product.name || "";
 
   const description =
     document.createElement(
@@ -1855,8 +1590,7 @@ function createProduct(product){
     "product-description";
 
   description.textContent =
-    product.description ||
-    "";
+    product.description || "";
 
   const bottom =
     document.createElement(
@@ -1876,9 +1610,8 @@ function createProduct(product){
 
   price.textContent =
     "$" +
-    Number(
-      product.price || 0
-    ).toFixed(2);
+    Number(product.price || 0)
+      .toFixed(2);
 
   const controls =
     document.createElement(
@@ -1889,9 +1622,7 @@ function createProduct(product){
     "add-controls";
 
   controls.dataset.productId =
-    normalizeId(
-      product.id
-    );
+    normalizeId(product.id);
 
   renderProductControls(
     controls,
@@ -1927,11 +1658,10 @@ function createProduct(product){
   );
 
   return card;
-
 }
 
 /* =========================
-   CONTROLES PRODUCTO
+   CONTROLES DEL PRODUCTO
 ========================= */
 
 function renderProductControls(
@@ -1939,17 +1669,13 @@ function renderProductControls(
   product
 ){
 
-  controls.innerHTML =
-    "";
+  controls.innerHTML = "";
 
   const key =
-    normalizeId(
-      product.id
-    );
+    normalizeId(product.id);
 
   const quantity =
-    cart[key]?.quantity ||
-    0;
+    cart[key]?.quantity || 0;
 
   if(!isAvailable(product)){
 
@@ -1975,7 +1701,6 @@ function renderProductControls(
     );
 
     return;
-
   }
 
   if(quantity <= 0){
@@ -2000,10 +1725,7 @@ function renderProductControls(
     plus.setAttribute(
       "aria-label",
       "Agregar " +
-      (
-        product.name ||
-        "producto"
-      )
+      (product.name || "producto")
     );
 
     controls.appendChild(
@@ -2011,7 +1733,6 @@ function renderProductControls(
     );
 
     return;
-
   }
 
   const minus =
@@ -2030,6 +1751,11 @@ function renderProductControls(
 
   minus.textContent =
     "−";
+
+  minus.setAttribute(
+    "aria-label",
+    "Disminuir cantidad"
+  );
 
   const quantityElement =
     document.createElement(
@@ -2059,6 +1785,11 @@ function renderProductControls(
   plus.textContent =
     "+";
 
+  plus.setAttribute(
+    "aria-label",
+    "Aumentar cantidad"
+  );
+
   controls.appendChild(
     minus
   );
@@ -2070,11 +1801,10 @@ function renderProductControls(
   controls.appendChild(
     plus
   );
-
 }
 
 /* =========================
-   CARRITO
+   AGREGAR / CAMBIAR CANTIDAD
 ========================= */
 
 function addToCart(id){
@@ -2083,36 +1813,34 @@ function addToCart(id){
     normalizeId(id);
 
   const product =
-    findProductById(
-      key
-    );
+    findProductById(key);
 
   if(
     !product ||
     !isAvailable(product)
   ){
 
-    return;
+    console.warn(
+      "No se pudo agregar el producto:",
+      id
+    );
 
+    return;
   }
 
   if(!cart[key]){
 
     cart[key] = {
-
-      product,
+      product:product,
       quantity:1
-
     };
 
   }else{
 
     cart[key].quantity += 1;
-
   }
 
   updateCart();
-
 }
 
 function changeQuantity(
@@ -2124,9 +1852,7 @@ function changeQuantity(
     normalizeId(id);
 
   const product =
-    findProductById(
-      key
-    );
+    findProductById(key);
 
   if(
     !product ||
@@ -2134,16 +1860,13 @@ function changeQuantity(
   ){
 
     return;
-
   }
 
   const current =
-    cart[key]?.quantity ||
-    0;
+    cart[key]?.quantity || 0;
 
   const next =
-    current +
-    Number(amount);
+    current + Number(amount);
 
   if(next <= 0){
 
@@ -2152,22 +1875,20 @@ function changeQuantity(
   }else{
 
     cart[key] = {
-
-      product,
+      product:product,
       quantity:next
-
     };
-
   }
 
   updateCart();
-
 }
 
+/* =========================
+   EVENTOS DE PRODUCTOS
+========================= */
+
 document
-  .getElementById(
-    "menu"
-  )
+  .getElementById("menu")
   .addEventListener(
     "click",
     function(event){
@@ -2184,43 +1905,61 @@ document
       const id =
         button.dataset.productId;
 
-      if(
-        button.dataset.cartAction ===
-        "add"
-      ){
+      const action =
+        button.dataset.cartAction;
+
+      if(action === "add"){
 
         addToCart(id);
 
-      }else{
+      }else if(
+        action === "minus"
+      ){
 
         changeQuantity(
           id,
           -1
         );
-
       }
-
     }
   );
+
+/* =========================
+   ACTUALIZAR TARJETA
+========================= */
 
 function updateProductCard(id){
 
   const key =
     normalizeId(id);
 
-  const card =
-    document.querySelector(
-      `.product[data-product-id="${CSS.escape(key)}"]`
+  const cards =
+    document.querySelectorAll(
+      ".product[data-product-id]"
     );
+
+  let card = null;
+
+  cards.forEach(
+    candidate=>{
+
+      if(
+        candidate.dataset.productId ===
+        key
+      ){
+
+        card = candidate;
+      }
+
+    }
+  );
 
   if(!card){
     return;
   }
 
   const product =
-    findProductById(
-      key
-    );
+    findProductById(key);
 
   if(!product){
     return;
@@ -2231,15 +1970,37 @@ function updateProductCard(id){
       ".add-controls"
     );
 
-  if(controls){
-
-    renderProductControls(
-      controls,
-      product
-    );
-
+  if(!controls){
+    return;
   }
 
+  renderProductControls(
+    controls,
+    product
+  );
+}
+
+/* =========================
+   ACTUALIZAR TEXTO DE ENVÍO
+========================= */
+
+function updateDeliverySubtitle(){
+
+  const subtitle =
+    document.getElementById(
+      "deliverySubtitle"
+    );
+
+  if(!subtitle){
+    return;
+  }
+
+  subtitle.textContent =
+    "+" +
+    formatMoney(
+      getDeliveryFee()
+    ) +
+    " de envío";
 }
 
 /* =========================
@@ -2249,28 +2010,24 @@ function updateProductCard(id){
 function updateCart(){
 
   const items =
-    Object.values(
-      cart
-    );
+    Object.values(cart);
 
   const container =
     document.getElementById(
       "cartItems"
     );
 
-  container.innerHTML =
-    "";
+  container.innerHTML = "";
 
   let productsTotal = 0;
   let count = 0;
 
   items.forEach(
-    item => {
+    item=>{
 
       const price =
         Number(
-          item.product.price ||
-          0
+          item.product.price || 0
         );
 
       const subtotal =
@@ -2308,8 +2065,7 @@ function updateCart(){
         "cart-item-name";
 
       name.textContent =
-        item.product.name ||
-        "";
+        item.product.name || "";
 
       const itemPrice =
         document.createElement(
@@ -2363,8 +2119,8 @@ function updateCart(){
 
       const quantity =
         document.createElement(
-          "strong"
-        );
+        "strong"
+      );
 
       quantity.textContent =
         item.quantity;
@@ -2411,7 +2167,6 @@ function updateCart(){
       container.appendChild(
         row
       );
-
     }
   );
 
@@ -2449,18 +2204,22 @@ function updateCart(){
     count;
 
   products.forEach(
-    product =>
+    product=>{
+
       updateProductCard(
         product.id
-      )
-  );
+      );
 
+    }
+  );
 }
 
+/* =========================
+   EVENTOS DEL CARRITO
+========================= */
+
 document
-  .getElementById(
-    "cartItems"
-  )
+  .getElementById("cartItems")
   .addEventListener(
     "click",
     function(event){
@@ -2477,51 +2236,45 @@ document
       const id =
         button.dataset.productId;
 
-      if(
-        button.dataset.cartAction ===
-        "add"
-      ){
+      const action =
+        button.dataset.cartAction;
+
+      if(action === "add"){
 
         addToCart(id);
 
-      }else{
+      }else if(
+        action === "minus"
+      ){
 
         changeQuantity(
           id,
           -1
         );
-
       }
-
     }
   );
 
 /* =========================
-   CARRITO ABRIR
+   ABRIR / CERRAR CARRITO
 ========================= */
 
 document
-  .getElementById(
-    "cartButton"
-  )
+  .getElementById("cartButton")
   .addEventListener(
     "click",
     openCart
   );
 
 document
-  .getElementById(
-    "closeCartButton"
-  )
+  .getElementById("closeCartButton")
   .addEventListener(
     "click",
     closeCart
   );
 
 document
-  .getElementById(
-    "cartPanel"
-  )
+  .getElementById("cartPanel")
   .addEventListener(
     "click",
     function(event){
@@ -2534,9 +2287,7 @@ document
       ){
 
         closeCart();
-
       }
-
     }
   );
 
@@ -2551,7 +2302,6 @@ function openCart(){
     );
 
   updateCart();
-
 }
 
 function closeCart(){
@@ -2563,11 +2313,10 @@ function closeCart(){
     .classList.remove(
       "open"
     );
-
 }
 
 /* =========================
-   ENTREGA
+   ENTREGA / RECOGER
 ========================= */
 
 document
@@ -2575,7 +2324,7 @@ document
     'input[name="deliveryType"]'
   )
   .forEach(
-    radio => {
+    radio=>{
 
       radio.addEventListener(
         "change",
@@ -2584,46 +2333,6 @@ document
 
     }
   );
-
-function getDeliveryType(){
-
-  return document.querySelector(
-    'input[name="deliveryType"]:checked'
-  )?.value ||
-  "delivery";
-
-}
-
-function getAppliedDeliveryFee(){
-
-  return getDeliveryType() ===
-    "delivery"
-      ? getDeliveryFee()
-      : 0;
-
-}
-
-function getDeliveryFee(){
-
-  const configured =
-    Number(
-      settings.delivery_cost
-    );
-
-  if(
-    Number.isFinite(
-      configured
-    ) &&
-    configured >= 0
-  ){
-
-    return configured;
-
-  }
-
-  return DEFAULT_DELIVERY_FEE;
-
-}
 
 function updateDeliveryUI(){
 
@@ -2648,9 +2357,7 @@ function updateDeliveryUI(){
     address.value =
       "";
 
-    if(
-      settings.pickup_maps_url
-    ){
+    if(settings.pickup_maps_url){
 
       maps.style.display =
         "block";
@@ -2662,7 +2369,6 @@ function updateDeliveryUI(){
 
       maps.style.display =
         "none";
-
     }
 
   }else{
@@ -2672,31 +2378,9 @@ function updateDeliveryUI(){
 
     maps.style.display =
       "none";
-
   }
 
   updateCart();
-
-}
-
-function updateDeliverySubtitle(){
-
-  const subtitle =
-    document.getElementById(
-      "deliverySubtitle"
-    );
-
-  if(!subtitle){
-    return;
-  }
-
-  subtitle.textContent =
-    "+" +
-    formatMoney(
-      getDeliveryFee()
-    ) +
-    " de envío";
-
 }
 
 /* =========================
@@ -2704,9 +2388,7 @@ function updateDeliverySubtitle(){
 ========================= */
 
 document
-  .getElementById(
-    "paymentMethod"
-  )
+  .getElementById("paymentMethod")
   .addEventListener(
     "change",
     updatePaymentUI
@@ -2734,12 +2416,10 @@ function updatePaymentUI(){
       "";
 
     return;
-
   }
 
   const bank =
-    settings.bank_name ||
-    "";
+    settings.bank_name || "";
 
   const account =
     settings.bank_account ||
@@ -2747,24 +2427,20 @@ function updatePaymentUI(){
     "";
 
   const clabe =
-    settings.bank_clabe ||
-    "";
+    settings.bank_clabe || "";
 
   const holder =
-    settings.bank_holder ||
-    "";
+    settings.bank_holder || "";
 
   const whatsapp =
     String(
-      settings.whatsapp ||
-      ""
+      settings.whatsapp || ""
     ).replace(
       /\D/g,
       ""
     );
 
-  let proofLink =
-    "";
+  let proofLink = "";
 
   if(whatsapp){
 
@@ -2778,7 +2454,6 @@ function updatePaymentUI(){
       encodeURIComponent(
         proofMessage
       );
-
   }
 
   panel.innerHTML = `
@@ -2870,7 +2545,6 @@ function updatePaymentUI(){
   panel.classList.add(
     "show"
   );
-
 }
 
 /* =========================
@@ -2878,9 +2552,7 @@ function updatePaymentUI(){
 ========================= */
 
 document
-  .getElementById(
-    "whatsappButton"
-  )
+  .getElementById("whatsappButton")
   .addEventListener(
     "click",
     sendOrder
@@ -2889,9 +2561,7 @@ document
 function sendOrder(){
 
   const items =
-    Object.values(
-      cart
-    );
+    Object.values(cart);
 
   if(items.length === 0){
 
@@ -2900,7 +2570,6 @@ function sendOrder(){
     );
 
     return;
-
   }
 
   const name =
@@ -2931,11 +2600,9 @@ function sendOrder(){
       .trim();
 
   const payment =
-    document
-      .getElementById(
-        "paymentMethod"
-      )
-      .value;
+    document.getElementById(
+      "paymentMethod"
+    ).value;
 
   const notes =
     document
@@ -2952,7 +2619,6 @@ function sendOrder(){
     );
 
     return;
-
   }
 
   if(!phone){
@@ -2962,12 +2628,11 @@ function sendOrder(){
     );
 
     return;
-
   }
 
   if(
     deliveryType ===
-      "delivery" &&
+    "delivery" &&
     !address
   ){
 
@@ -2976,13 +2641,11 @@ function sendOrder(){
     );
 
     return;
-
   }
 
   const whatsapp =
     String(
-      settings.whatsapp ||
-      ""
+      settings.whatsapp || ""
     ).replace(
       /\D/g,
       ""
@@ -2995,11 +2658,9 @@ function sendOrder(){
     );
 
     return;
-
   }
 
-  let productsTotal =
-    0;
+  let productsTotal = 0;
 
   let message =
     "*NUEVO PEDIDO PASTEHOT*\n\n";
@@ -3033,19 +2694,17 @@ function sendOrder(){
       "*Dirección:* " +
       address +
       "\n";
-
   }
 
   message +=
     "\n*PRODUCTOS*\n";
 
   items.forEach(
-    item => {
+    item=>{
 
       const subtotal =
         Number(
-          item.product.price ||
-          0
+          item.product.price || 0
         ) *
         item.quantity;
 
@@ -3064,8 +2723,7 @@ function sendOrder(){
   );
 
   const deliveryFee =
-    deliveryType ===
-    "delivery"
+    deliveryType === "delivery"
       ? getDeliveryFee()
       : 0;
 
@@ -3078,10 +2736,18 @@ function sendOrder(){
     productsTotal.toFixed(2) +
     "*\n";
 
-  message +=
-    "*Envío: $" +
-    deliveryFee.toFixed(2) +
-    "*\n";
+  if(deliveryType === "delivery"){
+
+    message +=
+      "*Envío: $" +
+      deliveryFee.toFixed(2) +
+      "*\n";
+
+  }else{
+
+    message +=
+      "*Envío: $0.00*\n";
+  }
 
   message +=
     "*TOTAL: $" +
@@ -3104,7 +2770,6 @@ function sendOrder(){
       "*Notas:* " +
       notes +
       "\n";
-
   }
 
   const url =
@@ -3119,62 +2784,11 @@ function sendOrder(){
     url,
     "_blank"
   );
-
 }
 
 /* =========================
    UTILIDADES
 ========================= */
-
-function normalizeId(id){
-
-  return String(
-    id ?? ""
-  );
-
-}
-
-function findProductById(id){
-
-  const key =
-    normalizeId(id);
-
-  return products.find(
-    product =>
-      normalizeId(
-        product.id
-      ) === key
-  );
-
-}
-
-function isAvailable(product){
-
-  if(!product){
-    return false;
-  }
-
-  const value =
-    product.available;
-
-  return (
-    value === true ||
-    value === 1 ||
-    value === "1" ||
-    value === "true" ||
-    value === "TRUE"
-  );
-
-}
-
-function formatMoney(amount){
-
-  return "$" +
-    Number(
-      amount || 0
-    ).toFixed(2);
-
-}
 
 function slug(text){
 
@@ -3198,44 +2812,6 @@ function slug(text){
       /^-|-$/g,
       ""
     );
-
-}
-
-function parseJSON(
-  value,
-  fallback
-){
-
-  if(
-    value === null ||
-    value === undefined ||
-    value === ""
-  ){
-
-    return fallback;
-
-  }
-
-  if(
-    typeof value === "object"
-  ){
-
-    return value;
-
-  }
-
-  try{
-
-    return JSON.parse(
-      value
-    );
-
-  }catch{
-
-    return fallback;
-
-  }
-
 }
 
 function escapeHtml(value){
@@ -3268,7 +2844,6 @@ function escapeHtml(value){
     /'/g,
     "&#039;"
   );
-
 }
 
 /* =========================
