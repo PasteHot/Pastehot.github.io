@@ -25,10 +25,6 @@ body{
   min-height:100vh;
 }
 
-/* =========================
-   CAPAS DEL FONDO
-========================= */
-
 #pageBackground{
   position:fixed;
   inset:0;
@@ -130,7 +126,6 @@ textarea{
 
 .menu-title p{
   margin:8px 0 0;
-  color:#666;
 }
 
 /* =========================
@@ -180,7 +175,6 @@ textarea{
 }
 
 .category-title{
-  font-size:25px;
   margin:0 0 16px;
   font-weight:800;
 }
@@ -1108,6 +1102,44 @@ let cart = {};
 
 const DEFAULT_DELIVERY_FEE = 30;
 
+const DEFAULT_SLOGAN_TYPOGRAPHY = {
+
+  font:
+    "Arial,Helvetica,sans-serif",
+
+  size:16,
+
+  color:"#666666",
+
+  weight:400,
+
+  style:"normal",
+
+  align:"center",
+
+  letterSpacing:0
+
+};
+
+const DEFAULT_CATEGORY_TYPOGRAPHY = {
+
+  font:
+    "Arial,Helvetica,sans-serif",
+
+  size:25,
+
+  color:"#171717",
+
+  weight:800,
+
+  style:"normal",
+
+  align:"left",
+
+  letterSpacing:0
+
+};
+
 /* =========================
    CARGAR
 ========================= */
@@ -1145,6 +1177,7 @@ async function init(){
     );
 
     return;
+
   }
 
   if(settingsResult.error){
@@ -1155,6 +1188,7 @@ async function init(){
     );
 
     return;
+
   }
 
   products =
@@ -1310,12 +1344,15 @@ function applyDesign(){
   document.getElementById(
     "menuTitle"
   ).textContent =
-    settings.menu_title || "";
+    settings.menu_title ||
+    settings.business_name ||
+    "";
 
   document.getElementById(
     "menuSlogan"
   ).textContent =
-    settings.slogan || "";
+    settings.slogan ||
+    "";
 
   applyTypography();
 
@@ -1325,107 +1362,73 @@ function applyDesign(){
    TIPOGRAFÍA
 ========================= */
 
-function getTypography(){
+function parseTypography(){
 
-  let result = {
+  const fallback = {
 
     slogan:{
-      font:
-        "Arial,Helvetica,sans-serif",
-
-      size:16,
-
-      color:"#666666",
-
-      weight:400,
-
-      style:"normal",
-
-      align:"center",
-
-      letterSpacing:0
+      ...DEFAULT_SLOGAN_TYPOGRAPHY
     },
 
     categories:{}
 
   };
 
-  if(
-    settings.typography
-  ){
+  if(!settings.typography){
 
-    try{
-
-      const parsed =
-        JSON.parse(
-          settings.typography
-        );
-
-      if(
-        parsed &&
-        typeof parsed ===
-        "object"
-      ){
-
-        result = {
-
-          ...result,
-
-          ...parsed,
-
-          slogan:{
-            ...result.slogan,
-            ...(parsed.slogan || {})
-          },
-
-          categories:{
-            ...(parsed.categories || {})
-          }
-
-        };
-
-      }
-
-    }catch(error){
-
-      console.error(
-        "Error leyendo tipografía:",
-        error
-      );
-
-    }
+    return fallback;
 
   }
 
-  return result;
-}
+  try{
 
-function getDefaultCategoryTypography(){
+    const parsed =
+      typeof settings.typography ===
+      "string"
+        ? JSON.parse(
+            settings.typography
+          )
+        : settings.typography;
 
-  return {
+    if(
+      !parsed ||
+      typeof parsed !== "object"
+    ){
 
-    font:
-      "Arial,Helvetica,sans-serif",
+      return fallback;
 
-    size:25,
+    }
 
-    color:"#171717",
+    return {
 
-    weight:800,
+      slogan:{
+        ...DEFAULT_SLOGAN_TYPOGRAPHY,
+        ...(parsed.slogan || {})
+      },
 
-    style:"normal",
+      categories:{
+        ...(parsed.categories || {})
+      }
 
-    align:"left",
+    };
 
-    letterSpacing:0
+  }catch(error){
 
-  };
+    console.error(
+      "Error leyendo tipografía:",
+      error
+    );
+
+    return fallback;
+
+  }
+
 }
 
 function applyTypography(){
 
   const typography =
-    getTypography();
+    parseTypography();
 
   const slogan =
     document.getElementById(
@@ -1444,8 +1447,13 @@ function applyTypographyStyle(
   config
 ){
 
-  if(!element || !config){
+  if(
+    !element ||
+    !config
+  ){
+
     return;
+
   }
 
   element.style.fontFamily =
@@ -1454,7 +1462,7 @@ function applyTypographyStyle(
 
   element.style.fontSize =
     Number(
-      config.size || 16
+      config.size ?? 16
     ) +
     "px";
 
@@ -1464,7 +1472,7 @@ function applyTypographyStyle(
 
   element.style.fontWeight =
     String(
-      config.weight || 400
+      config.weight ?? 400
     );
 
   element.style.fontStyle =
@@ -1477,21 +1485,22 @@ function applyTypographyStyle(
 
   element.style.letterSpacing =
     Number(
-      config.letterSpacing || 0
+      config.letterSpacing ?? 0
     ) +
     "px";
+
 }
 
-function getCategoryTypography(
+function getCategoryConfig(
   category
 ){
 
   const typography =
-    getTypography();
+    parseTypography();
 
   return {
 
-    ...getDefaultCategoryTypography(),
+    ...DEFAULT_CATEGORY_TYPOGRAPHY,
 
     ...(
       typography.categories?.[
@@ -1500,6 +1509,7 @@ function getCategoryTypography(
     )
 
   };
+
 }
 
 /* =========================
@@ -1508,26 +1518,61 @@ function getCategoryTypography(
 
 function getCategories(){
 
-  const found =
-    new Set();
+  const configured =
+    parseJSON(
+      settings.categories,
+      []
+    );
 
-  products.forEach(
-    product=>{
+  const productCategories =
+    [
+      ...new Set(
+        products
+          .map(
+            product =>
+              product.category
+          )
+          .filter(Boolean)
+      )
+    ];
 
-      if(product.category){
+  if(
+    Array.isArray(configured) &&
+    configured.length
+  ){
 
-        found.add(
-          product.category
-        );
+    /*
+      Mantiene el orden definido
+      desde el administrador.
+    */
 
-      }
+    return configured.filter(
+      category =>
+        productCategories.includes(
+          category
+        )
+    );
 
-    }
+  }
+
+  return productCategories;
+
+}
+
+function getCategoryDisplayText(
+  category
+){
+
+  const config =
+    getCategoryConfig(
+      category
+    );
+
+  return (
+    config.displayText ||
+    category
   );
 
-  return Array.from(
-    found
-  );
 }
 
 function renderCategories(){
@@ -1537,13 +1582,17 @@ function renderCategories(){
       "categories"
     );
 
-  container.innerHTML = "";
+  container.innerHTML =
+    "";
 
   const categories =
     getCategories();
 
   categories.forEach(
-    (category,index)=>{
+    (
+      category,
+      index
+    ) => {
 
       const button =
         document.createElement(
@@ -1562,11 +1611,13 @@ function renderCategories(){
         );
 
       button.textContent =
-        category;
+        getCategoryDisplayText(
+          category
+        );
 
       button.addEventListener(
         "click",
-        ()=>{
+        () => {
 
           document
             .querySelectorAll(
@@ -1607,6 +1658,7 @@ function renderCategories(){
 
     }
   );
+
 }
 
 /* =========================
@@ -1622,13 +1674,14 @@ function renderMenu(){
       "menu"
     );
 
-  menu.innerHTML = "";
+  menu.innerHTML =
+    "";
 
   const categories =
     getCategories();
 
   categories.forEach(
-    category=>{
+    category => {
 
       const section =
         document.createElement(
@@ -1651,11 +1704,13 @@ function renderMenu(){
         "category-title";
 
       title.textContent =
-        category;
+        getCategoryDisplayText(
+          category
+        );
 
       applyTypographyStyle(
         title,
-        getCategoryTypography(
+        getCategoryConfig(
           category
         )
       );
@@ -1697,6 +1752,7 @@ function renderMenu(){
 
     }
   );
+
 }
 
 /* =========================
@@ -1740,10 +1796,12 @@ function createProduct(product){
     "product-image";
 
   image.src =
-    product.image_url || "";
+    product.image_url ||
+    "";
 
   image.alt =
-    product.name || "";
+    product.name ||
+    "";
 
   imageWrap.appendChild(
     image
@@ -1785,7 +1843,8 @@ function createProduct(product){
     "product-name";
 
   name.textContent =
-    product.name || "";
+    product.name ||
+    "";
 
   const description =
     document.createElement(
@@ -1796,7 +1855,8 @@ function createProduct(product){
     "product-description";
 
   description.textContent =
-    product.description || "";
+    product.description ||
+    "";
 
   const bottom =
     document.createElement(
@@ -1867,6 +1927,7 @@ function createProduct(product){
   );
 
   return card;
+
 }
 
 /* =========================
@@ -1878,7 +1939,8 @@ function renderProductControls(
   product
 ){
 
-  controls.innerHTML = "";
+  controls.innerHTML =
+    "";
 
   const key =
     normalizeId(
@@ -1886,7 +1948,8 @@ function renderProductControls(
     );
 
   const quantity =
-    cart[key]?.quantity || 0;
+    cart[key]?.quantity ||
+    0;
 
   if(!isAvailable(product)){
 
@@ -1912,6 +1975,7 @@ function renderProductControls(
     );
 
     return;
+
   }
 
   if(quantity <= 0){
@@ -1936,7 +2000,10 @@ function renderProductControls(
     plus.setAttribute(
       "aria-label",
       "Agregar " +
-      (product.name || "producto")
+      (
+        product.name ||
+        "producto"
+      )
     );
 
     controls.appendChild(
@@ -1944,6 +2011,7 @@ function renderProductControls(
     );
 
     return;
+
   }
 
   const minus =
@@ -2002,6 +2070,7 @@ function renderProductControls(
   controls.appendChild(
     plus
   );
+
 }
 
 /* =========================
@@ -2024,6 +2093,7 @@ function addToCart(id){
   ){
 
     return;
+
   }
 
   if(!cart[key]){
@@ -2042,6 +2112,7 @@ function addToCart(id){
   }
 
   updateCart();
+
 }
 
 function changeQuantity(
@@ -2063,10 +2134,12 @@ function changeQuantity(
   ){
 
     return;
+
   }
 
   const current =
-    cart[key]?.quantity || 0;
+    cart[key]?.quantity ||
+    0;
 
   const next =
     current +
@@ -2088,10 +2161,13 @@ function changeQuantity(
   }
 
   updateCart();
+
 }
 
 document
-  .getElementById("menu")
+  .getElementById(
+    "menu"
+  )
   .addEventListener(
     "click",
     function(event){
@@ -2163,6 +2239,7 @@ function updateProductCard(id){
     );
 
   }
+
 }
 
 /* =========================
@@ -2181,13 +2258,14 @@ function updateCart(){
       "cartItems"
     );
 
-  container.innerHTML = "";
+  container.innerHTML =
+    "";
 
   let productsTotal = 0;
   let count = 0;
 
   items.forEach(
-    item=>{
+    item => {
 
       const price =
         Number(
@@ -2230,7 +2308,8 @@ function updateCart(){
         "cart-item-name";
 
       name.textContent =
-        item.product.name || "";
+        item.product.name ||
+        "";
 
       const itemPrice =
         document.createElement(
@@ -2375,6 +2454,7 @@ function updateCart(){
         product.id
       )
   );
+
 }
 
 document
@@ -2471,6 +2551,7 @@ function openCart(){
     );
 
   updateCart();
+
 }
 
 function closeCart(){
@@ -2482,6 +2563,7 @@ function closeCart(){
     .classList.remove(
       "open"
     );
+
 }
 
 /* =========================
@@ -2493,7 +2575,7 @@ document
     'input[name="deliveryType"]'
   )
   .forEach(
-    radio=>{
+    radio => {
 
       radio.addEventListener(
         "change",
@@ -2509,6 +2591,7 @@ function getDeliveryType(){
     'input[name="deliveryType"]:checked'
   )?.value ||
   "delivery";
+
 }
 
 function getAppliedDeliveryFee(){
@@ -2517,6 +2600,7 @@ function getAppliedDeliveryFee(){
     "delivery"
       ? getDeliveryFee()
       : 0;
+
 }
 
 function getDeliveryFee(){
@@ -2534,9 +2618,11 @@ function getDeliveryFee(){
   ){
 
     return configured;
+
   }
 
   return DEFAULT_DELIVERY_FEE;
+
 }
 
 function updateDeliveryUI(){
@@ -2590,6 +2676,7 @@ function updateDeliveryUI(){
   }
 
   updateCart();
+
 }
 
 function updateDeliverySubtitle(){
@@ -2609,6 +2696,7 @@ function updateDeliverySubtitle(){
       getDeliveryFee()
     ) +
     " de envío";
+
 }
 
 /* =========================
@@ -2646,10 +2734,12 @@ function updatePaymentUI(){
       "";
 
     return;
+
   }
 
   const bank =
-    settings.bank_name || "";
+    settings.bank_name ||
+    "";
 
   const account =
     settings.bank_account ||
@@ -2657,20 +2747,24 @@ function updatePaymentUI(){
     "";
 
   const clabe =
-    settings.bank_clabe || "";
+    settings.bank_clabe ||
+    "";
 
   const holder =
-    settings.bank_holder || "";
+    settings.bank_holder ||
+    "";
 
   const whatsapp =
     String(
-      settings.whatsapp || ""
+      settings.whatsapp ||
+      ""
     ).replace(
       /\D/g,
       ""
     );
 
-  let proofLink = "";
+  let proofLink =
+    "";
 
   if(whatsapp){
 
@@ -2776,6 +2870,7 @@ function updatePaymentUI(){
   panel.classList.add(
     "show"
   );
+
 }
 
 /* =========================
@@ -2805,6 +2900,7 @@ function sendOrder(){
     );
 
     return;
+
   }
 
   const name =
@@ -2856,6 +2952,7 @@ function sendOrder(){
     );
 
     return;
+
   }
 
   if(!phone){
@@ -2865,6 +2962,7 @@ function sendOrder(){
     );
 
     return;
+
   }
 
   if(
@@ -2878,11 +2976,13 @@ function sendOrder(){
     );
 
     return;
+
   }
 
   const whatsapp =
     String(
-      settings.whatsapp || ""
+      settings.whatsapp ||
+      ""
     ).replace(
       /\D/g,
       ""
@@ -2895,9 +2995,11 @@ function sendOrder(){
     );
 
     return;
+
   }
 
-  let productsTotal = 0;
+  let productsTotal =
+    0;
 
   let message =
     "*NUEVO PEDIDO PASTEHOT*\n\n";
@@ -2938,7 +3040,7 @@ function sendOrder(){
     "\n*PRODUCTOS*\n";
 
   items.forEach(
-    item=>{
+    item => {
 
       const subtotal =
         Number(
@@ -3017,6 +3119,7 @@ function sendOrder(){
     url,
     "_blank"
   );
+
 }
 
 /* =========================
@@ -3028,6 +3131,7 @@ function normalizeId(id){
   return String(
     id ?? ""
   );
+
 }
 
 function findProductById(id){
@@ -3041,6 +3145,7 @@ function findProductById(id){
         product.id
       ) === key
   );
+
 }
 
 function isAvailable(product){
@@ -3059,6 +3164,7 @@ function isAvailable(product){
     value === "true" ||
     value === "TRUE"
   );
+
 }
 
 function formatMoney(amount){
@@ -3067,6 +3173,7 @@ function formatMoney(amount){
     Number(
       amount || 0
     ).toFixed(2);
+
 }
 
 function slug(text){
@@ -3091,6 +3198,44 @@ function slug(text){
       /^-|-$/g,
       ""
     );
+
+}
+
+function parseJSON(
+  value,
+  fallback
+){
+
+  if(
+    value === null ||
+    value === undefined ||
+    value === ""
+  ){
+
+    return fallback;
+
+  }
+
+  if(
+    typeof value === "object"
+  ){
+
+    return value;
+
+  }
+
+  try{
+
+    return JSON.parse(
+      value
+    );
+
+  }catch{
+
+    return fallback;
+
+  }
+
 }
 
 function escapeHtml(value){
@@ -3123,6 +3268,7 @@ function escapeHtml(value){
     /'/g,
     "&#039;"
   );
+
 }
 
 /* =========================
