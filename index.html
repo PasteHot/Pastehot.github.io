@@ -47,11 +47,6 @@ body{
   pointer-events:none;
 }
 
-/*
-  Todo el contenido normal queda
-  por encima del fondo.
-*/
-
 .hero,
 .page{
   position:relative;
@@ -68,18 +63,6 @@ textarea{
 /* =========================
    PORTADA
 ========================= */
-
-/*
-  Antes:
-  16:9 = 1920 × 1080
-
-  Ahora:
-  32:9 = 1920 × 540
-
-  La altura queda aproximadamente
-  reducida al 50% manteniendo
-  una proporción exacta.
-*/
 
 .hero{
   position:relative;
@@ -116,8 +99,8 @@ textarea{
   object-fit:cover;
   object-position:center;
   transform:translate(-50%,-50%);
-  border:6px solid white;
-  box-shadow:0 8px 28px rgba(0,0,0,.30);
+  border:0;
+  box-shadow:none;
   display:none;
   user-select:none;
   pointer-events:none;
@@ -758,7 +741,8 @@ textarea{
   .hero-profile{
     width:120px;
     height:120px;
-    border-width:5px;
+    border:0;
+    box-shadow:none;
   }
 
   .page{
@@ -1010,7 +994,7 @@ textarea{
 
         </svg>
 
-        Pedir por WhatsApp
+        Hacer pedido
 
       </button>
 
@@ -1278,11 +1262,6 @@ function applyDesign(){
     profile.style.display =
       "none";
   }
-
-  /*
-    El fondo seleccionado en el administrador
-    ahora se aplica a la capa visible del menú.
-  */
 
   if(
     settings.background_type === "image" &&
@@ -2140,8 +2119,8 @@ function updateCart(){
 
       const quantity =
         document.createElement(
-          "strong"
-        );
+        "strong"
+      );
 
       quantity.textContent =
         item.quantity;
@@ -2452,11 +2431,6 @@ function updatePaymentUI(){
 
   const holder =
     settings.bank_holder || "";
-
-  /*
-    Número de WhatsApp configurado
-    en el administrador.
-  */
 
   const whatsapp =
     String(
