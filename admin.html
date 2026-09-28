@@ -24,8 +24,13 @@
   --shadow:0 10px 35px rgba(0,0,0,.08);
 }
 
+html,
 body{
   margin:0;
+  min-height:100%;
+}
+
+body{
   font-family:Arial,Helvetica,sans-serif;
   background:#f5f6f8;
   color:var(--text);
@@ -404,10 +409,11 @@ textarea{
 }
 
 /* COVER EDITOR */
+/* Ahora coincide con la portada pública: 32:9 */
 
 .cover-editor{
   width:100%;
-  aspect-ratio:16 / 9;
+  aspect-ratio:32 / 9;
   background:#e8e8e8;
   border-radius:17px;
   overflow:hidden;
@@ -604,9 +610,11 @@ textarea{
   border-radius:12px;
 }
 
+/* Vista previa sincronizada con 32:9 */
+
 .preview-header{
   width:100%;
-  aspect-ratio:16 / 9;
+  aspect-ratio:32 / 9;
   position:relative;
   overflow:hidden;
   background:#eee;
@@ -1015,7 +1023,7 @@ th{
             </div>
 
             <div class="recommended-size">
-              Tamaño recomendado: <strong>1920 × 1080 px</strong> · proporción <strong>16:9</strong>
+              Tamaño recomendado: <strong>1920 × 540 px</strong> · proporción <strong>32:9</strong>
             </div>
 
             <div class="image-actions">
@@ -1199,6 +1207,7 @@ th{
 
         <p class="editor-panel-description">
           Puedes usar un color o una imagen como fondo del menú.
+          El fondo se mostrará detrás del contenido del menú.
         </p>
 
         <div class="grid grid-2">
@@ -1554,6 +1563,7 @@ const db = supabase.createClient(
 ========================================================= */
 
 let products = [];
+
 let categories = [
   "Pastes salados",
   "Pastes dulces",
@@ -1565,6 +1575,7 @@ let categories = [
 let editingProductId = null;
 
 let design = {
+
   cover:{
     url:"",
     x:0,
@@ -1584,6 +1595,7 @@ let design = {
     color:"#f7f7f7",
     url:""
   }
+
 };
 
 let localCoverFile = null;
@@ -2139,11 +2151,6 @@ async function saveProduct(){
 
 async function loadCategories(){
 
-  /*
-    Primero intenta leer las categorías de settings.
-    Si todavía no existen, usa las cinco categorías iniciales.
-  */
-
   const {data,error} =
     await db
       .from("settings")
@@ -2588,7 +2595,7 @@ function updateDesignEditor(){
       `calc(50% + ${design.profile.x}%)`;
 
     profileImg.style.top =
-      `calc(50% + ${design.profile.y}%)`;
+      `calc(50% + ${design.profile.y}%`;
 
     profileImg.style.transform =
       `translate(-50%,-50%) scale(${design.profile.scale})`;
@@ -2842,8 +2849,6 @@ async function saveDesign(){
 
   try{
 
-    /* PORTADA */
-
     if(localCoverFile){
 
       design.cover.url =
@@ -2856,8 +2861,6 @@ async function saveDesign(){
     }
 
 
-    /* PERFIL */
-
     if(localProfileFile){
 
       design.profile.url =
@@ -2869,8 +2872,6 @@ async function saveDesign(){
       localProfileFile=null;
     }
 
-
-    /* FONDO */
 
     if(localBackgroundFile){
 
@@ -2944,6 +2945,7 @@ async function saveDesign(){
 
     updateDesignEditor();
     updatePreview();
+    updateBackgroundUI();
 
     message.innerHTML =
       '<div class="message ok">Diseño guardado correctamente.</div>';
@@ -3087,6 +3089,8 @@ document
 
       design.background.type =
         this.value;
+
+      updateBackgroundUI();
     }
   );
 
