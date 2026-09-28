@@ -472,12 +472,35 @@ textarea{
   text-align:center;
 }
 
+/* =========================
+   RESUMEN DE COSTOS
+========================= */
+
+.cart-summary{
+  padding:15px 0 5px;
+  border-top:1px solid #eee;
+}
+
+.cart-summary-line{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+  padding:5px 0;
+  font-size:15px;
+  color:#555;
+}
+
+.cart-summary-line.delivery-line{
+  color:#555;
+}
+
 .cart-total{
   display:flex;
   justify-content:space-between;
   font-size:21px;
   font-weight:900;
-  padding:20px 0;
+  padding:15px 0 20px;
 }
 
 .order-form{
@@ -798,6 +821,24 @@ textarea{
 
     <div id="cartItems"></div>
 
+    <div class="cart-summary">
+
+      <div class="cart-summary-line">
+        <span>Productos</span>
+        <span id="cartProductsTotal">$0.00</span>
+      </div>
+
+      <div
+        class="cart-summary-line delivery-line"
+        id="cartDeliveryLine">
+
+        <span>Envío</span>
+        <span id="cartDeliveryFee">$30.00</span>
+
+      </div>
+
+    </div>
+
     <div class="cart-total">
       <span>Total</span>
       <span id="cartTotal">$0.00</span>
@@ -829,7 +870,7 @@ textarea{
 
           <span class="delivery-text">
             <strong>Envío a domicilio</strong>
-            <small>Recibe tu pedido en tu domicilio</small>
+            <small id="deliverySubtitle">+$30 de envío</small>
           </span>
 
           <span class="delivery-check"></span>
@@ -935,6 +976,8 @@ let products = [];
 let settings = {};
 let cart = {};
 
+const DEFAULT_DELIVERY_FEE = 30;
+
 const categoriesOrder = [
   "Pastes salados",
   "Pastes dulces",
@@ -978,6 +1021,47 @@ function isAvailable(product){
     value === "true" ||
     value === "TRUE"
   );
+}
+
+/* =========================
+   COSTO DE ENVÍO
+========================= */
+
+function getDeliveryFee(){
+
+  const configured =
+    Number(settings.delivery_cost);
+
+  if(
+    Number.isFinite(configured) &&
+    configured >= 0
+  ){
+
+    return configured;
+  }
+
+  return DEFAULT_DELIVERY_FEE;
+}
+
+function getDeliveryType(){
+
+  return document.querySelector(
+    'input[name="deliveryType"]:checked'
+  )?.value || "delivery";
+}
+
+function getAppliedDeliveryFee(){
+
+  return getDeliveryType() === "delivery"
+    ? getDeliveryFee()
+    : 0;
+}
+
+function formatMoney(amount){
+
+  return "$" +
+    Number(amount || 0)
+      .toFixed(2);
 }
 
 /* =========================
@@ -1039,6 +1123,8 @@ async function init(){
   applyDesign();
 
   renderMenu();
+
+  updateDeliverySubtitle();
 
   updateCart();
 
@@ -1850,6 +1936,29 @@ function updateProductCard(id){
 }
 
 /* =========================
+   ACTUALIZAR TEXTO DE ENVÍO
+========================= */
+
+function updateDeliverySubtitle(){
+
+  const subtitle =
+    document.getElementById(
+      "deliverySubtitle"
+    );
+
+  if(!subtitle){
+    return;
+  }
+
+  subtitle.textContent =
+    "+" +
+    formatMoney(
+      getDeliveryFee()
+    ) +
+    " de envío";
+}
+
+/* =========================
    ACTUALIZAR CARRITO
 ========================= */
 
@@ -1865,7 +1974,7 @@ function updateCart(){
 
   container.innerHTML = "";
 
-  let total = 0;
+  let productsTotal = 0;
   let count = 0;
 
   items.forEach(
@@ -1880,7 +1989,7 @@ function updateCart(){
         price *
         item.quantity;
 
-      total +=
+      productsTotal +=
         subtotal;
 
       count +=
@@ -2016,11 +2125,33 @@ function updateCart(){
     }
   );
 
+  const deliveryFee =
+    getAppliedDeliveryFee();
+
+  const total =
+    productsTotal +
+    deliveryFee;
+
+  document.getElementById(
+    "cartProductsTotal"
+  ).textContent =
+    formatMoney(
+      productsTotal
+    );
+
+  document.getElementById(
+    "cartDeliveryFee"
+  ).textContent =
+    formatMoney(
+      deliveryFee
+    );
+
   document.getElementById(
     "cartTotal"
   ).textContent =
-    "$" +
-    total.toFixed(2);
+    formatMoney(
+      total
+    );
 
   document.getElementById(
     "cartCount"
@@ -2161,9 +2292,7 @@ document
 function updateDeliveryUI(){
 
   const type =
-    document.querySelector(
-      'input[name="deliveryType"]:checked'
-    )?.value;
+    getDeliveryType();
 
   const address =
     document.getElementById(
@@ -2205,6 +2334,8 @@ function updateDeliveryUI(){
     maps.style.display =
       "none";
   }
+
+  updateCart();
 }
 
 /* =========================
@@ -2345,9 +2476,7 @@ function sendOrder(){
       .trim();
 
   const deliveryType =
-    document.querySelector(
-      'input[name="deliveryType"]:checked'
-    )?.value;
+    getDeliveryType();
 
   const address =
     document
@@ -2418,7 +2547,7 @@ function sendOrder(){
     return;
   }
 
-  let total = 0;
+  let productsTotal = 0;
 
   let message =
     "*NUEVO PEDIDO PASTEHOT*\n\n";
@@ -2466,7 +2595,7 @@ function sendOrder(){
         ) *
         item.quantity;
 
-      total +=
+      productsTotal +=
         subtotal;
 
       message +=
@@ -2480,8 +2609,35 @@ function sendOrder(){
     }
   );
 
+  const deliveryFee =
+    deliveryType === "delivery"
+      ? getDeliveryFee()
+      : 0;
+
+  const total =
+    productsTotal +
+    deliveryFee;
+
   message +=
-    "\n*TOTAL: $" +
+    "\n*Subtotal productos: $" +
+    productsTotal.toFixed(2) +
+    "*\n";
+
+  if(deliveryType === "delivery"){
+
+    message +=
+      "*Envío: $" +
+      deliveryFee.toFixed(2) +
+      "*\n";
+
+  }else{
+
+    message +=
+      "*Envío: $0.00*\n";
+  }
+
+  message +=
+    "*TOTAL: $" +
     total.toFixed(2) +
     "*\n";
 
