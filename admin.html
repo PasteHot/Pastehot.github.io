@@ -16,6 +16,21 @@
 .device-preview{display:flex;justify-content:center;padding:14px 0}.device{background:#111;border-radius:24px;padding:8px;width:100%;max-width:630px;box-shadow:0 15px 45px rgba(0,0,0,.24)}.device.mobile{width:300px;border-radius:34px}.device-screen{position:relative;overflow:hidden;border-radius:16px;min-height:390px;background:#f5f5f5}.preview-background{position:absolute;inset:0;background:#f5f5f5 center/cover no-repeat;z-index:0}.preview-overlay{position:absolute;inset:0;background:transparent;z-index:1}.preview-header{position:relative;z-index:2;width:100%;aspect-ratio:32/9;background:#ddd;overflow:hidden}.preview-header img{position:absolute;left:50%;top:50%;width:100%;height:100%;object-fit:cover;transform:translate(-50%,-50%)}.preview-profile{width:100px!important;height:100px!important;border-radius:50%;z-index:3}.mobile .preview-profile{width:66px!important;height:66px!important}.preview-body{position:relative;z-index:2;padding:16px}.preview-category-title{margin:8px 0 12px}.preview-card-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.mobile .preview-card-row{grid-template-columns:repeat(2,1fr)}.preview-mini-card{height:95px;background:rgba(255,255,255,.9);border-radius:11px;box-shadow:0 5px 16px rgba(0,0,0,.08)}
 .color-row{display:flex;gap:10px;align-items:center}.color-row input[type=color]{width:58px;height:43px;padding:3px}.current-image{width:100%;max-height:170px;object-fit:cover;border-radius:11px;margin-top:10px}.style-preview{padding:20px;border-radius:14px;background:#f2f2f2;margin-top:14px}.style-preview h2{margin:0}
 .metric-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}.metric{background:#fff;border:1px solid var(--border);border-radius:15px;padding:17px;box-shadow:0 6px 20px rgba(0,0,0,.05)}.metric span{display:block;color:var(--muted);font-size:13px;font-weight:700}.metric strong{display:block;font-size:27px;margin-top:6px}.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.chart-row{display:grid;grid-template-columns:minmax(120px,.6fr) 1fr auto;gap:10px;align-items:center;margin:10px 0;font-size:13px}.bar-track{height:11px;background:#eee;border-radius:999px;overflow:hidden}.bar-fill{height:100%;background:#111;border-radius:999px}.chart-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:12px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:middle}th{font-size:12px;color:#666;text-transform:uppercase;letter-spacing:.02em}.badge{display:inline-block;padding:5px 8px;border-radius:999px;background:#eee;font-size:12px;font-weight:800}.badge.recurrent{background:#e3f7eb;color:#087333}.badge.new{background:#eef1ff;color:#3f4e9b}.order-filter{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.order-filter select{width:auto;min-width:150px}
+.batch-layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr);gap:20px}
+.batch-status-card{border-radius:20px;padding:24px;background:linear-gradient(135deg,#171717,#2a2a2a);color:#fff;box-shadow:0 14px 34px rgba(0,0,0,.16)}
+.batch-status-label{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#ffb6b9}
+.batch-status-time{font-size:clamp(38px,7vw,64px);font-weight:900;letter-spacing:-.04em;font-variant-numeric:tabular-nums;margin:8px 0 5px}
+.batch-status-text{font-size:15px;color:#e7e7e7;line-height:1.45}
+.batch-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+.batch-note{margin-top:14px;padding:12px 13px;border-radius:12px;background:#fff7ec;border:1px solid #f0dfc4;color:#6a431d;font-size:13px;line-height:1.5}
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:13px 0;border-bottom:1px solid #eee}
+.switch{position:relative;width:52px;height:30px;flex:0 0 auto}
+.switch input{opacity:0;width:0;height:0}
+.switch-slider{position:absolute;inset:0;border-radius:999px;background:#ccc;transition:.2s}
+.switch-slider:before{content:"";position:absolute;width:22px;height:22px;left:4px;top:4px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 2px 6px rgba(0,0,0,.18)}
+.switch input:checked + .switch-slider{background:var(--red)}
+.switch input:checked + .switch-slider:before{transform:translateX(22px)}
+@media(max-width:1000px){.batch-layout{grid-template-columns:1fr}}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:500}.modal.show{display:flex}.modal-card{background:#fff;border-radius:19px;width:100%;max-width:650px;max-height:90vh;overflow:auto;padding:24px}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.modal-head h3{margin:0}.close{border:0;background:#eee;width:36px;height:36px;border-radius:50%;font-size:20px}.order-detail-list{display:grid;gap:8px}.order-detail-item{display:flex;justify-content:space-between;gap:15px;padding:9px 0;border-bottom:1px solid #eee}
 @media(max-width:1000px){.design-layout,.analytics-grid{grid-template-columns:1fr}.grid-4,.metric-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:700px){.topbar{height:62px;padding:0 14px}.tabs{top:62px;padding:8px}.content{padding:16px 11px}.section-title{align-items:flex-start;flex-direction:column}.grid-2,.grid-3,.grid-4,.control-grid,.metric-grid{grid-template-columns:1fr}.product-admin-card{grid-template-columns:72px 1fr}.product-admin-image{width:72px;height:72px}.product-admin-actions{grid-column:1/-1;justify-content:flex-start}.chart-row{grid-template-columns:100px 1fr auto}.section-title h2{font-size:24px}}
@@ -25,7 +40,7 @@
 <div id="loginScreen" class="login-screen"><div class="login-card"><h1>Administrador</h1><p>Gestión del menú, diseño, ventas y clientes.</p><div class="form-group"><label>Correo</label><input id="loginEmail" type="email" autocomplete="username"></div><div class="form-group"><label>Contraseña</label><input id="loginPassword" type="password" autocomplete="current-password"></div><button class="btn btn-primary" style="width:100%" onclick="login()">Entrar</button><div id="loginMessage"></div></div></div>
 <div id="adminScreen" class="hidden">
 <header class="topbar"><div class="topbar-title">PasteHot · Administrador</div><button class="btn btn-light" onclick="logout()">Salir</button></header>
-<nav class="tabs"><button class="tab active" onclick="showTab('products',this)">Productos</button><button class="tab" onclick="showTab('design',this)">Diseño</button><button class="tab" onclick="showTab('business',this)">Negocio</button><button class="tab" onclick="showTab('orders',this)">Pedidos</button><button class="tab" onclick="showTab('customers',this)">Clientes</button></nav>
+<nav class="tabs"><button class="tab active" onclick="showTab('products',this)">Productos</button><button class="tab" onclick="showTab('design',this)">Diseño</button><button class="tab" onclick="showTab('business',this)">Negocio</button><button class="tab" onclick="showTab('batch',this)">Hornada</button><button class="tab" onclick="showTab('orders',this)">Pedidos</button><button class="tab" onclick="showTab('customers',this)">Clientes</button></nav>
 <main class="content">
 <section id="section-products" class="section active"><div class="section-title"><div><h2>Productos</h2><p>Precios, fotografías, categorías y disponibilidad.</p></div><button class="btn btn-primary" onclick="openProductModal()">+ Nuevo producto</button></div><div class="card"><div id="productsList"></div></div><div class="card"><div class="section-title" style="margin-bottom:12px"><div><h3 style="margin:0">Categorías</h3><p>El orden se refleja en el menú público.</p></div><button class="btn btn-dark" onclick="newCategory()">+ Nueva categoría</button></div><div id="categoriesList"></div></div></section>
 
@@ -41,6 +56,80 @@
 <div class="editor-panel"><div class="section-title" style="margin-bottom:8px"><div><h3 style="margin:0">Vista previa</h3><p>Comprueba el contraste antes de guardar.</p></div><div><button class="btn btn-light btn-small" onclick="setPreviewDevice('desktop')">PC</button> <button class="btn btn-light btn-small" onclick="setPreviewDevice('mobile')">Celular</button></div></div><div class="device-preview"><div id="previewDevice" class="device"><div class="device-screen"><div id="previewBackground" class="preview-background"></div><div id="previewOverlay" class="preview-overlay"></div><div class="preview-header"><img id="previewCover" class="hidden"><img id="previewProfile" class="preview-profile hidden"></div><div class="preview-body"><h2 id="previewCategoryTitle" class="preview-category-title">Pastes salados</h2><div class="preview-card-row"><div class="preview-mini-card"></div><div class="preview-mini-card"></div><div class="preview-mini-card"></div></div></div></div></div></div></div></div></section>
 
 <section id="section-business" class="section"><div class="section-title"><div><h2>Negocio</h2><p>Datos visibles y operativos del menú.</p></div></div><div class="card"><div class="grid grid-2"><div class="form-group"><label>Nombre del negocio</label><input id="business_name"></div><div class="form-group"><label>Slogan</label><input id="slogan"></div><div class="form-group"><label>WhatsApp</label><input id="whatsapp" placeholder="5219990000000"></div><div class="form-group"><label>Dirección</label><input id="business_address"></div><div class="form-group"><label>Hora de apertura</label><input id="opening_time" type="time"></div><div class="form-group"><label>Hora de cierre</label><input id="closing_time" type="time"></div><div class="form-group"><label>Costo de entrega</label><input id="delivery_cost" type="number" min="0" step="0.01"></div><div class="form-group"><label>Google Maps para recoger</label><input id="pickup_maps_url" placeholder="Enlace exacto de Google Maps"></div></div><button class="btn btn-primary" onclick="saveBusinessSettings()">Guardar configuración</button><div id="businessMessage"></div></div><div class="card"><h3>Métodos de pago</h3><div class="grid grid-2"><div class="form-group"><label>Banco</label><input id="bank_name"></div><div class="form-group"><label>Beneficiario</label><input id="bank_holder"></div><div class="form-group"><label>CLABE</label><input id="bank_clabe"></div><div class="form-group"><label>Número de tarjeta</label><input id="bank_card"></div></div><button class="btn btn-primary" onclick="savePaymentSettings()">Guardar datos de transferencia</button><div id="paymentMessage"></div></div></section>
+
+
+<section id="section-batch" class="section">
+  <div class="section-title">
+    <div>
+      <h2>Próxima hornada</h2>
+      <p>Controla el contador real que verá el cliente en el menú.</p>
+    </div>
+    <button class="btn btn-light" onclick="loadBatchSettings()">Actualizar</button>
+  </div>
+
+  <div class="batch-layout">
+    <div class="card">
+      <div class="switch-row">
+        <div>
+          <strong>Mostrar hornada en el menú</strong>
+          <div style="color:var(--muted);font-size:13px;margin-top:3px">Puedes ocultarla sin borrar la configuración.</div>
+        </div>
+        <label class="switch">
+          <input id="batchEnabled" type="checkbox">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+
+      <div class="grid grid-2" style="margin-top:18px">
+        <div class="form-group">
+          <label>Duración estimada de la hornada</label>
+          <div style="display:flex;align-items:center;gap:9px">
+            <input id="batchDuration" type="number" min="5" max="180" step="1" value="30">
+            <span style="white-space:nowrap;color:var(--muted)">minutos</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Tiempo mostrando “¡Recién horneados!”</label>
+          <div style="display:flex;align-items:center;gap:9px">
+            <input id="batchFreshMinutes" type="number" min="1" max="60" step="1" value="5">
+            <span style="white-space:nowrap;color:var(--muted)">minutos</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Texto del contador</label>
+        <input id="batchLabel" value="Próxima hornada estimada">
+      </div>
+
+      <div class="form-group">
+        <label>Mensaje cuando termina</label>
+        <input id="batchFinishedMessage" value="¡Recién horneados!">
+      </div>
+
+      <div class="batch-actions">
+        <button class="btn btn-primary" onclick="startBatch()">🔥 Iniciar nueva hornada</button>
+        <button class="btn btn-success" onclick="markBatchFresh()">✓ Marcar recién horneados</button>
+        <button class="btn btn-light" onclick="saveBatchPreferences()">Guardar preferencias</button>
+        <button class="btn btn-danger" onclick="disableBatch()">Desactivar</button>
+      </div>
+
+      <div class="batch-note">
+        <strong>Cómo funciona:</strong> al iniciar una hornada se guarda una hora final real en Supabase. El cliente verá la misma cuenta regresiva aunque cierre y vuelva a abrir el menú. Al llegar a cero, aparecerá “¡Recién horneados!” durante el tiempo que indiques. Después, el aviso se ocultará hasta que inicies otra hornada.
+      </div>
+
+      <div id="batchMessage"></div>
+    </div>
+
+    <div class="batch-status-card">
+      <div class="batch-status-label">Estado en el menú</div>
+      <div id="batchAdminTime" class="batch-status-time">--:--</div>
+      <div id="batchAdminText" class="batch-status-text">Sin hornada activa.</div>
+      <div style="margin-top:18px;font-size:12px;color:#bfbfbf">Vista administrativa en tiempo real</div>
+    </div>
+  </div>
+</section>
 
 <section id="section-orders" class="section"><div class="section-title"><div><h2>Pedidos y ventas</h2><p>Resumen calculado a partir de los pedidos registrados.</p></div><div class="order-filter"><select id="ordersPeriod" onchange="renderOrderAnalytics()"><option value="7">Últimos 7 días</option><option value="30" selected>Últimos 30 días</option><option value="all">Todo</option></select><button class="btn btn-light" onclick="loadOrders()">Actualizar</button></div></div><div id="ordersMetrics" class="metric-grid"></div><div class="analytics-grid"><div class="card"><h3>Productos más vendidos</h3><div id="productSalesChart"></div></div><div class="card"><h3>Ventas por día</h3><div id="dailySalesChart"></div></div></div><div class="card table-wrap"><table><thead><tr><th>Fecha</th><th>Pedido</th><th>Cliente</th><th>Tipo</th><th>Total</th><th>Pago</th><th>Estado</th><th></th></tr></thead><tbody id="ordersTable"></tbody></table></div></section>
 
@@ -70,8 +159,8 @@ function showMessage(id,text,ok=true){document.getElementById(id).innerHTML=`<di
 async function login(){const email=loginEmail.value.trim(),password=loginPassword.value;loginMessage.innerHTML="";if(!email||!password){showMessage("loginMessage","Escribe correo y contraseña.",false);return}const {error}=await db.auth.signInWithPassword({email,password});if(error){showMessage("loginMessage",error.message,false);return}loginScreen.classList.add("hidden");adminScreen.classList.remove("hidden");await initAdmin()}
 async function logout(){await db.auth.signOut();location.reload()}
 async function checkSession(){const {data}=await db.auth.getSession();if(data.session){loginScreen.classList.add("hidden");adminScreen.classList.remove("hidden");await initAdmin()}}
-async function initAdmin(){await Promise.all([loadProducts(),loadCategories(),loadDesign(),loadBusinessSettings(),loadOrders()])}
-function showTab(name,button){document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));document.getElementById("section-"+name).classList.add("active");button?.classList.add("active");if(name==="orders"||name==="customers")loadOrders();if(name==="design")loadDesign()}
+async function initAdmin(){await Promise.all([loadProducts(),loadCategories(),loadDesign(),loadBusinessSettings(),loadOrders(),loadBatchSettings()])}
+function showTab(name,button){document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));document.getElementById("section-"+name).classList.add("active");button?.classList.add("active");if(name==="orders"||name==="customers")loadOrders();if(name==="design")loadDesign();if(name==="batch")loadBatchSettings()}
 
 async function loadProducts(){const {data,error}=await db.from("products").select("*").order("sort_order",{ascending:true}).order("created_at",{ascending:true});if(error){productsList.innerHTML='<div class="message error">No se pudieron cargar los productos.</div>';return}products=data||[];renderProducts()}
 function renderProducts(){if(!products.length){productsList.innerHTML='<p style="color:#777">No hay productos.</p>';return}productsList.innerHTML=products.map(p=>`<div class="product-admin-card"><img class="product-admin-image" src="${escapeAttr(p.image_url||"")}" alt=""><div class="product-admin-info"><h3>${escapeHtml(p.name)}</h3><p>${escapeHtml(p.category||"")}</p><p>${formatMoney(p.price)}</p></div><div class="product-admin-actions"><button class="status-toggle ${p.available?"status-on":"status-off"}" onclick="toggleProduct('${p.id}',${!p.available})">${p.available?"● Disponible":"● Agotado"}</button><button class="btn btn-light btn-small" onclick="editProduct('${p.id}')">Editar</button><button class="btn btn-danger btn-small" onclick="deleteProduct('${p.id}')">Borrar</button></div></div>`).join("")}
@@ -107,6 +196,149 @@ async function saveDesign(){designMessage.innerHTML="";try{for(const type of ["c
 async function loadBusinessSettings(){const keys=["business_name","slogan","whatsapp","business_address","opening_time","closing_time","delivery_cost","pickup_maps_url","bank_name","bank_holder","bank_clabe","bank_card"];const {data}=await db.from("settings").select("key,value").in("key",keys);const s={};(data||[]).forEach(r=>s[r.key]=r.value);keys.forEach(k=>{const el=document.getElementById(k);if(el)el.value=s[k]||""})}
 async function saveBusinessSettings(){for(const k of ["business_name","slogan","whatsapp","business_address","opening_time","closing_time","delivery_cost","pickup_maps_url"])await saveSetting(k,document.getElementById(k).value);showMessage("businessMessage","Configuración guardada correctamente.")}
 async function savePaymentSettings(){for(const k of ["bank_name","bank_holder","bank_clabe","bank_card"])await saveSetting(k,document.getElementById(k).value);showMessage("paymentMessage","Datos de transferencia guardados.")}
+
+
+let batchSettings={
+  enabled:false,
+  duration:30,
+  freshMinutes:5,
+  label:"Próxima hornada estimada",
+  finishedMessage:"¡Recién horneados!",
+  endTime:""
+};
+let batchAdminInterval=null;
+
+async function loadBatchSettings(){
+  const keys=["batch_timer_enabled","batch_duration_minutes","batch_fresh_minutes","batch_label","batch_finished_message","batch_end_time"];
+  const {data,error}=await db.from("settings").select("key,value").in("key",keys);
+  if(error){
+    console.error(error);
+    if(document.getElementById("batchMessage"))showMessage("batchMessage","No se pudo cargar la configuración de hornada.",false);
+    return;
+  }
+  const s={};(data||[]).forEach(r=>s[r.key]=r.value);
+  batchSettings.enabled=String(s.batch_timer_enabled||"false")==="true";
+  batchSettings.duration=Math.max(5,Math.min(180,Number(s.batch_duration_minutes)||30));
+  batchSettings.freshMinutes=Math.max(1,Math.min(60,Number(s.batch_fresh_minutes)||5));
+  batchSettings.label=s.batch_label||"Próxima hornada estimada";
+  batchSettings.finishedMessage=s.batch_finished_message||"¡Recién horneados!";
+  batchSettings.endTime=s.batch_end_time||"";
+
+  if(document.getElementById("batchEnabled")){
+    batchEnabled.checked=batchSettings.enabled;
+    batchDuration.value=batchSettings.duration;
+    batchFreshMinutes.value=batchSettings.freshMinutes;
+    batchLabel.value=batchSettings.label;
+    batchFinishedMessage.value=batchSettings.finishedMessage;
+  }
+  startBatchAdminClock();
+}
+
+function readBatchForm(){
+  batchSettings.enabled=Boolean(batchEnabled.checked);
+  batchSettings.duration=Math.max(5,Math.min(180,Number(batchDuration.value)||30));
+  batchSettings.freshMinutes=Math.max(1,Math.min(60,Number(batchFreshMinutes.value)||5));
+  batchSettings.label=batchLabel.value.trim()||"Próxima hornada estimada";
+  batchSettings.finishedMessage=batchFinishedMessage.value.trim()||"¡Recién horneados!";
+}
+
+async function saveBatchBase(){
+  readBatchForm();
+  const pairs={
+    batch_timer_enabled:batchSettings.enabled,
+    batch_duration_minutes:batchSettings.duration,
+    batch_fresh_minutes:batchSettings.freshMinutes,
+    batch_label:batchSettings.label,
+    batch_finished_message:batchSettings.finishedMessage
+  };
+  await Promise.all(Object.entries(pairs).map(([k,v])=>saveSetting(k,v)));
+}
+
+async function saveBatchPreferences(){
+  batchMessage.innerHTML="";
+  try{
+    await saveBatchBase();
+    showMessage("batchMessage","Preferencias de hornada guardadas.");
+    startBatchAdminClock();
+  }catch(e){showMessage("batchMessage",e.message,false)}
+}
+
+async function startBatch(){
+  batchMessage.innerHTML="";
+  try{
+    readBatchForm();
+    batchSettings.enabled=true;
+    batchEnabled.checked=true;
+    const end=new Date(Date.now()+batchSettings.duration*60000).toISOString();
+    batchSettings.endTime=end;
+    await saveBatchBase();
+    await saveSetting("batch_end_time",end);
+    showMessage("batchMessage",`Hornada iniciada por ${batchSettings.duration} minutos.`);
+    startBatchAdminClock();
+  }catch(e){showMessage("batchMessage",e.message,false)}
+}
+
+async function markBatchFresh(){
+  batchMessage.innerHTML="";
+  try{
+    readBatchForm();
+    batchSettings.enabled=true;
+    batchEnabled.checked=true;
+    const now=new Date().toISOString();
+    batchSettings.endTime=now;
+    await saveBatchBase();
+    await saveSetting("batch_end_time",now);
+    showMessage("batchMessage","El menú mostrará “¡Recién horneados!”.");
+    startBatchAdminClock();
+  }catch(e){showMessage("batchMessage",e.message,false)}
+}
+
+async function disableBatch(){
+  if(!confirm("¿Ocultar el aviso de hornada del menú?"))return;
+  batchMessage.innerHTML="";
+  try{
+    batchSettings.enabled=false;
+    batchSettings.endTime="";
+    batchEnabled.checked=false;
+    await saveSetting("batch_timer_enabled","false");
+    await saveSetting("batch_end_time","");
+    showMessage("batchMessage","Aviso de hornada desactivado.");
+    startBatchAdminClock();
+  }catch(e){showMessage("batchMessage",e.message,false)}
+}
+
+function batchAdminState(){
+  if(!batchSettings.enabled)return{type:"off",time:"--:--",text:"El aviso está desactivado."};
+  if(!batchSettings.endTime)return{type:"waiting",time:"--:--",text:"Activa una nueva hornada para iniciar el contador."};
+  const endMs=new Date(batchSettings.endTime).getTime();
+  if(!Number.isFinite(endMs))return{type:"waiting",time:"--:--",text:"No hay una hora de hornada válida."};
+  const now=Date.now();
+  const remaining=endMs-now;
+  if(remaining>0){
+    const totalSeconds=Math.ceil(remaining/1000);
+    const min=Math.floor(totalSeconds/60);
+    const sec=totalSeconds%60;
+    return{type:"countdown",time:`${String(min).padStart(2,"0")}:${String(sec).padStart(2,"0")}`,text:batchSettings.label};
+  }
+  const freshUntil=endMs+batchSettings.freshMinutes*60000;
+  if(now<freshUntil)return{type:"fresh",time:"00:00",text:batchSettings.finishedMessage};
+  return{type:"ended",time:"--:--",text:"La ventana de recién horneados terminó. Inicia la siguiente hornada cuando corresponda."};
+}
+
+function renderBatchAdminClock(){
+  if(!document.getElementById("batchAdminTime"))return;
+  const state=batchAdminState();
+  batchAdminTime.textContent=state.time;
+  batchAdminText.textContent=state.text;
+  batchAdminTime.style.color=state.type==="fresh"?"#8cffb1":"#fff";
+}
+
+function startBatchAdminClock(){
+  if(batchAdminInterval)clearInterval(batchAdminInterval);
+  renderBatchAdminClock();
+  batchAdminInterval=setInterval(renderBatchAdminClock,1000);
+}
+
 
 async function loadOrders(){const {data,error}=await db.from("orders").select("*").order("created_at",{ascending:false}).limit(1000);if(error){orders=[];ordersTable.innerHTML='<tr><td colspan="8">No se pudieron cargar los pedidos. Revisa la tabla y las políticas RLS.</td></tr>';renderOrderAnalytics();renderCustomers();return}orders=data||[];renderOrdersTable();renderOrderAnalytics();renderCustomers()}
 function filteredOrders(){const p=ordersPeriod.value;if(p==="all")return orders;const cutoff=Date.now()-Number(p)*86400000;return orders.filter(o=>new Date(o.created_at).getTime()>=cutoff)}
