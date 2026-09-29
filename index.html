@@ -44,6 +44,17 @@ button:disabled{cursor:not-allowed}
 .brand-card p{margin:7px 0 0;color:var(--muted);line-height:1.45}
 .business-meta{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-size:13px;color:#555}
 .business-meta span{background:rgba(255,255,255,.7);padding:6px 10px;border-radius:999px;border:1px solid var(--border)}
+.brand-head{display:grid;grid-template-columns:minmax(180px,1fr) auto minmax(180px,1fr);align-items:center;gap:16px}
+.brand-title-wrap{text-align:center}
+.batch-public{justify-self:start;display:none;align-items:center;gap:10px;min-width:178px;padding:10px 13px;border-radius:16px;background:linear-gradient(135deg,#b80e16,#e32931);color:#fff;box-shadow:0 8px 22px rgba(183,14,22,.24);text-align:left}
+.batch-public.show{display:flex}
+.batch-public.fresh{background:linear-gradient(135deg,#0f7f43,#18a85a);box-shadow:0 8px 22px rgba(15,127,67,.22)}
+.batch-fire{width:35px;height:35px;flex:0 0 auto;border-radius:11px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;font-size:20px}
+.batch-copy{min-width:0}
+.batch-copy small{display:block;font-size:10px;line-height:1.15;font-weight:900;text-transform:uppercase;letter-spacing:.055em;color:rgba(255,255,255,.83)}
+.batch-countdown{display:block;margin-top:2px;font-size:24px;line-height:1;font-weight:900;letter-spacing:.02em;font-variant-numeric:tabular-nums}
+.brand-balance{min-width:178px}
+@media(max-width:760px){.brand-head{grid-template-columns:1fr}.batch-public{justify-self:center;order:2;min-width:min(100%,270px);margin-top:10px}.brand-title-wrap{order:1}.brand-balance{display:none}}
 
 .categories-shell{position:sticky;top:0;z-index:30;margin:0 -1px 10px;padding:8px 0;background:linear-gradient(to bottom,rgba(255,255,255,.94),rgba(255,255,255,.76),transparent);backdrop-filter:blur(6px)}
 .categories{display:flex;gap:9px;overflow-x:auto;padding:4px 2px 10px;scrollbar-width:none}
@@ -118,8 +129,20 @@ button:disabled{cursor:not-allowed}
 </header>
 <main class="page">
   <section class="brand-card">
-    <h1 id="menuTitle"></h1>
-    <p id="menuSlogan"></p>
+    <div class="brand-head">
+      <div id="batchPublic" class="batch-public" aria-live="polite">
+        <div class="batch-fire">🔥</div>
+        <div class="batch-copy">
+          <small id="batchPublicLabel">Próxima hornada estimada</small>
+          <strong id="batchPublicTime" class="batch-countdown">30:00</strong>
+        </div>
+      </div>
+      <div class="brand-title-wrap">
+        <h1 id="menuTitle"></h1>
+        <p id="menuSlogan"></p>
+      </div>
+      <div class="brand-balance" aria-hidden="true"></div>
+    </div>
     <div class="business-meta" id="businessMeta"></div>
   </section>
   <div class="categories-shell"><div class="categories" id="categories"></div></div>
@@ -164,6 +187,7 @@ let settings={};
 let cart={};
 const DEFAULT_DELIVERY_FEE=30;
 const FALLBACK_CATEGORIES=["Pastes salados","Pastes dulces","Pastes de temporada","Bebidas","Promociones"];
+let batchPublicInterval=null;
 const FONT_MAP={
   "Arial":"Arial,Helvetica,sans-serif",
   "Georgia":"Georgia,'Times New Roman',serif",
@@ -230,7 +254,7 @@ async function init(){
   if(pr.error){console.error(pr.error);document.getElementById("menu").textContent="No se pudo cargar el menú.";return}
   if(sr.error){console.error(sr.error);return}
   products=pr.data||[]; settings={}; (sr.data||[]).forEach(r=>settings[r.key]=r.value);
-  applyDesign(); renderMenu(); restoreCheckoutState(); updateDeliverySubtitle(); updateDeliveryUI(); updatePaymentUI(); updateCart();
+  applyDesign(); renderMenu(); restoreCheckoutState(); updateDeliverySubtitle(); updateDeliveryUI(); updatePaymentUI(); updateCart(); startPublicBatchClock();
 }
 function applyDesign(){
   const cover=document.getElementById("heroCover"),profile=document.getElementById("heroProfile"),bg=document.getElementById("pageBackground"),overlay=document.getElementById("backgroundOverlay");
@@ -249,6 +273,67 @@ function applyDesign(){
   if(settings.opening_time&&settings.closing_time){const s=document.createElement("span");s.textContent=`Horario ${settings.opening_time}–${settings.closing_time}`;meta.appendChild(s)}
   if(settings.business_address){const s=document.createElement("span");s.textContent=settings.business_address;meta.appendChild(s)}
 }
+
+function publicBatchState(){
+  const enabled=String(settings.batch_timer_enabled||"false")==="true";
+  if(!enabled||!settings.batch_end_time)return{visible:false};
+
+  const endMs=new Date(settings.batch_end_time).getTime();
+  if(!Number.isFinite(endMs))return{visible:false};
+
+  const now=Date.now();
+  const remaining=endMs-now;
+  const label=settings.batch_label||"Próxima hornada estimada";
+  const finished=settings.batch_finished_message||"¡Recién horneados!";
+  const freshMinutes=Math.max(1,Math.min(60,Number(settings.batch_fresh_minutes)||5));
+
+  if(remaining>0){
+    const totalSeconds=Math.ceil(remaining/1000);
+    const min=Math.floor(totalSeconds/60);
+    const sec=totalSeconds%60;
+    return{
+      visible:true,
+      fresh:false,
+      label,
+      time:`${String(min).padStart(2,"0")}:${String(sec).padStart(2,"0")}`
+    };
+  }
+
+  if(now<endMs+freshMinutes*60000){
+    return{
+      visible:true,
+      fresh:true,
+      label:finished,
+      time:"LISTOS"
+    };
+  }
+
+  return{visible:false};
+}
+
+function renderPublicBatchClock(){
+  const box=document.getElementById("batchPublic");
+  if(!box)return;
+  const state=publicBatchState();
+
+  if(!state.visible){
+    box.classList.remove("show","fresh");
+    return;
+  }
+
+  box.classList.add("show");
+  box.classList.toggle("fresh",Boolean(state.fresh));
+  document.getElementById("batchPublicLabel").textContent=state.label;
+  document.getElementById("batchPublicTime").textContent=state.time;
+}
+
+function startPublicBatchClock(){
+  if(batchPublicInterval)clearInterval(batchPublicInterval);
+  renderPublicBatchClock();
+  batchPublicInterval=setInterval(renderPublicBatchClock,1000);
+}
+
+
 function configuredCategories(){const parsed=safeJson(settings.categories,[]);return Array.isArray(parsed)&&parsed.length?parsed:FALLBACK_CATEGORIES}
 function getCategories(){const found=new Set(products.map(p=>p.category).filter(Boolean));const result=[];configuredCategories().forEach(c=>{if(found.has(c))result.push(c)});found.forEach(c=>{if(!result.includes(c))result.push(c)});return result}
 function slug(text){return String(text).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")}
@@ -299,7 +384,7 @@ function updatePaymentUI(){
     <div class="transfer-title">🏦 Transferencia bancaria</div>
     <p class="transfer-intro">Copia los datos, realiza la transferencia en tu aplicación bancaria y vuelve a este menú para finalizar el pedido.</p>
     <div class="bank-data">${bankRows||'<div style="color:#777">Los datos bancarios todavía no están configurados.</div>'}</div>
-    <div class="transfer-steps"><strong>Orden recomendado</strong><ol><li>Deja tu carrito preparado.</li><li>Copia la CLABE o tarjeta y realiza la transferencia.</li><li>Regresa a esta pestaña: tu carrito y tus datos permanecerán guardados.</li><li>Presiona <strong>Hacer pedido por WhatsApp</strong> para enviar el pedido.</li><li>Después, envía la captura o comprobante por WhatsApp.</li></ol></div>
+    <div class="transfer-steps"><strong>Orden recomendado</strong><ol><li>Deja tu carrito preparado.</li><li>Copia la CLABE o tarjeta y realiza la transferencia.</li><li>Regresa a esta pestaña: tu carrito y tus datos permanecerán guardados.</li><li>Presiona <strong>Enviar pedido por WhatsApp</strong> para enviar el pedido.</li><li>Después, envía la captura o comprobante por WhatsApp.</li></ol></div>
     <div class="transfer-safety">Tu carrito y los datos escritos se guardan temporalmente en este dispositivo para que no se pierdan al cambiar a tu app bancaria.</div>
     <div class="transfer-proof"><button class="transfer-whatsapp secondary" id="proofWhatsappButton" type="button">📎 Enviar comprobante por WhatsApp</button></div>`;
   panel.classList.add("show");
@@ -321,24 +406,78 @@ function showOrderMessage(text,type){const el=document.getElementById("orderStat
 function orderItemsPayload(){return Object.values(cart).map(i=>({product_id:i.product.id,name:i.product.name,price:Number(i.product.price||0),quantity:i.quantity,subtotal:Number(i.product.price||0)*i.quantity}))}
 function generateOrderCode(){const now=new Date(),stamp=now.toISOString().replace(/\D/g,"").slice(2,12);return `PJ-${stamp}-${Math.random().toString(36).slice(2,6).toUpperCase()}`}
 async function sendOrder(){
-  const items=Object.values(cart);if(!items.length){alert("Agrega al menos un producto.");return}
-  const name=document.getElementById("customerName").value.trim(),phone=document.getElementById("customerPhone").value.trim(),deliveryType=getDeliveryType(),address=document.getElementById("address").value.trim(),payment=document.getElementById("paymentMethod").value,notes=document.getElementById("orderNotes").value.trim();
-  if(!name){alert("Escribe tu nombre.");return}if(!phone){alert("Escribe tu teléfono.");return}if(deliveryType==="delivery"&&!address){alert("Escribe la dirección de entrega.");return}
-  const whatsapp=normalizePhone(settings.whatsapp);if(!whatsapp){alert("El número de WhatsApp todavía no está configurado.");return}
-  const itemPayload=orderItemsPayload(),subtotal=itemPayload.reduce((a,i)=>a+i.subtotal,0),deliveryFee=deliveryType==="delivery"?getDeliveryFee():0,total=subtotal+deliveryFee,orderCode=generateOrderCode();
-  const business=settings.business_name||"negocio";
+  const items=Object.values(cart);
+  if(!items.length){alert("Agrega al menos un producto.");return}
+
+  const name=document.getElementById("customerName").value.trim();
+  const phone=document.getElementById("customerPhone").value.trim();
+  const deliveryType=getDeliveryType();
+  const address=document.getElementById("address").value.trim();
+  const payment=document.getElementById("paymentMethod").value;
+  const notes=document.getElementById("orderNotes").value.trim();
+
+  if(!name){alert("Escribe tu nombre.");return}
+  if(!phone){alert("Escribe tu teléfono.");return}
+  if(deliveryType==="delivery"&&!address){alert("Escribe la dirección de entrega.");return}
+
+  const whatsapp=normalizePhone(settings.whatsapp);
+  if(!whatsapp){alert("El número de WhatsApp todavía no está configurado.");return}
+
+  const itemPayload=orderItemsPayload();
+  const subtotal=itemPayload.reduce((a,i)=>a+i.subtotal,0);
+  const deliveryFee=deliveryType==="delivery"?getDeliveryFee():0;
+  const total=subtotal+deliveryFee;
+  const orderCode=generateOrderCode();
+  const business=settings.business_name||"PasteHot";
+
+  const payload={
+    order_code:orderCode,
+    customer_name:name,
+    customer_phone:normalizePhone(phone),
+    delivery_type:deliveryType,
+    address:deliveryType==="delivery"?address:"",
+    payment_method:payment,
+    notes,
+    items:itemPayload,
+    subtotal,
+    delivery_fee:deliveryFee,
+    total,
+    order_status:"nuevo"
+  };
+
+  const button=document.getElementById("whatsappButton");
+  button.disabled=true;
+  button.textContent="Registrando pedido…";
+
+  try{
+    const {error}=await db.from("orders").insert(payload);
+    if(error){
+      console.error("No se pudo registrar el pedido:",error);
+      showOrderMessage("El pedido no pudo guardarse en el historial, pero puedes enviarlo por WhatsApp.","warn");
+    }else{
+      showOrderMessage(`Pedido ${orderCode} registrado. Abriendo WhatsApp…`,"ok");
+      localStorage.setItem("pastehot_last_order",orderCode);
+    }
+  }catch(error){
+    console.error("Error inesperado al registrar pedido:",error);
+    showOrderMessage("Hubo un problema registrando el pedido. Se enviará por WhatsApp.","warn");
+  }
+
   let message=`*NUEVO PEDIDO ${business.toUpperCase()}*\n*Pedido:* ${orderCode}\n\n*Cliente:* ${name}\n*Teléfono:* ${phone}\n*Modalidad:* ${deliveryType==="delivery"?"Envío a domicilio":"Pasar a recoger"}\n`;
   if(deliveryType==="delivery")message+=`*Dirección:* ${address}\n`;
-  message+="\n*PRODUCTOS*\n";itemPayload.forEach(i=>message+=`${i.quantity} x ${i.name} — ${formatMoney(i.subtotal)}\n`);message+=`\n*Subtotal:* ${formatMoney(subtotal)}\n*Envío:* ${formatMoney(deliveryFee)}\n*TOTAL:* ${formatMoney(total)}\n*Pago:* ${payment==="transfer"?"Transferencia":"Efectivo"}\n`;if(notes)message+=`*Notas:* ${notes}\n`;
+  message+="\n*PRODUCTOS*\n";
+  itemPayload.forEach(i=>message+=`${i.quantity} x ${i.name} — ${formatMoney(i.subtotal)}\n`);
+  message+=`\n*Subtotal:* ${formatMoney(subtotal)}\n*Envío:* ${formatMoney(deliveryFee)}\n*TOTAL:* ${formatMoney(total)}\n*Pago:* ${payment==="transfer"?"Transferencia":"Efectivo"}\n`;
+  if(notes)message+=`*Notas:* ${notes}\n`;
+
+  button.disabled=false;
+  button.textContent="📲 Enviar pedido por WhatsApp";
+  saveCheckoutState();
+
   const url=`https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`;
-  const popup=window.open("about:blank","_blank");
-  const button=document.getElementById("whatsappButton");button.disabled=true;button.textContent="Registrando pedido…";
-  const payload={order_code:orderCode,customer_name:name,customer_phone:normalizePhone(phone),delivery_type:deliveryType,address:deliveryType==="delivery"?address:"",payment_method:payment,notes,items:itemPayload,subtotal,delivery_fee:deliveryFee,total,order_status:"nuevo"};
-  const {error}=await db.from("orders").insert(payload);
-  if(error){console.error("No se pudo registrar el pedido:",error);showOrderMessage("El pedido abrirá WhatsApp, pero no pudo guardarse en el historial. Revisa la configuración de Supabase.","warn")}else{showOrderMessage(`Pedido ${orderCode} registrado. Abriendo WhatsApp…`,"ok");localStorage.setItem("pastehot_last_order",orderCode)}
-  button.disabled=false;button.textContent="📲 Enviar pedido por WhatsApp";
-  if(popup){popup.location.href=url}else window.location.href=url;
+  window.location.href=url;
 }
+
 document.getElementById("whatsappButton").addEventListener("click",sendOrder);
 init();
 </script>
