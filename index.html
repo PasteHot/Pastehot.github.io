@@ -146,13 +146,17 @@ button:disabled{cursor:not-allowed}
 /* Pie de marca */
 .brand-footer{position:relative;z-index:2;width:min(1180px,94%);margin:16px auto 34px;padding:0 0 78px}
 .brand-footer-card{background:rgba(17,17,17,.94);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:22px 24px;text-align:center;box-shadow:0 12px 34px rgba(0,0,0,.14);backdrop-filter:blur(10px)}
-.brand-footer-name{font-size:14px;font-weight:900;letter-spacing:.04em}
-.brand-footer-tagline{margin:6px 0 0;color:rgba(255,255,255,.72);font-size:12px;line-height:1.5}
+.brand-footer-heading{display:flex;align-items:baseline;justify-content:center;gap:8px;flex-wrap:wrap;line-height:1.15}
+.brand-footer-brand{font-size:18px;font-weight:900;letter-spacing:.015em}
+.brand-footer-official{font-size:15px;font-weight:800;letter-spacing:.025em}
+.brand-footer-separator{font-size:14px;color:rgba(255,255,255,.52);font-weight:700}
+.registered-mark{font-size:.52em;line-height:0;vertical-align:super;margin-left:1px;font-weight:800}
+.registered-mark-small{font-size:.58em}
 .brand-footer-rule{width:42px;height:2px;margin:14px auto;background:var(--accent);border-radius:999px}
 .brand-footer-legal{margin:0 auto;max-width:900px;color:rgba(255,255,255,.58);font-size:10.5px;line-height:1.65;letter-spacing:.01em}.brand-footer-copyright{margin:10px auto 0;max-width:900px;color:rgba(255,255,255,.46);font-size:10px;line-height:1.55;letter-spacing:.01em}
 .brand-footer-site{display:inline-block;margin-top:8px;color:#fff;text-decoration:none;font-size:11px;font-weight:900;letter-spacing:.04em}
 .brand-footer-site:hover{text-decoration:underline}
-@media(max-width:650px){.brand-footer{width:94%;margin-top:8px;padding-bottom:72px}.brand-footer-card{padding:19px 16px;border-radius:17px}.brand-footer-legal{font-size:10px}}
+@media(max-width:650px){.brand-footer{width:94%;margin-top:8px;padding-bottom:72px}.brand-footer-card{padding:19px 16px;border-radius:17px}.brand-footer-brand{font-size:17px}.brand-footer-official{font-size:14px}.brand-footer-legal{font-size:10px}}
 </style>
 </head>
 <body>
@@ -198,12 +202,15 @@ button:disabled{cursor:not-allowed}
 
 <footer class="brand-footer" aria-label="Información de marca">
   <div class="brand-footer-card">
-    <div class="brand-footer-name">PasteHot® · Menú digital oficial</div>
-    <p class="brand-footer-tagline">Sabor recién horneado, atención directa y pedidos preparados para ti.</p>
+    <div class="brand-footer-heading">
+      <span class="brand-footer-brand">PasteHot<span class="registered-mark">®</span></span>
+      <span class="brand-footer-separator">·</span>
+      <span class="brand-footer-official">Menú digital oficial</span>
+    </div>
     <div class="brand-footer-rule"></div>
     <p class="brand-footer-legal">Precios, productos, horarios, promociones y tiempos de entrega sujetos a disponibilidad y cambios sin previo aviso.</p>
     <a class="brand-footer-site" href="https://www.pastehot.com" aria-label="Sitio oficial de PasteHot">www.pastehot.com</a>
-    <p class="brand-footer-copyright">© <span id="footerYear"></span> PasteHot® es una marca registrada. Todos los derechos reservados.</p>
+    <p class="brand-footer-copyright">© <span id="footerYear"></span> PasteHot<span class="registered-mark registered-mark-small">®</span> es una marca registrada. Todos los derechos reservados.</p>
   </div>
 </footer>
 <button class="cart-button" id="cartButton" type="button" aria-label="Abrir carrito">
