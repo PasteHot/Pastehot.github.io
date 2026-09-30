@@ -31,6 +31,25 @@
 .switch input:checked + .switch-slider{background:var(--red)}
 .switch input:checked + .switch-slider:before{transform:translateX(22px)}
 @media(max-width:1000px){.batch-layout{grid-template-columns:1fr}}
+.operation-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.operation-card{background:#fff;border:1px solid var(--border);border-radius:17px;padding:21px;box-shadow:var(--shadow)}
+.operation-card h3{margin:0 0 6px}
+.operation-card>p{margin:0 0 18px;color:var(--muted);line-height:1.45}
+.store-live-status{display:flex;align-items:center;gap:10px;padding:14px 15px;border-radius:14px;margin-bottom:16px;font-weight:900}
+.store-live-status.open{background:#e4f8eb;color:#08733a}
+.store-live-status.closed{background:#ffe7e8;color:#a51118}
+.status-dot{width:11px;height:11px;border-radius:50%;background:currentColor;box-shadow:0 0 0 4px rgba(0,0,0,.05)}
+.weekly-schedule{display:grid;gap:9px}
+.day-row{display:grid;grid-template-columns:120px 110px 1fr 1fr;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #eee}
+.day-name{font-weight:900}
+.day-enabled{display:flex;align-items:center;gap:7px;font-size:13px;color:#555}
+.day-enabled input{width:auto}
+.operation-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+.preview-badge{display:inline-flex;align-items:center;gap:7px;padding:9px 12px;border-radius:999px;background:#ecf8ef;color:#0d7b3f;font-weight:900;margin-top:6px}
+.social-preview{font-size:28px;font-weight:900;color:#118044;margin-top:6px}
+@media(max-width:900px){.operation-grid{grid-template-columns:1fr}}
+@media(max-width:700px){.day-row{grid-template-columns:1fr 1fr}.day-name{grid-column:1/-1}.day-enabled{grid-column:1/-1}}
+
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:500}.modal.show{display:flex}.modal-card{background:#fff;border-radius:19px;width:100%;max-width:650px;max-height:90vh;overflow:auto;padding:24px}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.modal-head h3{margin:0}.close{border:0;background:#eee;width:36px;height:36px;border-radius:50%;font-size:20px}.order-detail-list{display:grid;gap:8px}.order-detail-item{display:flex;justify-content:space-between;gap:15px;padding:9px 0;border-bottom:1px solid #eee}
 @media(max-width:1000px){.design-layout,.analytics-grid{grid-template-columns:1fr}.grid-4,.metric-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:700px){.topbar{height:62px;padding:0 14px}.tabs{top:62px;padding:8px}.content{padding:16px 11px}.section-title{align-items:flex-start;flex-direction:column}.grid-2,.grid-3,.grid-4,.control-grid,.metric-grid{grid-template-columns:1fr}.product-admin-card{grid-template-columns:72px 1fr}.product-admin-image{width:72px;height:72px}.product-admin-actions{grid-column:1/-1;justify-content:flex-start}.chart-row{grid-template-columns:100px 1fr auto}.section-title h2{font-size:24px}}
@@ -40,7 +59,7 @@
 <div id="loginScreen" class="login-screen"><div class="login-card"><h1>Administrador</h1><p>Gestión del menú, diseño, ventas y clientes.</p><div class="form-group"><label>Correo</label><input id="loginEmail" type="email" autocomplete="username"></div><div class="form-group"><label>Contraseña</label><input id="loginPassword" type="password" autocomplete="current-password"></div><button class="btn btn-primary" style="width:100%" onclick="login()">Entrar</button><div id="loginMessage"></div></div></div>
 <div id="adminScreen" class="hidden">
 <header class="topbar"><div class="topbar-title">PasteHot · Administrador</div><button class="btn btn-light" onclick="logout()">Salir</button></header>
-<nav class="tabs"><button class="tab active" onclick="showTab('products',this)">Productos</button><button class="tab" onclick="showTab('design',this)">Diseño</button><button class="tab" onclick="showTab('business',this)">Negocio</button><button class="tab" onclick="showTab('batch',this)">Hornada</button><button class="tab" onclick="showTab('orders',this)">Pedidos</button><button class="tab" onclick="showTab('customers',this)">Clientes</button></nav>
+<nav class="tabs"><button class="tab active" onclick="showTab('products',this)">Productos</button><button class="tab" onclick="showTab('design',this)">Diseño</button><button class="tab" onclick="showTab('business',this)">Negocio</button><button class="tab" onclick="showTab('operation',this)">Operación</button><button class="tab" onclick="showTab('batch',this)">Hornada</button><button class="tab" onclick="showTab('orders',this)">Pedidos</button><button class="tab" onclick="showTab('customers',this)">Clientes</button></nav>
 <main class="content">
 <section id="section-products" class="section active"><div class="section-title"><div><h2>Productos</h2><p>Precios, fotografías, categorías y disponibilidad.</p></div><button class="btn btn-primary" onclick="openProductModal()">+ Nuevo producto</button></div><div class="card"><div id="productsList"></div></div><div class="card"><div class="section-title" style="margin-bottom:12px"><div><h3 style="margin:0">Categorías</h3><p>El orden se refleja en el menú público.</p></div><button class="btn btn-dark" onclick="newCategory()">+ Nueva categoría</button></div><div id="categoriesList"></div></div></section>
 
@@ -57,6 +76,105 @@
 
 <section id="section-business" class="section"><div class="section-title"><div><h2>Negocio</h2><p>Datos visibles y operativos del menú.</p></div></div><div class="card"><div class="grid grid-2"><div class="form-group"><label>Nombre del negocio</label><input id="business_name"></div><div class="form-group"><label>Slogan</label><input id="slogan"></div><div class="form-group"><label>WhatsApp</label><input id="whatsapp" placeholder="5219990000000"></div><div class="form-group"><label>Dirección</label><input id="business_address"></div><div class="form-group"><label>Hora de apertura</label><input id="opening_time" type="time"></div><div class="form-group"><label>Hora de cierre</label><input id="closing_time" type="time"></div><div class="form-group"><label>Costo de entrega</label><input id="delivery_cost" type="number" min="0" step="0.01"></div><div class="form-group"><label>Google Maps para recoger</label><input id="pickup_maps_url" placeholder="Enlace exacto de Google Maps"></div></div><button class="btn btn-primary" onclick="saveBusinessSettings()">Guardar configuración</button><div id="businessMessage"></div></div><div class="card"><h3>Métodos de pago</h3><div class="grid grid-2"><div class="form-group"><label>Banco</label><input id="bank_name"></div><div class="form-group"><label>Beneficiario</label><input id="bank_holder"></div><div class="form-group"><label>CLABE</label><input id="bank_clabe"></div><div class="form-group"><label>Número de tarjeta</label><input id="bank_card"></div></div><button class="btn btn-primary" onclick="savePaymentSettings()">Guardar datos de transferencia</button><div id="paymentMessage"></div></div></section>
 
+
+
+<section id="section-operation" class="section">
+  <div class="section-title">
+    <div>
+      <h2>Operación de la tienda</h2>
+      <p>Horarios, cierre temporal y mensajes comerciales del encabezado.</p>
+    </div>
+    <button class="btn btn-light" onclick="loadOperationSettings()">Actualizar</button>
+  </div>
+
+  <div class="operation-grid">
+    <div class="operation-card">
+      <h3>Estado inmediato</h3>
+      <p>El cierre manual tiene prioridad sobre cualquier horario semanal.</p>
+      <div id="operationLiveStatus" class="store-live-status open"><span class="status-dot"></span><span>Tienda disponible según horario</span></div>
+
+      <div class="switch-row">
+        <div>
+          <strong>Cerrar tienda manualmente</strong>
+          <div style="color:var(--muted);font-size:13px;margin-top:3px">Úsalo por emergencia, descanso, falta de producto o mantenimiento.</div>
+        </div>
+        <label class="switch">
+          <input id="manualStoreClosed" type="checkbox" onchange="previewOperationStatus()">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+
+      <div class="form-group" style="margin-top:16px">
+        <label>Mensaje opcional cuando cierres manualmente</label>
+        <input id="manualCloseReason" placeholder="Ej. Cerrado hoy por mantenimiento. Regresamos mañana.">
+      </div>
+
+      <div class="operation-actions">
+        <button class="btn btn-danger" onclick="closeStoreNow()">Cerrar tienda ahora</button>
+        <button class="btn btn-success" onclick="openStoreNow()">Reabrir tienda</button>
+        <button class="btn btn-primary" onclick="saveOperationSettings()">Guardar operación</button>
+      </div>
+      <div id="operationMessage"></div>
+    </div>
+
+    <div class="operation-card">
+      <h3>Mensajes comerciales</h3>
+      <p>Se muestran en el bloque superior del menú. Mantén promesas reales para reforzar confianza.</p>
+
+      <div class="switch-row">
+        <div><strong>Mostrar tiempo de entrega</strong></div>
+        <label class="switch">
+          <input id="deliveryBadgeEnabled" type="checkbox" checked>
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+      <div class="form-group" style="margin-top:14px">
+        <label>Texto de entrega</label>
+        <input id="deliveryBadgeText" value="Envío en menos de 20 min">
+      </div>
+      <div class="preview-badge">🚚 <span id="deliveryBadgePreview">Envío en menos de 20 min</span></div>
+
+      <div class="switch-row" style="margin-top:18px">
+        <div><strong>Mostrar prueba social</strong></div>
+        <label class="switch">
+          <input id="socialProofEnabled" type="checkbox" checked>
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+      <div class="grid grid-2" style="margin-top:14px">
+        <div class="form-group">
+          <label>Número</label>
+          <input id="socialProofCount" type="number" min="0" step="1" value="230">
+        </div>
+        <div class="form-group">
+          <label>Texto después del número</label>
+          <input id="socialProofSuffix" value="pedidos esta semana">
+        </div>
+      </div>
+      <div class="social-preview"><span id="socialProofPreviewCount">230</span>+ <span id="socialProofPreviewSuffix" style="font-size:14px;font-weight:800">pedidos esta semana</span></div>
+      <div class="operation-actions">
+        <button class="btn btn-light" onclick="syncSocialProofFromOrders()">Usar pedidos reales de últimos 7 días</button>
+        <button class="btn btn-primary" onclick="saveMarketingSettings()">Guardar mensajes</button>
+      </div>
+      <div id="marketingMessage"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <div class="section-title" style="margin-bottom:14px">
+      <div>
+        <h3 style="margin:0">Horario semanal</h3>
+        <p>Activa solo los días en que atiendes y define el horario de cada día.</p>
+      </div>
+    </div>
+    <div id="weeklySchedule" class="weekly-schedule"></div>
+    <div class="operation-actions">
+      <button class="btn btn-light" onclick="copyMondaySchedule()">Copiar lunes a los días activos</button>
+      <button class="btn btn-primary" onclick="saveWeeklySchedule()">Guardar horario semanal</button>
+    </div>
+    <div id="scheduleMessage"></div>
+  </div>
+</section>
 
 <section id="section-batch" class="section">
   <div class="section-title">
@@ -159,8 +277,8 @@ function showMessage(id,text,ok=true){document.getElementById(id).innerHTML=`<di
 async function login(){const email=loginEmail.value.trim(),password=loginPassword.value;loginMessage.innerHTML="";if(!email||!password){showMessage("loginMessage","Escribe correo y contraseña.",false);return}const {error}=await db.auth.signInWithPassword({email,password});if(error){showMessage("loginMessage",error.message,false);return}loginScreen.classList.add("hidden");adminScreen.classList.remove("hidden");await initAdmin()}
 async function logout(){await db.auth.signOut();location.reload()}
 async function checkSession(){const {data}=await db.auth.getSession();if(data.session){loginScreen.classList.add("hidden");adminScreen.classList.remove("hidden");await initAdmin()}}
-async function initAdmin(){await Promise.all([loadProducts(),loadCategories(),loadDesign(),loadBusinessSettings(),loadOrders(),loadBatchSettings()])}
-function showTab(name,button){document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));document.getElementById("section-"+name).classList.add("active");button?.classList.add("active");if(name==="orders"||name==="customers")loadOrders();if(name==="design")loadDesign();if(name==="batch")loadBatchSettings()}
+async function initAdmin(){await Promise.all([loadProducts(),loadCategories(),loadDesign(),loadBusinessSettings(),loadOrders(),loadBatchSettings(),loadOperationSettings()])}
+function showTab(name,button){document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));document.getElementById("section-"+name).classList.add("active");button?.classList.add("active");if(name==="orders"||name==="customers")loadOrders();if(name==="design")loadDesign();if(name==="batch")loadBatchSettings();if(name==="operation")loadOperationSettings()}
 
 async function loadProducts(){const {data,error}=await db.from("products").select("*").order("sort_order",{ascending:true}).order("created_at",{ascending:true});if(error){productsList.innerHTML='<div class="message error">No se pudieron cargar los productos.</div>';return}products=data||[];renderProducts()}
 function renderProducts(){if(!products.length){productsList.innerHTML='<p style="color:#777">No hay productos.</p>';return}productsList.innerHTML=products.map(p=>`<div class="product-admin-card"><img class="product-admin-image" src="${escapeAttr(p.image_url||"")}" alt=""><div class="product-admin-info"><h3>${escapeHtml(p.name)}</h3><p>${escapeHtml(p.category||"")}</p><p>${formatMoney(p.price)}</p></div><div class="product-admin-actions"><button class="status-toggle ${p.available?"status-on":"status-off"}" onclick="toggleProduct('${p.id}',${!p.available})">${p.available?"● Disponible":"● Agotado"}</button><button class="btn btn-light btn-small" onclick="editProduct('${p.id}')">Editar</button><button class="btn btn-danger btn-small" onclick="deleteProduct('${p.id}')">Borrar</button></div></div>`).join("")}
@@ -196,6 +314,203 @@ async function saveDesign(){designMessage.innerHTML="";try{for(const type of ["c
 async function loadBusinessSettings(){const keys=["business_name","slogan","whatsapp","business_address","opening_time","closing_time","delivery_cost","pickup_maps_url","bank_name","bank_holder","bank_clabe","bank_card"];const {data}=await db.from("settings").select("key,value").in("key",keys);const s={};(data||[]).forEach(r=>s[r.key]=r.value);keys.forEach(k=>{const el=document.getElementById(k);if(el)el.value=s[k]||""})}
 async function saveBusinessSettings(){for(const k of ["business_name","slogan","whatsapp","business_address","opening_time","closing_time","delivery_cost","pickup_maps_url"])await saveSetting(k,document.getElementById(k).value);showMessage("businessMessage","Configuración guardada correctamente.")}
 async function savePaymentSettings(){for(const k of ["bank_name","bank_holder","bank_clabe","bank_card"])await saveSetting(k,document.getElementById(k).value);showMessage("paymentMessage","Datos de transferencia guardados.")}
+
+
+
+const DAY_CONFIG=[
+  ["mon","Lunes"],["tue","Martes"],["wed","Miércoles"],["thu","Jueves"],
+  ["fri","Viernes"],["sat","Sábado"],["sun","Domingo"]
+];
+let operationSettings={
+  manualClosed:false,
+  manualReason:"",
+  deliveryEnabled:true,
+  deliveryText:"Envío en menos de 20 min",
+  socialEnabled:true,
+  socialCount:230,
+  socialSuffix:"pedidos esta semana",
+  weekly:null
+};
+
+function defaultWeeklySchedule(){
+  const open=document.getElementById("opening_time")?.value||"12:00";
+  const close=document.getElementById("closing_time")?.value||"21:00";
+  return {
+    mon:{enabled:true,open,close},tue:{enabled:true,open,close},
+    wed:{enabled:true,open,close},thu:{enabled:true,open,close},
+    fri:{enabled:true,open,close},sat:{enabled:true,open,close},
+    sun:{enabled:false,open,close}
+  };
+}
+
+function parseSettingBool(v,defaultValue=false){
+  if(v===undefined||v===null||v==="")return defaultValue;
+  return String(v)==="true";
+}
+
+async function loadOperationSettings(){
+  const keys=[
+    "store_manual_closed","store_manual_close_reason","weekly_schedule",
+    "delivery_badge_enabled","delivery_badge_text",
+    "social_proof_enabled","social_proof_count","social_proof_suffix"
+  ];
+  const {data,error}=await db.from("settings").select("key,value").in("key",keys);
+  if(error){console.error(error);return}
+  const s={};(data||[]).forEach(r=>s[r.key]=r.value);
+
+  operationSettings.manualClosed=parseSettingBool(s.store_manual_closed,false);
+  operationSettings.manualReason=s.store_manual_close_reason||"";
+  operationSettings.deliveryEnabled=parseSettingBool(s.delivery_badge_enabled,true);
+  operationSettings.deliveryText=s.delivery_badge_text||"Envío en menos de 20 min";
+  operationSettings.socialEnabled=parseSettingBool(s.social_proof_enabled,true);
+  operationSettings.socialCount=Math.max(0,Number(s.social_proof_count)||0);
+  operationSettings.socialSuffix=s.social_proof_suffix||"pedidos esta semana";
+  try{
+    operationSettings.weekly=s.weekly_schedule?JSON.parse(s.weekly_schedule):defaultWeeklySchedule();
+  }catch{
+    operationSettings.weekly=defaultWeeklySchedule();
+  }
+
+  if(document.getElementById("manualStoreClosed")){
+    manualStoreClosed.checked=operationSettings.manualClosed;
+    manualCloseReason.value=operationSettings.manualReason;
+    deliveryBadgeEnabled.checked=operationSettings.deliveryEnabled;
+    deliveryBadgeText.value=operationSettings.deliveryText;
+    socialProofEnabled.checked=operationSettings.socialEnabled;
+    socialProofCount.value=operationSettings.socialCount;
+    socialProofSuffix.value=operationSettings.socialSuffix;
+    renderWeeklySchedule();
+    previewOperationStatus();
+    updateMarketingPreview();
+  }
+}
+
+function renderWeeklySchedule(){
+  const schedule=operationSettings.weekly||defaultWeeklySchedule();
+  weeklySchedule.innerHTML=DAY_CONFIG.map(([key,label])=>{
+    const d=schedule[key]||{enabled:false,open:"12:00",close:"21:00"};
+    return `<div class="day-row" data-day="${key}">
+      <div class="day-name">${label}</div>
+      <label class="day-enabled"><input class="day-check" type="checkbox" ${d.enabled?"checked":""}> Laboral</label>
+      <input class="day-open" type="time" value="${escapeAttr(d.open||"12:00")}" aria-label="Apertura ${label}">
+      <input class="day-close" type="time" value="${escapeAttr(d.close||"21:00")}" aria-label="Cierre ${label}">
+    </div>`;
+  }).join("");
+  weeklySchedule.querySelectorAll(".day-check").forEach(ch=>ch.addEventListener("change",e=>{
+    const row=e.target.closest(".day-row");
+    row.querySelector(".day-open").disabled=!e.target.checked;
+    row.querySelector(".day-close").disabled=!e.target.checked;
+  }));
+  weeklySchedule.querySelectorAll(".day-row").forEach(row=>{
+    const checked=row.querySelector(".day-check").checked;
+    row.querySelector(".day-open").disabled=!checked;
+    row.querySelector(".day-close").disabled=!checked;
+  });
+}
+
+function collectWeeklySchedule(){
+  const result={};
+  document.querySelectorAll("#weeklySchedule .day-row").forEach(row=>{
+    result[row.dataset.day]={
+      enabled:row.querySelector(".day-check").checked,
+      open:row.querySelector(".day-open").value||"12:00",
+      close:row.querySelector(".day-close").value||"21:00"
+    };
+  });
+  return result;
+}
+
+function copyMondaySchedule(){
+  const mon=document.querySelector('#weeklySchedule .day-row[data-day="mon"]');
+  if(!mon)return;
+  const open=mon.querySelector(".day-open").value;
+  const close=mon.querySelector(".day-close").value;
+  document.querySelectorAll("#weeklySchedule .day-row").forEach(row=>{
+    if(row.querySelector(".day-check").checked){
+      row.querySelector(".day-open").value=open;
+      row.querySelector(".day-close").value=close;
+    }
+  });
+}
+
+function previewOperationStatus(){
+  if(!document.getElementById("operationLiveStatus"))return;
+  const closed=manualStoreClosed.checked;
+  operationLiveStatus.className=`store-live-status ${closed?"closed":"open"}`;
+  operationLiveStatus.innerHTML=`<span class="status-dot"></span><span>${closed?"CERRADA manualmente":"Disponible según horario semanal"}</span>`;
+}
+
+function updateMarketingPreview(){
+  if(document.getElementById("deliveryBadgePreview"))deliveryBadgePreview.textContent=deliveryBadgeText.value.trim()||"Envío en menos de 20 min";
+  if(document.getElementById("socialProofPreviewCount"))socialProofPreviewCount.textContent=Math.max(0,Number(socialProofCount.value)||0);
+  if(document.getElementById("socialProofPreviewSuffix"))socialProofPreviewSuffix.textContent=socialProofSuffix.value.trim()||"pedidos esta semana";
+}
+
+async function saveOperationSettings(){
+  operationMessage.innerHTML="";
+  try{
+    await saveSetting("store_manual_closed",manualStoreClosed.checked);
+    await saveSetting("store_manual_close_reason",manualCloseReason.value.trim());
+    operationSettings.manualClosed=manualStoreClosed.checked;
+    operationSettings.manualReason=manualCloseReason.value.trim();
+    previewOperationStatus();
+    showMessage("operationMessage","Estado operativo guardado.");
+  }catch(e){showMessage("operationMessage",e.message,false)}
+}
+
+async function closeStoreNow(){
+  manualStoreClosed.checked=true;
+  await saveOperationSettings();
+}
+
+async function openStoreNow(){
+  manualStoreClosed.checked=false;
+  manualCloseReason.value="";
+  await saveOperationSettings();
+}
+
+async function saveWeeklySchedule(){
+  scheduleMessage.innerHTML="";
+  try{
+    operationSettings.weekly=collectWeeklySchedule();
+    await saveSetting("weekly_schedule",JSON.stringify(operationSettings.weekly));
+    showMessage("scheduleMessage","Horario semanal guardado correctamente.");
+  }catch(e){showMessage("scheduleMessage",e.message,false)}
+}
+
+async function saveMarketingSettings(){
+  marketingMessage.innerHTML="";
+  try{
+    const count=Math.max(0,Math.floor(Number(socialProofCount.value)||0));
+    await Promise.all([
+      saveSetting("delivery_badge_enabled",deliveryBadgeEnabled.checked),
+      saveSetting("delivery_badge_text",deliveryBadgeText.value.trim()||"Envío en menos de 20 min"),
+      saveSetting("social_proof_enabled",socialProofEnabled.checked),
+      saveSetting("social_proof_count",count),
+      saveSetting("social_proof_suffix",socialProofSuffix.value.trim()||"pedidos esta semana")
+    ]);
+    updateMarketingPreview();
+    showMessage("marketingMessage","Mensajes comerciales guardados.");
+  }catch(e){showMessage("marketingMessage",e.message,false)}
+}
+
+async function syncSocialProofFromOrders(){
+  marketingMessage.innerHTML="";
+  try{
+    const since=new Date(Date.now()-7*86400000).toISOString();
+    const {data,error}=await db.from("orders").select("id,order_status,created_at").gte("created_at",since);
+    if(error)throw error;
+    const count=(data||[]).filter(o=>o.order_status!=="cancelado").length;
+    socialProofCount.value=count;
+    socialProofSuffix.value="pedidos esta semana";
+    updateMarketingPreview();
+    await saveMarketingSettings();
+  }catch(e){showMessage("marketingMessage","No se pudo calcular el número real: "+e.message,false)}
+}
+
+document.addEventListener("input",e=>{
+  if(["deliveryBadgeText","socialProofCount","socialProofSuffix"].includes(e.target?.id))updateMarketingPreview();
+});
 
 
 let batchSettings={
