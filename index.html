@@ -80,6 +80,8 @@ button:disabled{cursor:not-allowed}
 .product-image{width:100%;height:100%;object-fit:cover;display:block;transition:.2s}
 .product.soldout .product-image{opacity:.42;filter:grayscale(.55)}
 .soldout-label{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:10;background:#d40000;color:#fff;font-size:13px;font-weight:900;letter-spacing:.7px;padding:7px 13px;border-radius:999px;box-shadow:0 4px 12px rgba(0,0,0,.25);white-space:nowrap}
+.low-stock-label{position:absolute;left:12px;top:12px;z-index:10;background:#fff4d6;color:#805d00;border:1px solid #f0d38a;font-size:12px;font-weight:900;padding:6px 9px;border-radius:999px;box-shadow:0 4px 12px rgba(0,0,0,.12);white-space:nowrap}
+.stock-inline-note{margin-top:8px;font-size:11px;font-weight:900;color:#805d00;text-align:center}
 .product-body{padding:16px}
 .product.soldout .product-body{opacity:.5}
 .product-name{font-size:18px;font-weight:900;margin:0 0 7px;line-height:1.2}
@@ -240,7 +242,13 @@ const FONT_MAP={
 function normalizeId(id){return String(id??"")}
 function normalizePhone(v){return String(v??"").replace(/\D/g,"")}
 function findProductById(id){const k=normalizeId(id);return products.find(p=>normalizeId(p.id)===k)}
-function isAvailable(p){if(!p)return false;return [true,1,"1","true","TRUE"].includes(p.available)}
+function boolValue(v){return [true,1,"1","true","TRUE"].includes(v)}
+function isStockTracked(p){return !!p&&boolValue(p.track_stock)}
+function stockCount(p){return Math.max(0,Math.floor(Number(p?.stock)||0))}
+function lowStockThreshold(p){return Math.max(0,Math.floor(Number(p?.low_stock_threshold)||0))}
+function maxPurchasable(p){return isStockTracked(p)?stockCount(p):Infinity}
+function isAvailable(p){if(!p)return false;return boolValue(p.available)&&(!isStockTracked(p)||stockCount(p)>0)}
+function stockLimitMessage(p){const n=stockCount(p);return n===1?"Solo queda 1 disponible.":`Solo quedan ${n} disponibles.`}
 function formatMoney(n){return "$"+Number(n||0).toFixed(2)}
 function getDeliveryFee(){const n=Number(settings.delivery_cost);return Number.isFinite(n)&&n>=0?n:DEFAULT_DELIVERY_FEE}
 function getDeliveryType(){return document.querySelector('input[name="deliveryType"]:checked')?.value||"delivery"}
@@ -434,7 +442,8 @@ function restoreCheckoutState(){
     if(state?.quantities){
       Object.entries(state.quantities).forEach(([id,q])=>{
         const product=findProductById(id);
-        const quantity=Math.max(0,Number(q)||0);
+        const requested=Math.max(0,Math.floor(Number(q)||0));
+        const quantity=product?Math.min(requested,maxPurchasable(product)):0;
         if(product&&quantity>0&&isAvailable(product))cart[normalizeId(id)]={product,quantity};
       });
     }
@@ -450,6 +459,26 @@ function restoreCheckoutState(){
   }catch(e){console.warn("No se pudo restaurar el carrito.",e)}
 }
 function clearCheckoutState(){try{localStorage.removeItem(SESSION_KEY)}catch{}}
+function reconcileCartWithProducts(){
+  const next={};
+  Object.entries(cart).forEach(([id,item])=>{
+    const product=findProductById(id);
+    if(!product||!isAvailable(product))return;
+    const quantity=Math.min(Math.max(0,Math.floor(Number(item.quantity)||0)),maxPurchasable(product));
+    if(quantity>0)next[normalizeId(id)]={product,quantity};
+  });
+  cart=next;
+}
+async function reloadProducts(){
+  const {data,error}=await db.from("products").select("*").order("sort_order",{ascending:true}).order("created_at",{ascending:true});
+  if(error){console.warn("No se pudieron actualizar las existencias.",error);return false}
+  products=data||[];
+  reconcileCartWithProducts();
+  renderMenu();
+  updateCart();
+  saveCheckoutState();
+  return true;
+}
 
 async function init(){
   const [pr,sr]=await Promise.all([
@@ -563,18 +592,26 @@ function createProduct(product){
 
   if(!isAvailable(product)){
     const s=document.createElement("div");s.className="soldout-label";s.textContent="AGOTADO";wrap.appendChild(s);
+  }else if(isStockTracked(product)&&stockCount(product)<=lowStockThreshold(product)){
+    const low=document.createElement("div");
+    low.className="low-stock-label";
+    low.textContent=stockCount(product)===1?"Última pieza":`Últimos ${stockCount(product)}`;
+    wrap.appendChild(low);
   }
 
   const body=document.createElement("div");body.className="product-body";
   const n=document.createElement("h3");n.className="product-name";n.textContent=product.name||"";
   const d=document.createElement("div");d.className="product-description";d.textContent=product.description||"";
   const closed=document.createElement("div");closed.className="store-closed-note";closed.textContent="Disponible cuando la tienda abra";
+  const stockNote=document.createElement("div");
+  stockNote.className="stock-inline-note";
+  if(isStockTracked(product)&&isAvailable(product)&&stockCount(product)<=lowStockThreshold(product))stockNote.textContent=stockLimitMessage(product);
   const bottom=document.createElement("div");bottom.className="product-bottom";
   const price=document.createElement("div");price.className="product-price";price.textContent=formatMoney(product.price);
   const controls=document.createElement("div");controls.className="add-controls";controls.dataset.productId=normalizeId(product.id);
   renderProductControls(controls,product);
   bottom.append(price,controls);
-  body.append(n,d,closed,bottom);
+  body.append(n,d,closed,stockNote,bottom);
   card.append(wrap,body);
   return card;
 }
@@ -583,6 +620,7 @@ function renderProductControls(controls,product){
   controls.innerHTML="";
   const key=normalizeId(product.id),q=cart[key]?.quantity||0;
   const storeOpen=isStoreOpen();
+  const atStockLimit=isStockTracked(product)&&q>=stockCount(product);
   const make=(txt,action,disabled=false)=>{
     const b=document.createElement("button");b.type="button";b.textContent=txt;b.disabled=disabled;
     if(action){b.dataset.cartAction=action;b.dataset.productId=key}
@@ -591,15 +629,34 @@ function renderProductControls(controls,product){
   if(!isAvailable(product)||!storeOpen){controls.appendChild(make("+",null,true));return}
   if(q<=0){controls.appendChild(make("+","add"));return}
   const qty=document.createElement("span");qty.className="quantity";qty.textContent=q;
-  controls.append(make("−","minus"),qty,make("+","add"));
+  controls.append(make("−","minus"),qty,make("+","add",atStockLimit));
 }
 
-function addToCart(id){if(blockClosedAction())return;const k=normalizeId(id),p=findProductById(k);if(!p||!isAvailable(p))return;if(!cart[k])cart[k]={product:p,quantity:1};else cart[k].quantity++;updateCart();saveCheckoutState()}
-function changeQuantity(id,amount){if(blockClosedAction())return;const k=normalizeId(id),p=findProductById(k);if(!p)return;const next=(cart[k]?.quantity||0)+Number(amount);if(next<=0)delete cart[k];else cart[k]={product:p,quantity:next};updateCart();saveCheckoutState()}
+function addToCart(id){
+  if(blockClosedAction())return;
+  const k=normalizeId(id),p=findProductById(k);
+  if(!p||!isAvailable(p))return;
+  const current=cart[k]?.quantity||0;
+  if(isStockTracked(p)&&current>=stockCount(p)){alert(stockLimitMessage(p));return}
+  cart[k]={product:p,quantity:current+1};
+  updateCart();saveCheckoutState();
+}
+function changeQuantity(id,amount){
+  if(blockClosedAction())return;
+  const k=normalizeId(id),p=findProductById(k);
+  if(!p)return;
+  const next=(cart[k]?.quantity||0)+Number(amount);
+  if(next<=0)delete cart[k];
+  else{
+    if(isStockTracked(p)&&next>stockCount(p)){alert(stockLimitMessage(p));return}
+    cart[k]={product:p,quantity:next};
+  }
+  updateCart();saveCheckoutState();
+}
 document.getElementById("menu").addEventListener("click",e=>{const b=e.target.closest("[data-cart-action]");if(!b)return;b.dataset.cartAction==="add"?addToCart(b.dataset.productId):changeQuantity(b.dataset.productId,-1)});
 document.getElementById("cartItems").addEventListener("click",e=>{const b=e.target.closest("[data-cart-action]");if(!b)return;b.dataset.cartAction==="add"?addToCart(b.dataset.productId):changeQuantity(b.dataset.productId,-1)});
 function updateProductCard(id){const card=[...document.querySelectorAll(".product[data-product-id]")].find(x=>x.dataset.productId===normalizeId(id));if(!card)return;const p=findProductById(id),controls=card.querySelector(".add-controls");card.classList.toggle("store-closed",!isStoreOpen());if(p&&controls)renderProductControls(controls,p)}
-function updateCart(){const items=Object.values(cart),container=document.getElementById("cartItems");container.innerHTML="";let productsTotal=0,count=0;if(!items.length){const e=document.createElement("div");e.className="cart-empty";e.textContent="Tu carrito está vacío.";container.appendChild(e)}items.forEach(item=>{const price=Number(item.product.price||0),subtotal=price*item.quantity;productsTotal+=subtotal;count+=item.quantity;const row=document.createElement("div");row.className="cart-item";const info=document.createElement("div");info.className="cart-item-info";const n=document.createElement("div");n.className="cart-item-name";n.textContent=item.product.name||"";const p=document.createElement("div");p.className="cart-item-price";p.textContent=`${item.quantity} × ${formatMoney(price)} = ${formatMoney(subtotal)}`;info.append(n,p);const ctr=document.createElement("div");ctr.className="qty-controls";const minus=document.createElement("button"),plus=document.createElement("button"),qty=document.createElement("strong");minus.type=plus.type="button";minus.textContent="−";plus.textContent="+";qty.textContent=item.quantity;minus.dataset.cartAction="minus";plus.dataset.cartAction="add";minus.dataset.productId=plus.dataset.productId=normalizeId(item.product.id);minus.disabled=plus.disabled=!isStoreOpen();ctr.append(minus,qty,plus);row.append(info,ctr);container.appendChild(row)});const delivery=getAppliedDeliveryFee(),total=productsTotal+delivery;document.getElementById("cartProductsTotal").textContent=formatMoney(productsTotal);document.getElementById("cartDeliveryFee").textContent=formatMoney(delivery);document.getElementById("cartTotal").textContent=formatMoney(total);document.getElementById("cartCount").textContent=count;products.forEach(p=>updateProductCard(p.id))}
+function updateCart(){const items=Object.values(cart),container=document.getElementById("cartItems");container.innerHTML="";let productsTotal=0,count=0;if(!items.length){const e=document.createElement("div");e.className="cart-empty";e.textContent="Tu carrito está vacío.";container.appendChild(e)}items.forEach(item=>{const price=Number(item.product.price||0),subtotal=price*item.quantity;productsTotal+=subtotal;count+=item.quantity;const row=document.createElement("div");row.className="cart-item";const info=document.createElement("div");info.className="cart-item-info";const n=document.createElement("div");n.className="cart-item-name";n.textContent=item.product.name||"";const p=document.createElement("div");p.className="cart-item-price";p.textContent=`${item.quantity} × ${formatMoney(price)} = ${formatMoney(subtotal)}`;info.append(n,p);const ctr=document.createElement("div");ctr.className="qty-controls";const minus=document.createElement("button"),plus=document.createElement("button"),qty=document.createElement("strong");minus.type=plus.type="button";minus.textContent="−";plus.textContent="+";qty.textContent=item.quantity;minus.dataset.cartAction="minus";plus.dataset.cartAction="add";minus.dataset.productId=plus.dataset.productId=normalizeId(item.product.id);minus.disabled=!isStoreOpen();plus.disabled=!isStoreOpen()||!isAvailable(item.product)||(isStockTracked(item.product)&&item.quantity>=stockCount(item.product));ctr.append(minus,qty,plus);row.append(info,ctr);container.appendChild(row)});const delivery=getAppliedDeliveryFee(),total=productsTotal+delivery;document.getElementById("cartProductsTotal").textContent=formatMoney(productsTotal);document.getElementById("cartDeliveryFee").textContent=formatMoney(delivery);document.getElementById("cartTotal").textContent=formatMoney(total);document.getElementById("cartCount").textContent=count;products.forEach(p=>updateProductCard(p.id))}
 function updateDeliverySubtitle(){document.getElementById("deliverySubtitle").textContent=`+${formatMoney(getDeliveryFee())} de envío`}
 function updateDeliveryUI(){const pickup=getDeliveryType()==="pickup",address=document.getElementById("address"),maps=document.getElementById("mapsButton");address.style.display=pickup?"none":"block";if(pickup)address.value="";if(pickup&&settings.pickup_maps_url){maps.style.display="block";maps.href=settings.pickup_maps_url}else maps.style.display="none";updateCart();saveCheckoutState()}
 document.querySelectorAll('input[name="deliveryType"]').forEach(r=>r.addEventListener("change",updateDeliveryUI));
@@ -676,7 +733,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&imageLightbox.class
 
 
 function showOrderMessage(text,type){const el=document.getElementById("orderStatusMessage");el.className=`order-status-message show ${type}`;el.textContent=text}
-function orderItemsPayload(){return Object.values(cart).map(i=>({product_id:i.product.id,name:i.product.name,price:Number(i.product.price||0),quantity:i.quantity,subtotal:Number(i.product.price||0)*i.quantity}))}
+function orderItemsPayload(){return Object.values(cart).map(i=>({product_id:i.product.id,quantity:i.quantity}))}
 function generateOrderCode(){const now=new Date(),stamp=now.toISOString().replace(/\D/g,"").slice(2,12);return `PJ-${stamp}-${Math.random().toString(36).slice(2,6).toUpperCase()}`}
 async function sendOrder(){
   if(blockClosedAction())return;
@@ -698,60 +755,82 @@ async function sendOrder(){
   if(!whatsapp){alert("El número de WhatsApp todavía no está configurado.");return}
 
   const itemPayload=orderItemsPayload();
-  const subtotal=itemPayload.reduce((a,i)=>a+i.subtotal,0);
-  const deliveryFee=deliveryType==="delivery"?getDeliveryFee():0;
-  const total=subtotal+deliveryFee;
   const orderCode=generateOrderCode();
   const business=settings.business_name||"PasteHot";
-
-  const payload={
-    order_code:orderCode,
-    customer_name:name,
-    customer_phone:normalizePhone(phone),
-    delivery_type:deliveryType,
-    address:deliveryType==="delivery"?address:"",
-    payment_method:payment,
-    notes,
-    items:itemPayload,
-    subtotal,
-    delivery_fee:deliveryFee,
-    total,
-    order_status:"nuevo"
-  };
-
   const button=document.getElementById("whatsappButton");
   button.disabled=true;
-  button.textContent="Registrando pedido…";
+  button.textContent="Verificando existencias…";
+  showOrderMessage("Comprobando disponibilidad antes de registrar tu pedido…","warn");
 
+  let confirmed;
   try{
-    const {error}=await db.from("orders").insert(payload);
+    const {data,error}=await db.rpc("create_order_with_inventory",{
+      p_order_code:orderCode,
+      p_customer_name:name,
+      p_customer_phone:normalizePhone(phone),
+      p_delivery_type:deliveryType,
+      p_address:deliveryType==="delivery"?address:"",
+      p_payment_method:payment,
+      p_notes:notes,
+      p_items:itemPayload
+    });
+
     if(error){
       console.error("No se pudo registrar el pedido:",error);
-      showOrderMessage("El pedido no pudo guardarse en el historial, pero puedes enviarlo por WhatsApp.","warn");
-    }else{
-      showOrderMessage(`Pedido ${orderCode} registrado. Abriendo WhatsApp…`,"ok");
-      localStorage.setItem("pastehot_last_order",orderCode);
+      const raw=String(error.message||"");
+      const marker=raw.indexOf("STOCK_INSUFICIENTE|");
+      if(marker>=0){
+        const parts=raw.slice(marker).split("|");
+        const productName=parts[1]||"Ese producto";
+        const available=Number(parts[2]);
+        const requested=Number(parts[3]);
+        const msg=Number.isFinite(available)
+          ? `${productName}: ${available===1?"solo queda 1 disponible":`solo quedan ${available} disponibles`}${Number.isFinite(requested)?` y pediste ${requested}`:""}. Ajusta tu carrito.`
+          : "Ya no hay suficientes existencias para completar el pedido. Ajusta tu carrito.";
+        showOrderMessage(msg,"warn");
+        alert(msg);
+      }else{
+        const msg=raw.includes("no está disponible")?raw:"No pudimos registrar el pedido. No se descontó inventario. Intenta de nuevo.";
+        showOrderMessage(msg,"warn");
+        alert(msg);
+      }
+      await reloadProducts();
+      return;
     }
+
+    confirmed=data||{};
+    localStorage.setItem("pastehot_last_order",confirmed.order_code||orderCode);
+    showOrderMessage(`Pedido ${confirmed.order_code||orderCode} registrado. Abriendo WhatsApp…`,"ok");
   }catch(error){
     console.error("Error inesperado al registrar pedido:",error);
-    showOrderMessage("Hubo un problema registrando el pedido. Se enviará por WhatsApp.","warn");
+    showOrderMessage("Hubo un problema registrando el pedido. No se descontó inventario. Intenta de nuevo.","warn");
+    alert("Hubo un problema registrando el pedido. No se enviará por WhatsApp hasta que quede registrado.");
+    return;
+  }finally{
+    button.disabled=false;
+    button.textContent="📲 Enviar pedido por WhatsApp";
   }
 
-  let message=`*NUEVO PEDIDO ${business.toUpperCase()}*\n*Pedido:* ${orderCode}\n\n*Cliente:* ${name}\n*Teléfono:* ${phone}\n*Modalidad:* ${deliveryType==="delivery"?"Envío a domicilio":"Pasar a recoger"}\n`;
+  const confirmedItems=Array.isArray(confirmed?.items)?confirmed.items:[];
+  const subtotal=Number(confirmed?.subtotal||0);
+  const deliveryFee=Number(confirmed?.delivery_fee||0);
+  const total=Number(confirmed?.total||0);
+  const finalCode=confirmed?.order_code||orderCode;
+
+  let message=`*NUEVO PEDIDO ${business.toUpperCase()}*\n*Pedido:* ${finalCode}\n\n*Cliente:* ${name}\n*Teléfono:* ${phone}\n*Modalidad:* ${deliveryType==="delivery"?"Envío a domicilio":"Pasar a recoger"}\n`;
   if(deliveryType==="delivery")message+=`*Dirección:* ${address}\n`;
   message+="\n*PRODUCTOS*\n";
-  itemPayload.forEach(i=>message+=`${i.quantity} x ${i.name} — ${formatMoney(i.subtotal)}\n`);
+  confirmedItems.forEach(i=>message+=`${i.quantity} x ${i.name} — ${formatMoney(i.subtotal)}\n`);
   message+=`\n*Subtotal:* ${formatMoney(subtotal)}\n*Envío:* ${formatMoney(deliveryFee)}\n*TOTAL:* ${formatMoney(total)}\n*Pago:* ${payment==="transfer"?"Transferencia":"Efectivo"}\n`;
   if(notes)message+=`*Notas:* ${notes}\n`;
 
-  button.disabled=false;
-  button.textContent="📲 Enviar pedido por WhatsApp";
+  cart={};
   saveCheckoutState();
+  await reloadProducts();
 
   const url=`https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`;
   window.location.href=url;
 }
-
 document.getElementById("whatsappButton").addEventListener("click",sendOrder);
 init();
 </script>
