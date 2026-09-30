@@ -36,7 +36,11 @@ button:disabled{cursor:not-allowed}
 
 .hero{width:100%;aspect-ratio:32/9;max-height:520px;overflow:hidden;background:#151515;position:relative}
 .hero-cover{position:absolute;left:50%;top:50%;width:100%;height:100%;object-fit:cover;transform:translate(-50%,-50%);transform-origin:center;display:none;user-select:none;pointer-events:none}
-.hero-profile{position:absolute;left:50%;top:50%;width:150px;height:150px;border-radius:50%;object-fit:cover;transform:translate(-50%,-50%);display:none;user-select:none;pointer-events:none}
+/* Perfil independiente: no invade la portada ni la tarjeta principal */
+.profile-zone{display:none;justify-content:center;align-items:center;margin:0 auto 14px}
+.profile-zone.show{display:flex}
+.profile-shell{position:relative;width:132px;height:132px;overflow:hidden;border-radius:50%;background:#fff;border:5px solid rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(0,0,0,.16)}
+.hero-profile{position:absolute;left:50%;top:50%;width:100%;height:100%;object-fit:cover;transform:translate(-50%,-50%);transform-origin:center;display:block;user-select:none;pointer-events:none}
 
 .page{width:min(1180px,94%);margin:0 auto;padding:26px 0 100px}
 .brand-card{max-width:980px;margin:0 auto 24px;padding:20px 22px;text-align:center;border:1px solid var(--border);background:var(--surface);backdrop-filter:blur(10px);border-radius:22px;box-shadow:0 10px 30px rgba(0,0,0,.07)}
@@ -140,7 +144,7 @@ button:disabled{cursor:not-allowed}
 .cart-closed-warning.show{display:block}
 
 @media(max-width:900px){.products{grid-template-columns:repeat(3,minmax(0,1fr))}}
-@media(max-width:650px){.hero-profile{width:110px;height:110px}.page{width:94%;padding-top:18px}.brand-card{padding:15px}.products{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.product{border-radius:16px}.product-body{padding:12px}.product-name{font-size:16px}.product-description{font-size:13px;min-height:36px}.product-price{font-size:17px}.add-controls button{width:36px;height:36px;font-size:21px}.cart-button{width:58px;height:58px;right:16px;bottom:16px}.cart-box{padding:19px}.category-section{scroll-margin-top:75px}}
+@media(max-width:650px){.profile-zone{margin-bottom:12px}.profile-shell{width:104px;height:104px;border-width:4px}.page{width:94%;padding-top:18px}.brand-card{padding:15px}.products{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.product{border-radius:16px}.product-body{padding:12px}.product-name{font-size:16px}.product-description{font-size:13px;min-height:36px}.product-price{font-size:17px}.add-controls button{width:36px;height:36px;font-size:21px}.cart-button{width:58px;height:58px;right:16px;bottom:16px}.cart-box{padding:19px}.category-section{scroll-margin-top:75px}}
 @media(max-width:390px){.products{grid-template-columns:1fr}}
 
 /* Pie de marca */
@@ -164,9 +168,13 @@ button:disabled{cursor:not-allowed}
 <div id="backgroundOverlay"></div>
 <header class="hero" id="hero">
   <img id="heroCover" class="hero-cover" alt="">
-  <img id="heroProfile" class="hero-profile" alt="">
 </header>
 <main class="page">
+  <div id="profileZone" class="profile-zone" aria-label="Identidad visual de PasteHot">
+    <div class="profile-shell">
+      <img id="heroProfile" class="hero-profile" alt="">
+    </div>
+  </div>
   <section class="brand-card">
     <div class="brand-dashboard">
       <div class="brand-left">
@@ -526,9 +534,9 @@ async function init(){
   applyDesign(); renderMenu(); restoreCheckoutState(); updateDeliverySubtitle(); updateDeliveryUI(); updatePaymentUI(); updateCart(); renderMarketingBadges(); startPublicBatchClock(); startStoreClock();
 }
 function applyDesign(){
-  const cover=document.getElementById("heroCover"),profile=document.getElementById("heroProfile"),bg=document.getElementById("pageBackground"),overlay=document.getElementById("backgroundOverlay");
+  const cover=document.getElementById("heroCover"),profile=document.getElementById("heroProfile"),profileZone=document.getElementById("profileZone"),bg=document.getElementById("pageBackground"),overlay=document.getElementById("backgroundOverlay");
   if(settings.cover_image){cover.src=settings.cover_image;cover.style.display="block";cover.style.left=`calc(50% + ${Number(settings.cover_x)||0}%)`;cover.style.top=`calc(50% + ${Number(settings.cover_y)||0}%)`;cover.style.transform=`translate(-50%,-50%) scale(${Number(settings.cover_scale)||1})`}else cover.style.display="none";
-  if(settings.profile_image){profile.src=settings.profile_image;profile.style.display="block";profile.style.left=`calc(50% + ${Number(settings.profile_x)||0}%)`;profile.style.top=`calc(50% + ${Number(settings.profile_y)||0}%)`;profile.style.transform=`translate(-50%,-50%) scale(${Number(settings.profile_scale)||1})`}else profile.style.display="none";
+  if(settings.profile_image){profile.src=settings.profile_image;profileZone.classList.add("show");profile.style.left=`calc(50% + ${Number(settings.profile_x)||0}%)`;profile.style.top=`calc(50% + ${Number(settings.profile_y)||0}%)`;profile.style.transform=`translate(-50%,-50%) scale(${Number(settings.profile_scale)||1})`}else{profileZone.classList.remove("show");profile.removeAttribute("src")};
   if(settings.background_type==="image"&&settings.background_image)bg.style.backgroundImage=`url(${JSON.stringify(settings.background_image)})`;else bg.style.backgroundImage="none";
   bg.style.backgroundColor=settings.background_color||"#f4f4f4";
   const opacity=Math.max(0,Math.min(.75,Number(settings.background_overlay)||0)); overlay.style.background=`rgba(0,0,0,${opacity})`;
@@ -890,7 +898,7 @@ async function sendOrder(){
     return;
   }finally{
     button.disabled=false;
-    button.textContent="📲 Enviar pedido por WhatsApp";
+    button.textContent="📲 Enviar pedido ";
   }
 
   const confirmedItems=Array.isArray(confirmed?.items)?confirmed.items:[];
