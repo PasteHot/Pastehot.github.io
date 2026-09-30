@@ -142,6 +142,17 @@ button:disabled{cursor:not-allowed}
 @media(max-width:900px){.products{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:650px){.hero-profile{width:110px;height:110px}.page{width:94%;padding-top:18px}.brand-card{padding:15px}.products{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.product{border-radius:16px}.product-body{padding:12px}.product-name{font-size:16px}.product-description{font-size:13px;min-height:36px}.product-price{font-size:17px}.add-controls button{width:36px;height:36px;font-size:21px}.cart-button{width:58px;height:58px;right:16px;bottom:16px}.cart-box{padding:19px}.category-section{scroll-margin-top:75px}}
 @media(max-width:390px){.products{grid-template-columns:1fr}}
+
+/* Pie de marca */
+.brand-footer{position:relative;z-index:2;width:min(1180px,94%);margin:16px auto 34px;padding:0 0 78px}
+.brand-footer-card{background:rgba(17,17,17,.94);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:22px 24px;text-align:center;box-shadow:0 12px 34px rgba(0,0,0,.14);backdrop-filter:blur(10px)}
+.brand-footer-name{font-size:14px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+.brand-footer-tagline{margin:6px 0 0;color:rgba(255,255,255,.72);font-size:12px;line-height:1.5}
+.brand-footer-rule{width:42px;height:2px;margin:14px auto;background:var(--accent);border-radius:999px}
+.brand-footer-legal{margin:0 auto;max-width:900px;color:rgba(255,255,255,.58);font-size:10.5px;line-height:1.65;letter-spacing:.01em}
+.brand-footer-site{display:inline-block;margin-top:8px;color:#fff;text-decoration:none;font-size:11px;font-weight:900;letter-spacing:.04em}
+.brand-footer-site:hover{text-decoration:underline}
+@media(max-width:650px){.brand-footer{width:94%;margin-top:8px;padding-bottom:72px}.brand-footer-card{padding:19px 16px;border-radius:17px}.brand-footer-legal{font-size:10px}}
 </style>
 </head>
 <body>
@@ -184,6 +195,16 @@ button:disabled{cursor:not-allowed}
   <div class="categories-shell"><div class="categories" id="categories"></div></div>
   <div id="menu"></div>
 </main>
+
+<footer class="brand-footer" aria-label="Información de marca">
+  <div class="brand-footer-card">
+    <div class="brand-footer-name">PasteHot™ · Menú digital oficial</div>
+    <p class="brand-footer-tagline">Sabor recién horneado, atención directa y pedidos preparados para ti.</p>
+    <div class="brand-footer-rule"></div>
+    <p class="brand-footer-legal">© <span id="footerYear"></span> PasteHot. Todos los derechos reservados. Precios, disponibilidad, horarios y tiempos de entrega pueden variar según la operación del día.</p>
+    <a class="brand-footer-site" href="https://www.pastehot.com" aria-label="Sitio oficial de PasteHot">www.pastehot.com</a>
+  </div>
+</footer>
 <button class="cart-button" id="cartButton" type="button" aria-label="Abrir carrito">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="20" r="1"></circle><circle cx="18" cy="20" r="1"></circle><path d="M3 4h2l2.4 11.3a2 2 0 0 0 2 1.7h7.9a2 2 0 0 0 1.9-1.4L21 8H6"></path></svg>
   <span class="cart-count" id="cartCount">0</span>
@@ -885,6 +906,9 @@ async function sendOrder(){
   window.location.href=url;
 }
 document.getElementById("whatsappButton").addEventListener("click",sendOrder);
+
+const footerYear=document.getElementById("footerYear");
+if(footerYear)footerYear.textContent=new Date().getFullYear();
 init();
 </script>
 </body>
