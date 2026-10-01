@@ -690,8 +690,8 @@ function printOrderTicket(id){
     .brand-fallback{text-align:center;font-size:21px;font-weight:900;margin:.5mm 0 1mm}
     .brand{text-align:center;font-size:16.5px;font-weight:900;line-height:1.05;margin-top:.2mm}
     .registered{font-size:6px;vertical-align:super;line-height:0;margin-left:.5px}
-    .subtitle{text-align:center;font-size:9.5px;font-weight:800;margin-top:.6mm;letter-spacing:.15px}
-    .order-code{text-align:center;font-size:15.5px;font-weight:900;line-height:1.12;margin:2.6mm 0 .8mm;overflow-wrap:anywhere;letter-spacing:.1px}
+    .subtitle{text-align:center;font-size:10.5px;font-weight:900;margin-top:.8mm;letter-spacing:.55px}
+    .order-code{text-align:center;font-size:13.5px;font-weight:900;line-height:1.12;margin:2.2mm 0 .8mm;overflow-wrap:anywhere;letter-spacing:.15px}
     .date{text-align:center;font-size:9px;margin-bottom:2.2mm}
     .rule{border-top:1px dashed #000;margin:2.5mm 0}
     .label{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;margin-bottom:.5mm}
@@ -706,8 +706,8 @@ function printOrderTicket(id){
   </style></head><body><main class="ticket">
     ${logoHtml}
     <div class="brand">PasteHot<span class="registered">®</span></div>
-    <div class="subtitle">Menú digital oficial</div>
-    <div class="order-code">PEDIDO ${escapeHtml(o.order_code||String(o.id||"").slice(0,8))}</div>
+    <div class="subtitle">TICKET DE PEDIDO</div>
+    <div class="order-code">FOLIO ${escapeHtml(o.order_code||String(o.id||"").slice(0,8))}</div>
     <div class="date">${escapeHtml(ticketDate(o.created_at))}</div>
     <div class="rule"></div>
     <div class="meta">
