@@ -659,14 +659,82 @@ function startBatchAdminClock(){
 
 async function loadOrders(){const {data,error}=await db.from("orders").select("*").order("created_at",{ascending:false}).limit(1000);if(error){orders=[];ordersTable.innerHTML='<tr><td colspan="8">No se pudieron cargar los pedidos. Revisa la tabla y las políticas RLS.</td></tr>';renderOrderAnalytics();renderCustomers();return}orders=data||[];renderOrdersTable();renderOrderAnalytics();renderCustomers()}
 function filteredOrders(){const p=ordersPeriod.value;if(p==="all")return orders;const cutoff=Date.now()-Number(p)*86400000;return orders.filter(o=>new Date(o.created_at).getTime()>=cutoff)}
-function renderOrdersTable(){if(!orders.length){ordersTable.innerHTML='<tr><td colspan="8">No hay pedidos registrados.</td></tr>';return}ordersTable.innerHTML=orders.slice(0,250).map(o=>`<tr><td>${formatDate(o.created_at)}</td><td>${escapeHtml(o.order_code||String(o.id||"").slice(0,8))}</td><td>${escapeHtml(o.customer_name||"")}</td><td>${escapeHtml(o.delivery_type||"")}</td><td>${formatMoney(o.total)}</td><td>${escapeHtml(o.payment_method||"")}</td><td><select style="min-width:120px" onchange="updateOrderStatus('${o.id}',this.value)">${["nuevo","confirmado","preparando","listo","entregado","cancelado"].map(s=>`<option value="${s}" ${o.order_status===s?"selected":""}>${s}</option>`).join("")}</select></td><td><button class="btn btn-light btn-small" onclick="openOrderModal('${o.id}')">Ver</button></td></tr>`).join("")}
+function renderOrdersTable(){if(!orders.length){ordersTable.innerHTML='<tr><td colspan="8">No hay pedidos registrados.</td></tr>';return}ordersTable.innerHTML=orders.slice(0,250).map(o=>`<tr><td>${formatDate(o.created_at)}</td><td>${escapeHtml(o.order_code||String(o.id||"").slice(0,8))}</td><td>${escapeHtml(o.customer_name||"")}</td><td>${escapeHtml(o.delivery_type||"")}</td><td>${formatMoney(o.total)}</td><td>${escapeHtml(o.payment_method||"")}</td><td><select style="min-width:120px" onchange="updateOrderStatus('${o.id}',this.value)">${["nuevo","confirmado","preparando","listo","entregado","cancelado"].map(s=>`<option value="${s}" ${o.order_status===s?"selected":""}>${s}</option>`).join("")}</select></td><td><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-light btn-small" onclick="openOrderModal('${o.id}')">Ver</button><button class="btn btn-dark btn-small" onclick="printOrderTicket('${o.id}')">🖨 Ticket</button></div></td></tr>`).join("")}
 async function updateOrderStatus(id,status){const current=orders.find(x=>String(x.id)===String(id));const previous=current?.order_status||"nuevo";const {error}=await db.rpc("update_order_status_with_inventory",{p_order_id:id,p_new_status:status});if(error){console.error(error);const parts=String(error.message||"").split("|");if(parts[0].includes("STOCK_INSUFICIENTE")&&parts.length>=4){alert(`No se puede reactivar el pedido. ${parts[1]}: quedan ${parts[2]} y el pedido necesita ${parts[3]}.`)}else alert("No se pudo actualizar el estado del pedido.");if(current)current.order_status=previous;renderOrdersTable();return}if(current)current.order_status=status;renderOrdersTable();renderOrderAnalytics();renderCustomers();await loadProducts()}
 function renderOrderAnalytics(){const list=filteredOrders(),valid=list.filter(o=>o.order_status!=="cancelado"),revenue=valid.reduce((a,o)=>a+Number(o.total||0),0),avg=valid.length?revenue/valid.length:0;const productMap={},dayMap={};valid.forEach(o=>{safeItems(o.items).forEach(i=>{const key=i.name||"Producto";productMap[key]=(productMap[key]||0)+Number(i.quantity||0)});const day=new Date(o.created_at).toISOString().slice(0,10);dayMap[day]=(dayMap[day]||0)+Number(o.total||0)});const productsRank=Object.entries(productMap).sort((a,b)=>b[1]-a[1]),daysRank=Object.entries(dayMap).sort((a,b)=>b[1]-a[1]);const best=daysRank[0],worst=[...daysRank].sort((a,b)=>a[1]-b[1])[0];ordersMetrics.innerHTML=metric("Pedidos",valid.length)+metric("Ventas",formatMoney(revenue))+metric("Ticket promedio",formatMoney(avg))+metric("Mejor día",best?`${best[0]} · ${formatMoney(best[1])}`:"—");renderBarChart(productSalesChart,productsRank.slice(0,8),v=>`${v} u.`);const chronological=Object.entries(dayMap).sort((a,b)=>a[0].localeCompare(b[0])).slice(-14);renderBarChart(dailySalesChart,chronological,v=>formatMoney(v));if(worst&&chronological.length)dailySalesChart.insertAdjacentHTML("beforeend",`<p style="color:var(--muted);font-size:13px">Menor venta entre días con pedidos: <strong>${escapeHtml(worst[0])}</strong> · ${formatMoney(worst[1])}</p>`)}
 function metric(label,value){return `<div class="metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`}
 function renderBarChart(container,rows,formatter){if(!rows.length){container.innerHTML='<p style="color:#777">Sin datos todavía.</p>';return}const max=Math.max(...rows.map(r=>Number(r[1])||0),1);container.innerHTML=rows.map(([label,value])=>`<div class="chart-row"><div class="chart-label" title="${escapeAttr(label)}">${escapeHtml(label)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(3,(Number(value)/max)*100)}%"></div></div><strong>${escapeHtml(formatter(value))}</strong></div>`).join("")}
 function deriveCustomers(){const map={};orders.filter(o=>o.order_status!=="cancelado").forEach(o=>{const phone=normalizePhone(o.customer_phone);if(!phone)return;if(!map[phone])map[phone]={name:o.customer_name||"",phone,count:0,total:0,first:o.created_at,last:o.created_at};const c=map[phone];c.count++;c.total+=Number(o.total||0);if(new Date(o.created_at)<new Date(c.first))c.first=o.created_at;if(new Date(o.created_at)>new Date(c.last)){c.last=o.created_at;c.name=o.customer_name||c.name}});return Object.values(map).sort((a,b)=>new Date(b.last)-new Date(a.last))}
 function renderCustomers(){const list=deriveCustomers(),rec=list.filter(c=>c.count>1),newc=list.filter(c=>c.count===1),value=list.reduce((a,c)=>a+c.total,0);customersMetrics.innerHTML=metric("Clientes únicos",list.length)+metric("Nuevos",newc.length)+metric("Recurrentes",rec.length)+metric("Venta acumulada",formatMoney(value));if(!list.length){customersTable.innerHTML='<tr><td colspan="7">No hay clientes todavía.</td></tr>';return}customersTable.innerHTML=list.map(c=>`<tr><td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.phone)}</td><td>${c.count}</td><td>${formatMoney(c.total)}</td><td>${dateOnly(c.first)}</td><td>${dateOnly(c.last)}</td><td><span class="badge ${c.count>1?"recurrent":"new"}">${c.count>1?"Recurrente":"Nuevo"}</span></td></tr>`).join("")}
-function openOrderModal(id){const o=orders.find(x=>String(x.id)===String(id));if(!o)return;orderModalTitle.textContent=`Pedido ${o.order_code||""}`;const items=safeItems(o.items);orderDetail.innerHTML=`<p><strong>Cliente:</strong> ${escapeHtml(o.customer_name||"")} · ${escapeHtml(o.customer_phone||"")}</p><p><strong>Modalidad:</strong> ${escapeHtml(o.delivery_type||"")} ${o.address?"· "+escapeHtml(o.address):""}</p><p><strong>Pago:</strong> ${escapeHtml(o.payment_method||"")}</p>${o.notes?`<p><strong>Notas:</strong> ${escapeHtml(o.notes)}</p>`:""}<div class="order-detail-list">${items.map(i=>`<div class="order-detail-item"><span>${escapeHtml(i.quantity)} × ${escapeHtml(i.name)}</span><strong>${formatMoney(i.subtotal)}</strong></div>`).join("")}</div><p style="text-align:right;font-size:20px"><strong>Total: ${formatMoney(o.total)}</strong></p>`;orderModal.classList.add("show")}
+function ticketDeliveryLabel(value){return value==="delivery"?"Envío a domicilio":value==="pickup"?"Pasar a recoger":String(value||"")}
+function ticketPaymentLabel(value){return value==="cash"?"Efectivo":value==="transfer"?"Transferencia":String(value||"")}
+function ticketDate(value){if(!value)return"";return new Intl.DateTimeFormat("es-MX",{dateStyle:"short",timeStyle:"short"}).format(new Date(value))}
+function printOrderTicket(id){
+  const o=orders.find(x=>String(x.id)===String(id));
+  if(!o){alert("No se encontró el pedido.");return}
+  const items=safeItems(o.items);
+  const logo=design?.profile?.url||"";
+  const logoHtml=logo?`<img class="logo" src="${escapeAttr(logo)}" alt="PasteHot">`:`<div class="brand-fallback">PasteHot®</div>`;
+  const itemRows=items.map(i=>`<div class="item"><div class="item-name"><strong>${escapeHtml(i.quantity)} × ${escapeHtml(i.name||"Producto")}</strong>${Number(i.price)>=0?`<small>${escapeHtml(i.quantity)} × ${formatMoney(i.price)}</small>`:""}</div><strong class="item-total">${formatMoney(i.subtotal)}</strong></div>`).join("");
+  const notes=o.notes?`<div class="notes"><strong>NOTAS</strong><div>${escapeHtml(o.notes)}</div></div>`:"";
+  const popup=window.open("","_blank","width=420,height=720");
+  if(!popup){alert("El navegador bloqueó la ventana del ticket. Permite ventanas emergentes para imprimir.");return}
+  popup.document.open();
+  popup.document.write(`<!DOCTYPE html><html lang="es-MX"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ticket ${escapeHtml(o.order_code||"")}</title><style>
+    @page{size:58mm auto;margin:0}
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;width:58mm;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif}
+    body{font-size:10.5px;line-height:1.32}
+    .ticket{width:58mm;padding:3mm 3mm 4mm;margin:0 auto}
+    .logo{display:block;max-width:38mm;max-height:22mm;object-fit:contain;margin:0 auto 2mm}
+    .brand-fallback{text-align:center;font-size:20px;font-weight:900;margin:1mm 0 2mm}
+    .brand{text-align:center;font-size:15px;font-weight:900;line-height:1.1}
+    .registered{font-size:7px;vertical-align:super;margin-left:1px}
+    .subtitle{text-align:center;font-size:9px;font-weight:700;margin-top:1mm}
+    .order-code{text-align:center;font-size:14px;font-weight:900;margin:3mm 0 1mm;overflow-wrap:anywhere}
+    .date{text-align:center;font-size:9px;margin-bottom:2.5mm}
+    .rule{border-top:1px dashed #000;margin:2.5mm 0}
+    .label{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;margin-bottom:.5mm}
+    .value{font-size:11px;font-weight:800;overflow-wrap:anywhere}
+    .meta{display:grid;gap:2mm}
+    .item{display:grid;grid-template-columns:1fr auto;gap:2mm;align-items:start;padding:1.5mm 0;border-bottom:1px dotted #999}
+    .item-name{min-width:0;overflow-wrap:anywhere}.item-name small{display:block;font-size:8.5px;font-weight:400;margin-top:.5mm}.item-total{white-space:nowrap;font-size:10px}
+    .totals{display:grid;gap:1.2mm}.total-row{display:flex;justify-content:space-between;gap:2mm}.grand{font-size:15px;font-weight:900;border-top:1.5px solid #000;padding-top:2mm;margin-top:1mm}
+    .notes{margin-top:2.5mm;padding:2mm;border:1px solid #000;overflow-wrap:anywhere}.notes strong{display:block;font-size:8px;margin-bottom:1mm}
+    .footer{text-align:center;font-size:7.5px;line-height:1.35;margin-top:3mm}.website{font-size:10px;font-weight:900;margin:2mm 0}.legal{margin-top:2mm}.copyright{font-size:7px;margin-top:2mm}
+    @media print{html,body{width:58mm}.ticket{page-break-after:auto}}
+  </style></head><body><main class="ticket">
+    ${logoHtml}
+    <div class="brand">PasteHot<span class="registered">®</span></div>
+    <div class="subtitle">Menú digital oficial</div>
+    <div class="order-code">PEDIDO ${escapeHtml(o.order_code||String(o.id||"").slice(0,8))}</div>
+    <div class="date">${escapeHtml(ticketDate(o.created_at))}</div>
+    <div class="rule"></div>
+    <div class="meta">
+      <div><div class="label">Cliente</div><div class="value">${escapeHtml(o.customer_name||"Cliente")}</div></div>
+      <div><div class="label">Modalidad</div><div class="value">${escapeHtml(ticketDeliveryLabel(o.delivery_type))}</div></div>
+      <div><div class="label">Pago</div><div class="value">${escapeHtml(ticketPaymentLabel(o.payment_method))}</div></div>
+    </div>
+    <div class="rule"></div>
+    <div>${itemRows||'<div style="text-align:center">Sin productos registrados.</div>'}</div>
+    <div class="rule"></div>
+    <div class="totals">
+      <div class="total-row"><span>Subtotal</span><strong>${formatMoney(o.subtotal)}</strong></div>
+      <div class="total-row"><span>Envío</span><strong>${formatMoney(o.delivery_fee)}</strong></div>
+      <div class="total-row grand"><span>TOTAL</span><span>${formatMoney(o.total)}</span></div>
+    </div>
+    ${notes}
+    <div class="rule"></div>
+    <div class="footer">
+      <div class="website">www.pastehot.com</div>
+      <div class="legal">Precios, productos, horarios, promociones y tiempos de entrega sujetos a disponibilidad y cambios sin previo aviso.</div>
+      <div class="copyright">© 2026 PasteHot<span class="registered">®</span> es una marca registrada. Todos los derechos reservados.</div>
+    </div>
+  </main><script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250));<\/script></body></html>`);
+  popup.document.close();
+}
+
+function openOrderModal(id){const o=orders.find(x=>String(x.id)===String(id));if(!o)return;orderModalTitle.textContent=`Pedido ${o.order_code||""}`;const items=safeItems(o.items);orderDetail.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn btn-dark btn-small" onclick="printOrderTicket(\'${o.id}\')">🖨 Imprimir ticket 58 mm</button></div><p><strong>Cliente:</strong> ${escapeHtml(o.customer_name||"")} · ${escapeHtml(o.customer_phone||"")}</p><p><strong>Modalidad:</strong> ${escapeHtml(o.delivery_type||"")} ${o.address?"· "+escapeHtml(o.address):""}</p><p><strong>Pago:</strong> ${escapeHtml(o.payment_method||"")}</p>${o.notes?`<p><strong>Notas:</strong> ${escapeHtml(o.notes)}</p>`:""}<div class="order-detail-list">${items.map(i=>`<div class="order-detail-item"><span>${escapeHtml(i.quantity)} × ${escapeHtml(i.name)}</span><strong>${formatMoney(i.subtotal)}</strong></div>`).join("")}</div><p style="text-align:right;font-size:20px"><strong>Total: ${formatMoney(o.total)}</strong></p>`;orderModal.classList.add("show")}
 function closeOrderModal(){orderModal.classList.remove("show")}
 
 async function saveSetting(key,value){const {data,error}=await db.from("settings").select("id").eq("key",key).maybeSingle();if(error)throw error;if(data){const r=await db.from("settings").update({value:String(value),updated_at:new Date().toISOString()}).eq("id",data.id);if(r.error)throw r.error}else{const r=await db.from("settings").insert({key,value:String(value)});if(r.error)throw r.error}}
