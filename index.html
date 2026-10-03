@@ -129,6 +129,7 @@ button:disabled{cursor:not-allowed}
 .payment-label{font-size:13px;font-weight:900;margin-bottom:-4px}
 
 .whatsapp-button{width:100%;border:0;border-radius:14px;padding:15px;background:#20b957;color:#fff;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:9px}.whatsapp-button:disabled{opacity:.6}.order-status-message{display:none;padding:11px 12px;border-radius:10px;font-size:13px}.order-status-message.show{display:block}.order-status-message.ok{background:#e8f8ee;color:#0c6f34}.order-status-message.warn{background:#fff5dd;color:#805d00}
+.curbside-modal{position:fixed;inset:0;z-index:1200;display:none;align-items:center;justify-content:center;padding:22px;background:rgba(0,0,0,.62);backdrop-filter:blur(4px)}.curbside-modal.show{display:flex}.curbside-card{width:min(470px,100%);background:#fff;border-radius:22px;padding:25px;box-shadow:0 26px 80px rgba(0,0,0,.3);text-align:center}.curbside-card h3{margin:0 0 12px;font-size:22px}.curbside-alert{margin:0;padding:16px;border-radius:14px;background:#fff0f1;color:#9a1118;font-size:20px;font-weight:950;line-height:1.2}.curbside-copy{margin:13px 0 0;color:#555;font-size:13px;line-height:1.5}.curbside-actions{display:grid;grid-template-columns:1fr 1.35fr;gap:9px;margin-top:20px}.curbside-actions button{border:0;border-radius:11px;padding:12px;font-weight:900}.curbside-back{background:#eee;color:#222}.curbside-accept{background:#111;color:#fff}
 
 
 .product.store-closed .add-controls button{opacity:.28;cursor:not-allowed}
@@ -253,6 +254,7 @@ button:disabled{cursor:not-allowed}
   </div>
 </div>
 
+<div id="curbsideModal" class="curbside-modal" role="dialog" aria-modal="true" aria-labelledby="curbsideTitle"><div class="curbside-card"><h3 id="curbsideTitle">Importante</h3><p class="curbside-alert">LOS PEDIDOS SE ENTREGAN A PIE DE CALLE.</p><p class="curbside-copy">Al continuar confirmas que estás de acuerdo con esta modalidad de entrega.</p><div class="curbside-actions"><button id="curbsideBack" class="curbside-back" type="button">Volver</button><button id="curbsideAccept" class="curbside-accept" type="button">Entendido, enviar pedido</button></div></div></div>
 <div id="imageLightbox" class="image-lightbox" role="dialog" aria-modal="true" aria-label="Vista ampliada del producto">
   <div class="image-lightbox-content">
     <button id="imageLightboxClose" class="image-lightbox-close" type="button" aria-label="Cerrar imagen">×</button>
@@ -826,6 +828,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&imageLightbox.class
 function showOrderMessage(text,type){const el=document.getElementById("orderStatusMessage");el.className=`order-status-message show ${type}`;el.textContent=text}
 function orderItemsPayload(){return Object.values(cart).map(i=>({product_id:i.product.id,quantity:i.quantity}))}
 function generateOrderCode(){const now=new Date(),stamp=now.toISOString().replace(/\D/g,"").slice(2,12);return `PJ-${stamp}-${Math.random().toString(36).slice(2,6).toUpperCase()}`}
+function confirmCurbsideDelivery(){return new Promise(resolve=>{const modal=document.getElementById("curbsideModal"),back=document.getElementById("curbsideBack"),accept=document.getElementById("curbsideAccept");const finish=value=>{modal.classList.remove("show");document.body.style.overflow="";back.onclick=null;accept.onclick=null;resolve(value)};back.onclick=()=>finish(false);accept.onclick=()=>finish(true);modal.classList.add("show");document.body.style.overflow="hidden"})}
 async function sendOrder(){
   if(blockClosedAction())return;
   const items=Object.values(cart);
@@ -844,18 +847,19 @@ async function sendOrder(){
 
   const whatsapp=normalizePhone(settings.whatsapp);
   if(!whatsapp){alert("El número de WhatsApp todavía no está configurado.");return}
+  if(deliveryType==="delivery"&&!(await confirmCurbsideDelivery()))return;
 
   const itemPayload=orderItemsPayload();
   const orderCode=generateOrderCode();
   const business=settings.business_name||"PasteHot";
   const button=document.getElementById("whatsappButton");
   button.disabled=true;
-  button.textContent="Verificando existencias…";
-  showOrderMessage("Comprobando disponibilidad antes de registrar tu pedido…","warn");
+  button.textContent="Registrando pedido…";
+  showOrderMessage("Comprobando disponibilidad y registrando tu pedido como pendiente de confirmación…","warn");
 
   let confirmed;
   try{
-    const {data,error}=await db.rpc("create_order_with_inventory",{
+    const {data,error}=await db.rpc("create_pending_order_with_location",{
       p_order_code:orderCode,
       p_customer_name:name,
       p_customer_phone:normalizePhone(phone),
@@ -863,7 +867,15 @@ async function sendOrder(){
       p_address:deliveryType==="delivery"?address:"",
       p_payment_method:payment,
       p_notes:notes,
-      p_items:itemPayload
+      p_items:itemPayload,
+      p_delivery_lat:null,
+      p_delivery_lng:null,
+      p_delivery_accuracy_m:null,
+      p_delivery_address_text:deliveryType==="delivery"?address:null,
+      p_delivery_locality:null,
+      p_delivery_region:null,
+      p_delivery_postcode:null,
+      p_delivery_country_code:null
     });
 
     if(error){
@@ -881,7 +893,7 @@ async function sendOrder(){
         showOrderMessage(msg,"warn");
         alert(msg);
       }else{
-        const msg=raw.includes("no está disponible")?raw:"No pudimos registrar el pedido. No se descontó inventario. Intenta de nuevo.";
+        const msg=raw.includes("no está disponible")?raw:"No pudimos registrar el pedido. Intenta de nuevo.";
         showOrderMessage(msg,"warn");
         alert(msg);
       }
@@ -891,10 +903,10 @@ async function sendOrder(){
 
     confirmed=data||{};
     localStorage.setItem("pastehot_last_order",confirmed.order_code||orderCode);
-    showOrderMessage(`Pedido ${confirmed.order_code||orderCode} registrado. Abriendo WhatsApp…`,"ok");
+    showOrderMessage(`Pedido ${confirmed.order_code||orderCode} registrado como pendiente. Abriendo WhatsApp…`,"ok");
   }catch(error){
     console.error("Error inesperado al registrar pedido:",error);
-    showOrderMessage("Hubo un problema registrando el pedido. No se descontó inventario. Intenta de nuevo.","warn");
+    showOrderMessage("Hubo un problema registrando el pedido. Intenta de nuevo.","warn");
     alert("Hubo un problema registrando el pedido. No se enviará por WhatsApp hasta que quede registrado.");
     return;
   }finally{
@@ -914,6 +926,8 @@ async function sendOrder(){
   confirmedItems.forEach(i=>message+=`${i.quantity} x ${i.name} — ${formatMoney(i.subtotal)}\n`);
   message+=`\n*Subtotal:* ${formatMoney(subtotal)}\n*Envío:* ${formatMoney(deliveryFee)}\n*TOTAL:* ${formatMoney(total)}\n*Pago:* ${payment==="transfer"?"Transferencia":"Efectivo"}\n`;
   if(notes)message+=`*Notas:* ${notes}\n`;
+  message+="\n*Importante:* El pedido queda pendiente hasta que PasteHot confirme su recepción.\n";
+  if(deliveryType==="delivery")message+="*Entrega:* A PIE DE CALLE.\n";
 
   cart={};
   saveCheckoutState();
