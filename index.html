@@ -91,7 +91,8 @@ button:disabled{cursor:not-allowed}
 .product.soldout .product-body{opacity:.5}
 .product-name{font-size:18px;font-weight:900;margin:0 0 7px;line-height:1.2}
 .product-description{font-size:14px;color:#666;line-height:1.65;min-height:40px;text-align:center;text-wrap:pretty}
-.product-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:15px}
+.product-card-footer{margin-top:auto;display:flex;flex-direction:column}
+.product-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:0;padding-top:15px}
 .product-price{font-size:20px;font-weight:900}
 .add-controls{display:flex;align-items:center;justify-content:flex-end;gap:7px;min-width:42px}
 .add-controls button{border:none;width:38px;height:38px;border-radius:50%;background:#111;color:#fff;font-size:23px;font-weight:800;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0}
@@ -759,7 +760,9 @@ function createProduct(product){
   const controls=document.createElement("div");controls.className="add-controls";controls.dataset.productId=normalizeId(product.id);
   renderProductControls(controls,product);
   bottom.append(price,controls);
-  body.append(n,d,closed,stockNote,bottom);
+  const footer=document.createElement("div");footer.className="product-card-footer";
+  footer.append(closed,stockNote,bottom);
+  body.append(n,d,footer);
   card.append(wrap,body);
   return card;
 }
