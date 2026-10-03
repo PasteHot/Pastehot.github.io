@@ -1185,6 +1185,9 @@ function printOrderTicket(id){
       .value{font-size:11px;font-weight:800;overflow-wrap:anywhere}
       .meta{display:grid;grid-template-columns:1fr 1fr;gap:2mm 4mm}
       .meta .wide{grid-column:1/-1}
+      .meta-line{grid-column:1/-1;display:flex;justify-content:space-between;align-items:baseline;gap:4mm;padding-top:1.5mm;border-top:1px dotted #aaa}
+      .meta-line .label{margin:0}
+      .meta-line .value{text-align:right}
       .item{display:grid;grid-template-columns:1fr auto;gap:2mm;align-items:start;padding:1.5mm 0;border-bottom:1px dotted #999}
       .item-name{min-width:0;overflow-wrap:anywhere}.item-name small{display:block;font-size:8.5px;font-weight:400;margin-top:.5mm}.item-total{white-space:nowrap;font-size:10px}
       .totals{display:grid;gap:1.2mm}.total-row{display:flex;justify-content:space-between;gap:2mm}.grand{font-size:15px;font-weight:900;border-top:1.5px solid #000;padding-top:2mm;margin-top:1mm}
@@ -1212,8 +1215,8 @@ function printOrderTicket(id){
       <div class="meta">
         <div><div class="label">Cliente</div><div class="value">${escapeHtml(firstName)}</div></div>
         <div><div class="label">Teléfono</div><div class="value">${escapeHtml(customerPhone||"Sin teléfono")}</div></div>
-        <div><div class="label">Modalidad</div><div class="value">${escapeHtml(ticketDeliveryLabel(o.delivery_type))}</div></div>
-        <div><div class="label">Pago</div><div class="value">${escapeHtml(ticketPaymentLabel(o.payment_method))}</div></div>
+        <div class="meta-line"><div class="label">Modalidad</div><div class="value">${escapeHtml(ticketDeliveryLabel(o.delivery_type))}</div></div>
+        <div class="meta-line"><div class="label">Pago</div><div class="value">${escapeHtml(ticketPaymentLabel(o.payment_method))}</div></div>
       </div>
       <div class="rule"></div>
       <div>${itemRows||'<div style="text-align:center">Sin productos registrados.</div>'}</div>
