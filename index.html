@@ -243,7 +243,10 @@ button:disabled{cursor:not-allowed}
         <label class="delivery-row"><input type="radio" name="deliveryType" value="delivery" checked><span class="delivery-icon">🛵</span><span class="delivery-text"><strong>Envío a domicilio</strong><small id="deliverySubtitle"></small></span><span class="delivery-check"></span></label>
         <label class="delivery-row"><input type="radio" name="deliveryType" value="pickup"><span class="delivery-icon">🛍️</span><span class="delivery-text"><strong>Pasar a recoger</strong><small>Recoge tu pedido en nuestro punto de venta</small></span><span class="delivery-check"></span></label>
       </div>
-      <input id="address" type="text" autocomplete="street-address" placeholder="Dirección de entrega">
+      <button id="useLocationButton" type="button" style="width:100%;border:0;border-radius:12px;padding:13px;background:#111;color:#fff;font-weight:900">📍 Usar mi ubicación actual</button>
+      <div id="locationStatus" style="font-size:12px;color:#666;line-height:1.4"></div>
+      <input id="address" type="text" readonly placeholder="La ubicación se completará automáticamente">
+      <div style="font-size:11px;color:#777;line-height:1.4">Al pulsar el botón autorizas el uso de tu ubicación exacta únicamente para validar y realizar esta entrega.</div>
       <a id="mapsButton" class="maps-button" href="#" target="_blank" rel="noopener">📍 Ver ubicación para recoger</a>
       <div class="payment-label">Forma de pago</div><select id="paymentMethod"><option value="cash">Efectivo al recibir/recoger</option><option value="transfer">Transferencia bancaria</option></select>
       <div id="transferPanel" class="transfer-panel"></div>
@@ -269,6 +272,7 @@ const db=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 let products=[];
 let settings={};
 let cart={};
+let deliveryLocation=null;
 const DEFAULT_DELIVERY_FEE=30;
 const FALLBACK_CATEGORIES=["Pastes salados","Pastes dulces","Pastes de temporada","Bebidas","Promociones"];
 let batchPublicInterval=null;
@@ -750,6 +754,29 @@ function updateCart(){
   document.getElementById("cartCount").textContent=count;
   products.forEach(p=>updateProductCard(p.id));
 }
+function requestDeliveryLocation(){
+  const status=document.getElementById("locationStatus"),button=document.getElementById("useLocationButton");
+  if(!navigator.geolocation){status.textContent="Este dispositivo no permite compartir ubicación.";return}
+  button.disabled=true;status.textContent="Obteniendo ubicación…";
+  navigator.geolocation.getCurrentPosition(
+    position=>{
+      const lat=Number(position.coords.latitude),lng=Number(position.coords.longitude),accuracy=Math.round(Number(position.coords.accuracy)||0);
+      deliveryLocation={lat,lng,accuracy};
+      document.getElementById("address").value=`Ubicación GPS ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      status.textContent=`✓ Ubicación obtenida · precisión aproximada ±${accuracy} m`;
+      button.textContent="✓ Ubicación obtenida · actualizar";
+      button.disabled=false;
+    },
+    ()=>{
+      deliveryLocation=null;document.getElementById("address").value="";
+      status.textContent="No se pudo obtener la ubicación. Revisa el permiso de ubicación e inténtalo nuevamente.";
+      button.disabled=false;
+    },
+    {enableHighAccuracy:true,timeout:18000,maximumAge:0}
+  );
+}
+document.getElementById("useLocationButton")?.addEventListener("click",requestDeliveryLocation);
+
 function updateDeliverySubtitle(){document.getElementById("deliverySubtitle").textContent=`+${formatMoney(getDeliveryFee())} de envío`}
 function updateDeliveryUI(){const pickup=getDeliveryType()==="pickup",address=document.getElementById("address"),maps=document.getElementById("mapsButton");address.style.display=pickup?"none":"block";if(pickup)address.value="";if(pickup&&settings.pickup_maps_url){maps.style.display="block";maps.href=settings.pickup_maps_url}else maps.style.display="none";updateCart();saveCheckoutState()}
 document.querySelectorAll('input[name="deliveryType"]').forEach(r=>r.addEventListener("change",updateDeliveryUI));
