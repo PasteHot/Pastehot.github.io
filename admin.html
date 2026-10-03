@@ -1127,9 +1127,9 @@ function printOrderTicket(id){
 
   const items=safeItems(o.items);
   const logo=design?.profile?.url||"";
-  const logoHtml=logo?\`<img class="logo" src="${escapeAttr(logo)}" alt="PasteHot">\`:\`<div class="brand-fallback">PasteHot®</div>\`;
-  const itemRows=items.map(i=>\`<div class="item"><div class="item-name"><strong>${escapeHtml(i.quantity)} × ${escapeHtml(i.name||"Producto")}</strong>${Number(i.price)>=0?\`<small>${escapeHtml(i.quantity)} × ${formatMoney(i.price)}</small>\`:""}</div><strong class="item-total">${formatMoney(i.subtotal)}</strong></div>\`).join("");
-  const notes=o.notes?\`<div class="notes"><strong>NOTAS</strong><div>${escapeHtml(o.notes)}</div></div>\`:"";
+  const logoHtml=logo?`<img class="logo" src="${escapeAttr(logo)}" alt="PasteHot">`:`<div class="brand-fallback">PasteHot®</div>`;
+  const itemRows=items.map(i=>`<div class="item"><div class="item-name"><strong>${escapeHtml(i.quantity)} × ${escapeHtml(i.name||"Producto")}</strong>${Number(i.price)>=0?`<small>${escapeHtml(i.quantity)} × ${formatMoney(i.price)}</small>`:""}</div><strong class="item-total">${formatMoney(i.subtotal)}</strong></div>`).join("");
+  const notes=o.notes?`<div class="notes"><strong>NOTAS</strong><div>${escapeHtml(o.notes)}</div></div>`:"";
   const isDelivery=o.delivery_type==="delivery";
   const hasLocation=isDelivery&&Number.isFinite(Number(o.delivery_lat))&&Number.isFinite(Number(o.delivery_lng));
   const customerPhone=normalizePhone(o.customer_phone||"");
@@ -1147,7 +1147,7 @@ function printOrderTicket(id){
   popup.document.close();
 
   const writeTicket=qrSrc=>{
-    const deliveryBlock=isDelivery?\`
+    const deliveryBlock=isDelivery?`
       <div class="rule"></div>
       <div class="delivery-title">DATOS DE ENTREGA</div>
       <div class="verify">
@@ -1155,19 +1155,19 @@ function printOrderTicket(id){
         <div class="verify-code">${escapeHtml(verificationCode)}</div>
         <div class="verify-note">El repartidor debe pedir este código antes de entregar.</div>
       </div>
-      ${o.delivery_zone_name?\`<div class="data-row"><span>Zona</span><strong>${escapeHtml(o.delivery_zone_name)}</strong></div>\`:""}
+      ${o.delivery_zone_name?`<div class="data-row"><span>Zona</span><strong>${escapeHtml(o.delivery_zone_name)}</strong></div>`:""}
       <div class="data-block"><div class="label">Dirección</div><div class="value">${escapeHtml(address)}</div></div>
       <div class="data-block"><div class="label">Referencia</div><div class="value">${escapeHtml(reference)}</div></div>
-      ${qrSrc?\`<img class="qr" src="${qrSrc}" alt="QR Google Maps"><div class="qr-note">Escanea para abrir la ubicación en Google Maps.</div>\`:""}
+      ${qrSrc?`<img class="qr" src="${qrSrc}" alt="QR Google Maps"><div class="qr-note">Escanea para abrir la ubicación en Google Maps.</div>`:""}
       <div class="contacts">
         <div class="data-block"><div class="label">Teléfono del cliente</div><div class="value">${escapeHtml(customerPhone||"Sin teléfono")}</div></div>
         <div class="data-block"><div class="label">Contacto PasteHot</div><div class="value">${escapeHtml(businessPhone||"Sin teléfono configurado")}</div></div>
       </div>
-      ${o.delivery_provider?\`<div class="data-row"><span>Reparto</span><strong>${escapeHtml(o.delivery_provider)}</strong></div>\`:""}
+      ${o.delivery_provider?`<div class="data-row"><span>Reparto</span><strong>${escapeHtml(o.delivery_provider)}</strong></div>`:""}
     `:"";
 
     popup.document.open();
-    popup.document.write(\`<!DOCTYPE html><html lang="es-MX"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ticket ${escapeHtml(o.order_code||"")}</title><style>
+    popup.document.write(`<!DOCTYPE html><html lang="es-MX"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ticket ${escapeHtml(o.order_code||"")}</title><style>
       @page{size:80mm auto;margin:0}
       *{box-sizing:border-box}
       html,body{margin:0;padding:0;width:80mm;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif}
@@ -1220,7 +1220,7 @@ function printOrderTicket(id){
       <div class="rule"></div>
       <div class="totals">
         <div class="total-row"><span>Subtotal</span><strong>${formatMoney(o.subtotal)}</strong></div>
-        ${isDelivery&&rain>0?\`<div class="total-row"><span>Tarifa base de envío</span><strong>${formatMoney(o.delivery_base_fee)}</strong></div><div class="total-row"><span>Recargo por lluvia</span><strong>${formatMoney(rain)}</strong></div>\`:""}
+        ${isDelivery&&rain>0?`<div class="total-row"><span>Tarifa base de envío</span><strong>${formatMoney(o.delivery_base_fee)}</strong></div><div class="total-row"><span>Recargo por lluvia</span><strong>${formatMoney(rain)}</strong></div>`:""}
         <div class="total-row"><span>Envío</span><strong>${formatMoney(o.delivery_fee)}</strong></div>
         <div class="total-row grand"><span>TOTAL</span><span>${formatMoney(o.total)}</span></div>
       </div>
@@ -1232,7 +1232,7 @@ function printOrderTicket(id){
         <div class="legal">Precios, productos, horarios, promociones y tiempos de entrega sujetos a disponibilidad y cambios sin previo aviso.</div>
         <div class="copyright">© 2026 PasteHot<span class="registered">®</span> es una marca registrada. Todos los derechos reservados.</div>
       </div>
-    </main><script>window.addEventListener('load',()=>setTimeout(()=>window.print(),300));<\/script></body></html>\`);
+    </main><script>window.addEventListener('load',()=>setTimeout(()=>window.print(),300));<\/script></body></html>`);
     popup.document.close();
   };
 
