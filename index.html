@@ -757,26 +757,34 @@ function requestDeliveryLocation(){
   if(!navigator.geolocation){status.textContent="Este dispositivo no permite compartir ubicación.";return}
   button.disabled=true;status.textContent="Obteniendo ubicación…";
   navigator.geolocation.getCurrentPosition(
-    position=>{
+    async position=>{
       const lat=Number(position.coords.latitude),lng=Number(position.coords.longitude),accuracy=Math.round(Number(position.coords.accuracy)||0);
       if(!Number.isFinite(lat)||!Number.isFinite(lng)||!accuracy){
         deliveryLocation=null;document.getElementById("address").value="";
         status.textContent="No se obtuvo una ubicación válida.";button.disabled=false;return;
       }
-      if(accuracy>150){
+      const {data:validation,error:validationError}=await db.rpc("validate_delivery_location",{
+        p_lat:lat,
+        p_lng:lng,
+        p_accuracy_m:accuracy
+      });
+      if(validationError){
+        console.error("No se pudo validar la zona de entrega:",validationError);
         deliveryLocation=null;document.getElementById("address").value="";
-        status.textContent=`La ubicación es demasiado imprecisa (±${accuracy} m). Activa la ubicación precisa/GPS e inténtalo otra vez.`;
+        status.textContent="No pudimos validar la zona de entrega. Inténtalo nuevamente.";
         button.disabled=false;return;
       }
-      if(lat<19.40||lat>21.80||lng< -90.70||lng> -87.20){
+      if(!validation?.ok){
         deliveryLocation=null;document.getElementById("address").value="";
-        status.textContent="La ubicación detectada está fuera de la zona permitida de Yucatán.";
+        status.textContent=validation?.code==="UBICACION_IMPRECISA"
+          ?`La ubicación es demasiado imprecisa (±${accuracy} m). Activa la ubicación precisa/GPS e inténtalo otra vez.`
+          :"La ubicación detectada está fuera del estado de Yucatán.";
         button.disabled=false;return;
       }
       deliveryLocation={lat,lng,accuracy};
       document.getElementById("address").value=`Ubicación GPS ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      status.textContent=`✓ Ubicación obtenida · precisión aproximada ±${accuracy} m`;
-      button.textContent="✓ Ubicación obtenida · actualizar";
+      status.textContent=`✓ Ubicación validada dentro de Yucatán · precisión aproximada ±${accuracy} m`;
+      button.textContent="✓ Ubicación validada · actualizar";
       button.disabled=false;
     },
     ()=>{
