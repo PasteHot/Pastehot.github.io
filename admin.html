@@ -187,6 +187,38 @@
       </div>
       <div id="marketingMessage"></div>
     </div>
+
+    <div class="operation-card">
+      <h3>🌧️ Recargo por lluvia</h3>
+      <p>Actívalo únicamente cuando las condiciones de lluvia hagan más exigente el reparto. El recargo se suma automáticamente a todas las zonas de entrega.</p>
+
+      <div class="switch-row">
+        <div>
+          <strong>Aplicar recargo temporal por lluvia</strong>
+          <div style="color:var(--muted);font-size:13px;margin-top:3px">Cuando está apagado no se cobra ni se muestra el aviso al cliente.</div>
+        </div>
+        <label class="switch">
+          <input id="rainSurchargeEnabled" type="checkbox" onchange="previewRainSurcharge()">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+
+      <div class="form-group" style="margin-top:14px">
+        <label>Recargo adicional por envío</label>
+        <input id="rainSurchargeAmount" type="number" min="0" step="1" value="10" oninput="previewRainSurcharge()">
+      </div>
+
+      <div class="form-group">
+        <label>Mensaje que verá el cliente</label>
+        <textarea id="rainSurchargeMessage" oninput="previewRainSurcharge()">Debido a la lluvia, se aplica temporalmente un cargo adicional al envío. Este ajuste reconoce las condiciones adicionales de reparto y el mayor cuidado requerido durante el traslado. Gracias por tu comprensión.</textarea>
+      </div>
+
+      <div id="rainSurchargePreview" class="hint">El aviso está desactivado.</div>
+      <div class="operation-actions">
+        <button class="btn btn-primary" onclick="saveRainSurchargeSettings()">Guardar y aplicar</button>
+      </div>
+      <div id="rainSurchargeAdminMessage"></div>
+    </div>
   </div>
 
   <div class="card" style="margin-top:20px">
@@ -564,6 +596,9 @@ let operationSettings={
   socialEnabled:true,
   socialCount:230,
   socialSuffix:"pedidos esta semana",
+  rainEnabled:false,
+  rainAmount:10,
+  rainMessage:"Debido a la lluvia, se aplica temporalmente un cargo adicional al envío. Este ajuste reconoce las condiciones adicionales de reparto y el mayor cuidado requerido durante el traslado. Gracias por tu comprensión.",
   weekly:null
 };
 
@@ -587,7 +622,8 @@ async function loadOperationSettings(){
   const keys=[
     "store_manual_closed","store_manual_close_reason","weekly_schedule",
     "delivery_badge_enabled","delivery_badge_text",
-    "social_proof_enabled","social_proof_count","social_proof_suffix"
+    "social_proof_enabled","social_proof_count","social_proof_suffix",
+    "rain_surcharge_enabled","rain_surcharge_amount","rain_surcharge_message"
   ];
   const {data,error}=await db.from("settings").select("key,value").in("key",keys);
   if(error){console.error(error);return}
@@ -600,6 +636,9 @@ async function loadOperationSettings(){
   operationSettings.socialEnabled=parseSettingBool(s.social_proof_enabled,true);
   operationSettings.socialCount=Math.max(0,Number(s.social_proof_count)||0);
   operationSettings.socialSuffix=s.social_proof_suffix||"pedidos esta semana";
+  operationSettings.rainEnabled=parseSettingBool(s.rain_surcharge_enabled,false);
+  operationSettings.rainAmount=Math.max(0,Number(s.rain_surcharge_amount)||10);
+  operationSettings.rainMessage=s.rain_surcharge_message||"Debido a la lluvia, se aplica temporalmente un cargo adicional al envío. Este ajuste reconoce las condiciones adicionales de reparto y el mayor cuidado requerido durante el traslado. Gracias por tu comprensión.";
   try{
     operationSettings.weekly=s.weekly_schedule?JSON.parse(s.weekly_schedule):defaultWeeklySchedule();
   }catch{
@@ -614,9 +653,13 @@ async function loadOperationSettings(){
     socialProofEnabled.checked=operationSettings.socialEnabled;
     socialProofCount.value=operationSettings.socialCount;
     socialProofSuffix.value=operationSettings.socialSuffix;
+    rainSurchargeEnabled.checked=operationSettings.rainEnabled;
+    rainSurchargeAmount.value=operationSettings.rainAmount;
+    rainSurchargeMessage.value=operationSettings.rainMessage;
     renderWeeklySchedule();
     previewOperationStatus();
     updateMarketingPreview();
+    previewRainSurcharge();
   }
 }
 
@@ -727,6 +770,39 @@ async function saveMarketingSettings(){
     updateMarketingPreview();
     showMessage("marketingMessage","Mensajes comerciales guardados.");
   }catch(e){showMessage("marketingMessage",e.message,false)}
+}
+
+function previewRainSurcharge(){
+  const el=document.getElementById("rainSurchargePreview");
+  if(!el||!document.getElementById("rainSurchargeEnabled"))return;
+  const enabled=rainSurchargeEnabled.checked;
+  const amount=Math.max(0,Number(rainSurchargeAmount.value)||0);
+  const msg=rainSurchargeMessage.value.trim()||"Debido a la lluvia, se aplica temporalmente un cargo adicional al envío.";
+  el.innerHTML=enabled
+    ? `<strong>Vista para el cliente:</strong><br>🌧️ ${escapeHtml(msg)} Recargo temporal: <strong>${formatMoney(amount)}</strong>.`
+    : "El aviso está desactivado. No se cobra ningún recargo por lluvia.";
+}
+
+async function saveRainSurchargeSettings(){
+  rainSurchargeAdminMessage.innerHTML="";
+  try{
+    const amount=Math.max(0,Number(rainSurchargeAmount.value)||0);
+    const message=rainSurchargeMessage.value.trim()||"Debido a la lluvia, se aplica temporalmente un cargo adicional al envío. Este ajuste reconoce las condiciones adicionales de reparto y el mayor cuidado requerido durante el traslado. Gracias por tu comprensión.";
+    await Promise.all([
+      saveSetting("rain_surcharge_enabled",rainSurchargeEnabled.checked),
+      saveSetting("rain_surcharge_amount",amount),
+      saveSetting("rain_surcharge_message",message)
+    ]);
+    operationSettings.rainEnabled=rainSurchargeEnabled.checked;
+    operationSettings.rainAmount=amount;
+    operationSettings.rainMessage=message;
+    previewRainSurcharge();
+    showMessage("rainSurchargeAdminMessage",rainSurchargeEnabled.checked
+      ? `Recargo por lluvia activado: +${formatMoney(amount)} en todas las zonas.`
+      : "Recargo por lluvia desactivado.");
+  }catch(e){
+    showMessage("rainSurchargeAdminMessage","No se pudo guardar el recargo por lluvia: "+e.message,false);
+  }
 }
 
 async function syncSocialProofFromOrders(){
@@ -1011,7 +1087,7 @@ function printDeliveryTicket(id){
     popup.document.close();
   },80);
 }
-function openOrderModal(id){const o=orders.find(x=>String(x.id)===String(id));if(!o)return;orderModalTitle.textContent=`Pedido ${o.order_code||""}`;const items=safeItems(o.items);const hasLocation=o.delivery_type==="delivery"&&Number.isFinite(Number(o.delivery_lat))&&Number.isFinite(Number(o.delivery_lng));const mapUrl=hasLocation?mapsPointUrl(o.delivery_lat,o.delivery_lng):"";const deliveryBox=o.delivery_type==="delivery"?`<div class="delivery-admin-box"><strong>Entrega</strong>${o.delivery_zone_name?`<p><strong>Zona:</strong> ${escapeHtml(o.delivery_zone_name)} · <strong>Tarifa:</strong> ${formatMoney(o.delivery_fee)}</p>`:""}<p><strong>Dirección detectada:</strong> ${escapeHtml(o.delivery_address_text||o.address||"Sin dirección")}</p>${hasLocation?`<p><strong>Precisión GPS:</strong> ±${Math.round(Number(o.delivery_accuracy_m)||0)} m</p><div class="delivery-admin-actions"><a class="btn btn-light btn-small" href="${escapeAttr(mapUrl)}" target="_blank" rel="noopener">📍 Abrir ubicación</a><button class="btn btn-dark btn-small" onclick="printDeliveryTicket('${o.id}')">🛵 Ticket de reparto</button></div><div id="deliveryQrBox" class="delivery-qr"></div>`:""}<div class="grid grid-2" style="margin-top:14px"><div class="form-group"><label>Proveedor</label><select id="deliveryProviderInput"><option value="">Sin asignar</option><option value="Uber" ${o.delivery_provider==="Uber"?"selected":""}>Uber</option><option value="DiDi" ${o.delivery_provider==="DiDi"?"selected":""}>DiDi</option><option value="Repartidor particular" ${o.delivery_provider==="Repartidor particular"?"selected":""}>Repartidor particular</option><option value="Otro" ${o.delivery_provider==="Otro"?"selected":""}>Otro</option></select></div><div class="form-group"><label>Enlace de seguimiento</label><input id="trackingUrlInput" value="${escapeAttr(o.tracking_url||"")}" placeholder="Pega aquí el enlace de Uber, DiDi u otro"></div></div><div class="delivery-admin-actions"><button class="btn btn-primary btn-small" onclick="saveDeliveryTracking('${o.id}')">Guardar seguimiento</button><button class="btn btn-success btn-small" onclick="sendTrackingWhatsApp('${o.id}')">📲 Enviar seguimiento</button></div></div>`:"";orderDetail.innerHTML=`<div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:12px">${o.order_status==="pendiente_confirmacion"?`<button class="btn btn-success btn-small" onclick="updateOrderStatus('${o.id}','confirmado');closeOrderModal()">✓ Confirmar pedido</button>`:""}<button class="btn btn-dark btn-small" onclick="printOrderTicket('${o.id}')">🖨 Imprimir ticket 58 mm</button></div><p><strong>Cliente:</strong> ${escapeHtml(o.customer_name||"")} · ${escapeHtml(o.customer_phone||"")}</p><p><strong>Modalidad:</strong> ${escapeHtml(ticketDeliveryLabel(o.delivery_type))}</p><p><strong>Pago:</strong> ${escapeHtml(ticketPaymentLabel(o.payment_method))}</p>${o.notes?`<p><strong>Notas:</strong> ${escapeHtml(o.notes)}</p>`:""}${deliveryBox}<div class="order-detail-list">${items.map(i=>`<div class="order-detail-item"><span>${escapeHtml(i.quantity)} × ${escapeHtml(i.name)}</span><strong>${formatMoney(i.subtotal)}</strong></div>`).join("")}</div><p style="text-align:right;font-size:20px"><strong>Total: ${formatMoney(o.total)}</strong></p>`;orderModal.classList.add("show");if(hasLocation)setTimeout(()=>renderDeliveryQr(o),0)}
+function openOrderModal(id){const o=orders.find(x=>String(x.id)===String(id));if(!o)return;orderModalTitle.textContent=`Pedido ${o.order_code||""}`;const items=safeItems(o.items);const hasLocation=o.delivery_type==="delivery"&&Number.isFinite(Number(o.delivery_lat))&&Number.isFinite(Number(o.delivery_lng));const mapUrl=hasLocation?mapsPointUrl(o.delivery_lat,o.delivery_lng):"";const deliveryBox=o.delivery_type==="delivery"?`<div class="delivery-admin-box"><strong>Entrega</strong>${o.delivery_zone_name?`<p><strong>Zona:</strong> ${escapeHtml(o.delivery_zone_name)}</p><p><strong>Tarifa base:</strong> ${formatMoney(o.delivery_base_fee ?? o.delivery_fee)}${Number(o.delivery_rain_surcharge)>0?` · <strong>Recargo por lluvia:</strong> ${formatMoney(o.delivery_rain_surcharge)} · <strong>Envío total:</strong> ${formatMoney(o.delivery_fee)}`:""}</p>`:""}<p><strong>Dirección detectada:</strong> ${escapeHtml(o.delivery_address_text||o.address||"Sin dirección")}</p>${hasLocation?`<p><strong>Precisión GPS:</strong> ±${Math.round(Number(o.delivery_accuracy_m)||0)} m</p><div class="delivery-admin-actions"><a class="btn btn-light btn-small" href="${escapeAttr(mapUrl)}" target="_blank" rel="noopener">📍 Abrir ubicación</a><button class="btn btn-dark btn-small" onclick="printDeliveryTicket('${o.id}')">🛵 Ticket de reparto</button></div><div id="deliveryQrBox" class="delivery-qr"></div>`:""}<div class="grid grid-2" style="margin-top:14px"><div class="form-group"><label>Proveedor</label><select id="deliveryProviderInput"><option value="">Sin asignar</option><option value="Uber" ${o.delivery_provider==="Uber"?"selected":""}>Uber</option><option value="DiDi" ${o.delivery_provider==="DiDi"?"selected":""}>DiDi</option><option value="Repartidor particular" ${o.delivery_provider==="Repartidor particular"?"selected":""}>Repartidor particular</option><option value="Otro" ${o.delivery_provider==="Otro"?"selected":""}>Otro</option></select></div><div class="form-group"><label>Enlace de seguimiento</label><input id="trackingUrlInput" value="${escapeAttr(o.tracking_url||"")}" placeholder="Pega aquí el enlace de Uber, DiDi u otro"></div></div><div class="delivery-admin-actions"><button class="btn btn-primary btn-small" onclick="saveDeliveryTracking('${o.id}')">Guardar seguimiento</button><button class="btn btn-success btn-small" onclick="sendTrackingWhatsApp('${o.id}')">📲 Enviar seguimiento</button></div></div>`:"";orderDetail.innerHTML=`<div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:12px">${o.order_status==="pendiente_confirmacion"?`<button class="btn btn-success btn-small" onclick="updateOrderStatus('${o.id}','confirmado');closeOrderModal()">✓ Confirmar pedido</button>`:""}<button class="btn btn-dark btn-small" onclick="printOrderTicket('${o.id}')">🖨 Imprimir ticket 58 mm</button></div><p><strong>Cliente:</strong> ${escapeHtml(o.customer_name||"")} · ${escapeHtml(o.customer_phone||"")}</p><p><strong>Modalidad:</strong> ${escapeHtml(ticketDeliveryLabel(o.delivery_type))}</p><p><strong>Pago:</strong> ${escapeHtml(ticketPaymentLabel(o.payment_method))}</p>${o.notes?`<p><strong>Notas:</strong> ${escapeHtml(o.notes)}</p>`:""}${deliveryBox}<div class="order-detail-list">${items.map(i=>`<div class="order-detail-item"><span>${escapeHtml(i.quantity)} × ${escapeHtml(i.name)}</span><strong>${formatMoney(i.subtotal)}</strong></div>`).join("")}</div><p style="text-align:right;font-size:20px"><strong>Total: ${formatMoney(o.total)}</strong></p>`;orderModal.classList.add("show");if(hasLocation)setTimeout(()=>renderDeliveryQr(o),0)}
 function closeOrderModal(){orderModal.classList.remove("show")}
 
 async function saveSetting(key,value){const {data,error}=await db.from("settings").select("id").eq("key",key).maybeSingle();if(error)throw error;if(data){const r=await db.from("settings").update({value:String(value),updated_at:new Date().toISOString()}).eq("id",data.id);if(r.error)throw r.error}else{const r=await db.from("settings").insert({key,value:String(value)});if(r.error)throw r.error}}
