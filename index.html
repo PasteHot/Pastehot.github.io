@@ -128,6 +128,19 @@ button:disabled{cursor:not-allowed}
 .transfer-whatsapp{display:flex;align-items:center;justify-content:center;width:100%;padding:12px 14px;border-radius:11px;background:#20b957;color:#fff;text-decoration:none;font-weight:900;border:0}
 .transfer-whatsapp.secondary{background:#eef0f2;color:#1d1d1d}
 .payment-label{font-size:13px;font-weight:900;margin-bottom:-4px}
+.delivery-address-card{padding:15px;border:1px solid #e2e4e7;border-radius:15px;background:#fafafa}
+.delivery-address-title{font-size:17px;font-weight:950;margin:0 0 5px}
+.delivery-address-intro{font-size:12px;color:#666;line-height:1.45;margin:0 0 13px}
+.delivery-address-grid{display:grid;grid-template-columns:1.35fr .65fr;gap:10px}
+.delivery-address-grid .full{grid-column:1/-1}
+.delivery-address-card label,.delivery-reference-wrap label{display:block;font-size:12px;font-weight:850;margin:0 0 5px}
+.delivery-address-card input,.delivery-reference-wrap textarea{margin:0}
+.location-action{width:100%;border:0;border-radius:13px;padding:14px 15px;background:#111;color:#fff;font-weight:950;font-size:14px;box-shadow:0 6px 18px rgba(0,0,0,.12)}
+.location-action:disabled{opacity:.55;cursor:not-allowed}
+.location-trust{padding:10px 12px;border-radius:11px;background:#f3f6f8;color:#4c5660;font-size:11px;line-height:1.45}
+.location-status{font-size:12px;color:#666;line-height:1.45}
+.delivery-reference-wrap{padding:13px;border:1px solid #e6e6e6;border-radius:13px;background:#fff}
+@media(max-width:520px){.delivery-address-grid{grid-template-columns:1fr}.delivery-address-grid .full{grid-column:auto}}
 
 .whatsapp-button{width:100%;border:0;border-radius:14px;padding:15px;background:#20b957;color:#fff;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:9px}.whatsapp-button:disabled{opacity:.6}.order-status-message{display:none;padding:11px 12px;border-radius:10px;font-size:13px}.order-status-message.show{display:block}.order-status-message.ok{background:#e8f8ee;color:#0c6f34}.order-status-message.warn{background:#fff5dd;color:#805d00}
 .curbside-modal{position:fixed;inset:0;z-index:1200;display:none;align-items:center;justify-content:center;padding:22px;background:rgba(0,0,0,.62);backdrop-filter:blur(4px)}.curbside-modal.show{display:flex}.curbside-card{width:min(470px,100%);background:#fff;border-radius:22px;padding:25px;box-shadow:0 26px 80px rgba(0,0,0,.3);text-align:center}.curbside-card h3{margin:0 0 12px;font-size:22px}.curbside-alert{margin:0;padding:16px;border-radius:14px;background:#fff0f1;color:#9a1118;font-size:20px;font-weight:950;line-height:1.2}.curbside-copy{margin:13px 0 0;color:#555;font-size:13px;line-height:1.5}.curbside-actions{display:grid;grid-template-columns:1fr 1.35fr;gap:9px;margin-top:20px}.curbside-actions button{border:0;border-radius:11px;padding:12px;font-weight:900}.curbside-back{background:#eee;color:#222}.curbside-accept{background:#111;color:#fff}
@@ -246,18 +259,43 @@ button:disabled{cursor:not-allowed}
         <label class="delivery-row"><input type="radio" name="deliveryType" value="pickup"><span class="delivery-icon">🛍️</span><span class="delivery-text"><strong>Pasar a recoger</strong><small>Recoge tu pedido en nuestro punto de venta</small></span><span class="delivery-check"></span></label>
       </div>
       <div id="rainSurchargeNotice" style="display:none;margin:10px 0;padding:12px 13px;border-radius:12px;background:#eef6ff;border:1px solid #cfe3f7;color:#274b6d;font-size:13px;line-height:1.45"></div>
-      <button id="useLocationButton" type="button" style="width:100%;border:0;border-radius:12px;padding:13px;background:#111;color:#fff;font-weight:900">📍 Usar mi ubicación actual</button>
-      <div id="locationStatus" style="font-size:12px;color:#666;line-height:1.4"></div>
-      <div id="deliveryAddressFields" style="display:none;margin-top:12px;padding:13px;border:1px solid #e1e4e8;border-radius:12px;background:#fafafa">
-        <div style="font-weight:900;font-size:16px;margin-bottom:9px">¿Tu dirección es correcta?</div>
-        <label for="address" style="display:block;font-size:12px;font-weight:800;margin-bottom:6px">Dirección de entrega *</label>
-        <textarea id="address" rows="3" placeholder="Revisa y corrige tu dirección, especialmente el número exterior"></textarea>
-        <div style="font-size:11px;color:#666;line-height:1.4;margin-top:5px">La dirección se sugiere a partir de tu ubicación. Si el número de casa no es correcto, corrígelo antes de continuar.</div>
-        <div style="font-size:10px;color:#777;line-height:1.4;margin-top:4px">Dirección sugerida con datos de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" style="color:inherit">© OpenStreetMap contributors</a> mediante Nominatim.</div>
-        <label for="deliveryReference" style="display:block;font-size:12px;font-weight:800;margin:12px 0 6px">Referencia del lugar a entregar *</label>
+
+      <div id="deliveryAddressFields" class="delivery-address-card">
+        <div class="delivery-address-title">Dirección de entrega</div>
+        <p class="delivery-address-intro">Escríbela manualmente tal como la conoces. La geolocalización no modificará estos datos.</p>
+        <div class="delivery-address-grid">
+          <div class="form-group">
+            <label for="deliveryStreet">Calle o avenida *</label>
+            <input id="deliveryStreet" type="text" autocomplete="street-address" placeholder="Ej. Calle 50">
+          </div>
+          <div class="form-group">
+            <label for="deliveryHouseNumber">Número exterior *</label>
+            <input id="deliveryHouseNumber" type="text" inputmode="text" placeholder="Ej. 123">
+          </div>
+          <div class="form-group full">
+            <label for="deliveryCrossStreets">Entre qué calles *</label>
+            <input id="deliveryCrossStreets" type="text" placeholder="Ej. entre Calle 21 y Calle 23">
+          </div>
+          <div class="form-group">
+            <label for="deliveryNeighborhood">Colonia o fraccionamiento *</label>
+            <input id="deliveryNeighborhood" type="text" placeholder="Ej. Las Américas">
+          </div>
+          <div class="form-group">
+            <label for="deliveryLocality">Municipio o localidad *</label>
+            <input id="deliveryLocality" type="text" placeholder="Ej. Mérida">
+          </div>
+        </div>
+        <input id="address" type="hidden">
+      </div>
+
+      <button id="useLocationButton" class="location-action" type="button">📍 Compartir geolocalización para precisar la entrega</button>
+      <div id="locationStatus" class="location-status"></div>
+      <div class="location-trust">Tu dirección escrita no se modificará. La ubicación se utiliza únicamente para validar cobertura, calcular el costo de envío y ayudar al repartidor a llegar con mayor precisión.</div>
+
+      <div id="deliveryReferenceWrap" class="delivery-reference-wrap">
+        <label for="deliveryReference">Referencia del lugar a entregar *</label>
         <textarea id="deliveryReference" rows="2" placeholder="Ej. Casa de dos pisos color roja con portón azul"></textarea>
       </div>
-      <div style="font-size:11px;color:#777;line-height:1.4">Al pulsar el botón autorizas el uso de tu ubicación exacta para validar la zona, calcular el envío y sugerir tu dirección. Revisa la dirección antes de enviar.</div>
       <a id="mapsButton" class="maps-button" href="#" target="_blank" rel="noopener">📍 Ver ubicación para recoger</a>
       <div class="payment-label">Forma de pago</div><select id="paymentMethod"><option value="cash">Efectivo al recibir/recoger</option><option value="transfer">Transferencia bancaria</option></select>
       <div id="transferPanel" class="transfer-panel"></div>
@@ -573,8 +611,7 @@ async function revalidateCurrentDeliveryLocation(){
   });
   if(error||!data?.ok){
     deliveryLocation=null;
-    const box=document.getElementById("deliveryAddressFields");if(box)box.style.display="none";
-    document.getElementById("locationStatus").textContent="La disponibilidad de entrega cambió. Pulsa “Usar mi ubicación actual” para volver a validar.";
+    document.getElementById("locationStatus").textContent="La disponibilidad de entrega cambió. Comparte nuevamente tu geolocalización para volver a validar.";
     updateDeliverySubtitle();updateRainSurchargeUI();updateCart();
     return;
   }
@@ -854,31 +891,47 @@ function updateCart(){
   document.getElementById("cartCount").textContent=count;
   products.forEach(p=>updateProductCard(p.id));
 }
-async function reverseGeocodeAddress(lat,lng){
-  const url=new URL("https://nominatim.openstreetmap.org/reverse");
-  url.searchParams.set("format","jsonv2");
-  url.searchParams.set("lat",String(lat));
-  url.searchParams.set("lon",String(lng));
-  url.searchParams.set("zoom","18");
-  url.searchParams.set("addressdetails","1");
-  url.searchParams.set("accept-language","es");
-  const response=await fetch(url.toString(),{headers:{Accept:"application/json"}});
-  if(!response.ok)throw new Error("No se pudo consultar la dirección.");
-  const data=await response.json();
-  const a=data?.address||{};
-  const street=a.road||a.pedestrian||a.residential||a.footway||a.path||"";
-  const line1=[street,a.house_number].filter(Boolean).join(" ").trim();
-  const area=a.suburb||a.neighbourhood||a.quarter||a.city_district||"";
-  const city=a.city||a.town||a.municipality||a.village||"";
-  const state=a.state||"Yucatán";
-  const parts=[];
-  [line1,area,city,state].forEach(v=>{const x=String(v||"").trim();if(x&&!parts.includes(x))parts.push(x)});
-  return parts.join(", ")||String(data?.display_name||"").trim();
+function manualDeliveryAddressData(){
+  return {
+    street:document.getElementById("deliveryStreet")?.value.trim()||"",
+    number:document.getElementById("deliveryHouseNumber")?.value.trim()||"",
+    cross:document.getElementById("deliveryCrossStreets")?.value.trim()||"",
+    neighborhood:document.getElementById("deliveryNeighborhood")?.value.trim()||"",
+    locality:document.getElementById("deliveryLocality")?.value.trim()||""
+  };
 }
-
+function composeManualDeliveryAddress(){
+  const a=manualDeliveryAddressData();
+  if(!a.street&&!a.number&&!a.cross&&!a.neighborhood&&!a.locality)return "";
+  return [a.street+(a.number?" #"+a.number:""),a.cross,a.neighborhood,a.locality,"Yucatán"].filter(Boolean).join(", ");
+}
+function syncManualDeliveryAddress(){
+  const el=document.getElementById("address");
+  if(el)el.value=composeManualDeliveryAddress();
+}
+function validateManualDeliveryAddress(focus=true){
+  const fields=[
+    ["deliveryStreet","Escribe la calle o avenida de entrega."],
+    ["deliveryHouseNumber","Escribe el número exterior del domicilio."],
+    ["deliveryCrossStreets","Escribe entre qué calles se encuentra el domicilio."],
+    ["deliveryNeighborhood","Escribe la colonia o fraccionamiento."],
+    ["deliveryLocality","Escribe el municipio o localidad."]
+  ];
+  for(const [id,msg] of fields){
+    const el=document.getElementById(id);
+    if(!el?.value.trim()){
+      if(focus){alert(msg);el?.focus()}
+      return false;
+    }
+  }
+  syncManualDeliveryAddress();
+  return true;
+}
 function showDeliveryAddressFields(show){
   const box=document.getElementById("deliveryAddressFields");
+  const ref=document.getElementById("deliveryReferenceWrap");
   if(box)box.style.display=show?"block":"none";
+  if(ref)ref.style.display=show?"block":"none";
 }
 
 function showYucatanOnlyModal(){
@@ -899,14 +952,14 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.getElement
 
 function requestDeliveryLocation(){
   const status=document.getElementById("locationStatus"),button=document.getElementById("useLocationButton");
-  const addressEl=document.getElementById("address");
+  if(!validateManualDeliveryAddress(true))return;
   if(!navigator.geolocation){status.textContent="Este dispositivo no permite compartir ubicación.";return}
-  button.disabled=true;status.textContent="Obteniendo y validando ubicación…";
+  button.disabled=true;status.textContent="Validando tu geolocalización y zona de entrega…";
   navigator.geolocation.getCurrentPosition(
     async position=>{
       const lat=Number(position.coords.latitude),lng=Number(position.coords.longitude),accuracy=Math.round(Number(position.coords.accuracy)||0);
       if(!Number.isFinite(lat)||!Number.isFinite(lng)||!accuracy){
-        deliveryLocation=null;addressEl.value="";showDeliveryAddressFields(false);
+        deliveryLocation=null;
         status.textContent="No se obtuvo una ubicación válida.";button.disabled=false;return;
       }
       const {data:validation,error:validationError}=await db.rpc("validate_delivery_location",{
@@ -914,12 +967,12 @@ function requestDeliveryLocation(){
       });
       if(validationError){
         console.error("No se pudo validar la zona de entrega:",validationError);
-        deliveryLocation=null;addressEl.value="";showDeliveryAddressFields(false);
+        deliveryLocation=null;
         status.textContent="No pudimos validar la zona de entrega. Inténtalo nuevamente.";
         button.disabled=false;return;
       }
       if(!validation?.ok){
-        deliveryLocation=null;addressEl.value="";showDeliveryAddressFields(false);
+        deliveryLocation=null;
         if(validation?.code==="UBICACION_IMPRECISA"){
           status.textContent="La ubicación es demasiado imprecisa (±"+accuracy+" m). Activa la ubicación precisa/GPS e inténtalo otra vez.";
         }else if(validation?.code==="UBICACION_FUERA_DE_YUCATAN"){
@@ -939,34 +992,16 @@ function requestDeliveryLocation(){
         zoneName:validation.zone_name||"Zona de entrega",
         baseFee:Number(validation.base_fee)||0,
         rainSurcharge:Number(validation.rain_surcharge)||0,
-        fee:Number(validation.fee)||0,
-        geocodedAddress:""
+        fee:Number(validation.fee)||0
       };
       const rainText=deliveryLocation.rainSurcharge>0?" · incluye +"+formatMoney(deliveryLocation.rainSurcharge)+" por lluvia":"";
-      status.textContent="✓ "+deliveryLocation.zoneName+" · envío "+formatMoney(deliveryLocation.fee)+rainText+" · precisión aproximada ±"+accuracy+" m";
-      button.textContent="✓ Ubicación y tarifa validadas · actualizar";
-      showDeliveryAddressFields(true);
-      addressEl.readOnly=true;
-      addressEl.value="Buscando dirección…";
-      try{
-        const suggested=await reverseGeocodeAddress(lat,lng);
-        deliveryLocation.geocodedAddress=suggested||"";
-        addressEl.value=suggested||"";
-        if(!suggested)addressEl.placeholder="Escribe tu dirección completa y corrige el número exterior";
-      }catch(error){
-        console.warn("No se pudo sugerir la dirección:",error);
-        deliveryLocation.geocodedAddress="";
-        addressEl.value="";
-        addressEl.placeholder="Escribe tu dirección completa y corrige el número exterior";
-        status.textContent+=" · No pudimos sugerir la dirección; escríbela manualmente.";
-      }finally{
-        addressEl.readOnly=false;
-      }
+      status.textContent="✓ Geolocalización validada · "+deliveryLocation.zoneName+" · envío "+formatMoney(deliveryLocation.fee)+rainText+" · precisión aproximada ±"+accuracy+" m";
+      button.textContent="✓ Geolocalización validada · actualizar";
       updateDeliverySubtitle();updateRainSurchargeUI();updateCart();
       button.disabled=false;
     },
     ()=>{
-      deliveryLocation=null;addressEl.value="";showDeliveryAddressFields(false);
+      deliveryLocation=null;
       status.textContent="No se pudo obtener la ubicación. Revisa el permiso de ubicación e inténtalo nuevamente.";
       button.disabled=false;
     },
@@ -978,7 +1013,7 @@ document.getElementById("useLocationButton")?.addEventListener("click",requestDe
 function updateDeliverySubtitle(){
   const el=document.getElementById("deliverySubtitle");
   if(getDeliveryType()!=="delivery"){el.textContent="";return}
-  if(!deliveryLocation){el.textContent="Costo de envío calculado automáticamente con tu ubicación";return}
+  if(!deliveryLocation){el.textContent="Escribe tu dirección y comparte tu geolocalización para calcular el envío";return}
   const rain=Number(deliveryLocation.rainSurcharge)||0;
   el.textContent=rain>0
     ?`${deliveryLocation.zoneName} · ${formatMoney(deliveryLocation.fee)} de envío (incluye ${formatMoney(rain)} por lluvia)`
@@ -986,26 +1021,24 @@ function updateDeliverySubtitle(){
 }
 function updateDeliveryUI(){
   const pickup=getDeliveryType()==="pickup";
-  const addressEl=document.getElementById("address");
-  const referenceEl=document.getElementById("deliveryReference");
   const maps=document.getElementById("mapsButton");
   const locBtn=document.getElementById("useLocationButton");
   const locStatus=document.getElementById("locationStatus");
   if(locBtn)locBtn.style.display=pickup?"none":"block";
   if(locStatus)locStatus.style.display=pickup?"none":"block";
+  showDeliveryAddressFields(!pickup);
   if(pickup){
-    addressEl.value="";
-    if(referenceEl)referenceEl.value="";
     deliveryLocation=null;
-    showDeliveryAddressFields(false);
-  }else{
-    showDeliveryAddressFields(Boolean(deliveryLocation));
-    if(locStatus)locStatus.style.display="block";
+    if(locStatus)locStatus.textContent="";
+    if(locBtn)locBtn.textContent="📍 Compartir geolocalización para precisar la entrega";
   }
   if(pickup&&settings.pickup_maps_url){maps.style.display="block";maps.href=settings.pickup_maps_url}else maps.style.display="none";
   updateDeliverySubtitle();updateRainSurchargeUI();updateCart();saveCheckoutState();
 }
 document.querySelectorAll('input[name="deliveryType"]').forEach(r=>r.addEventListener("change",updateDeliveryUI));
+["deliveryStreet","deliveryHouseNumber","deliveryCrossStreets","deliveryNeighborhood","deliveryLocality"].forEach(id=>{
+  document.getElementById(id)?.addEventListener("input",syncManualDeliveryAddress);
+});
 function escapeHtml(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
 function copyBankValue(value,button){
   if(!value)return;
@@ -1098,9 +1131,10 @@ async function sendOrder(){
 
   if(!name){alert("Escribe tu nombre.");return}
   if(!phone){alert("Escribe tu teléfono.");return}
-  if(deliveryType==="delivery"&&!deliveryLocation){alert("Para solicitar entrega a domicilio debes usar “Usar mi ubicación actual”.");document.getElementById("useLocationButton")?.scrollIntoView({behavior:"smooth",block:"center"});return}
+  if(deliveryType==="delivery"&&!validateManualDeliveryAddress(true))return;
+  if(deliveryType==="delivery"&&!deliveryLocation){alert("Para entrega a domicilio falta compartir la geolocalización. Esto nos permite validar cobertura y precisar el punto de entrega.");document.getElementById("useLocationButton")?.scrollIntoView({behavior:"smooth",block:"center"});return}
   if(deliveryType==="delivery"&&Number(deliveryLocation.accuracy)>150){alert("La ubicación es demasiado imprecisa. Activa la ubicación precisa/GPS y vuelve a intentarlo.");return}
-  if(deliveryType==="delivery"&&!address){alert("Revisa y confirma tu dirección de entrega.");document.getElementById("address")?.focus();return}
+  if(deliveryType==="delivery"&&!address){alert("Completa tu dirección de entrega.");return}
   if(deliveryType==="delivery"&&!deliveryReference){alert("Escribe una referencia del lugar de entrega para ayudar al repartidor a encontrar la entrada exacta.");document.getElementById("deliveryReference")?.focus();return}
 
   const whatsapp=normalizePhone(settings.whatsapp);
@@ -1130,7 +1164,7 @@ async function sendOrder(){
       p_delivery_lng:deliveryType==="delivery"?deliveryLocation.lng:null,
       p_delivery_accuracy_m:deliveryType==="delivery"?deliveryLocation.accuracy:null,
       p_delivery_address_text:deliveryType==="delivery"?address:null,
-      p_delivery_geocoded_address:deliveryType==="delivery"?(deliveryLocation.geocodedAddress||null):null,
+      p_delivery_geocoded_address:null,
       p_delivery_reference:deliveryType==="delivery"?deliveryReference:null,
       p_delivery_locality:null,
       p_delivery_region:deliveryType==="delivery"?"Yucatán":null,
@@ -1217,8 +1251,8 @@ async function sendOrder(){
   cart={};
   deliveryLocation=null;
   document.getElementById("address").value="";
-  const refEl=document.getElementById("deliveryReference");if(refEl)refEl.value="";
-  showDeliveryAddressFields(false);
+  ["deliveryStreet","deliveryHouseNumber","deliveryCrossStreets","deliveryNeighborhood","deliveryLocality","deliveryReference"].forEach(id=>{const el=document.getElementById(id);if(el)el.value=""});
+  showDeliveryAddressFields(getDeliveryType()==="delivery");
   updateDeliverySubtitle();
   updateRainSurchargeUI();
   saveCheckoutState();
