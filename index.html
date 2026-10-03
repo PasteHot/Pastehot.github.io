@@ -1124,7 +1124,7 @@ async function sendOrder(){
   const name=document.getElementById("customerName").value.trim();
   const phone=document.getElementById("customerPhone").value.trim();
   const deliveryType=getDeliveryType();
-  const address=document.getElementById("address").value.trim();
+  const address=composeManualDeliveryAddress();
   const deliveryReference=document.getElementById("deliveryReference")?.value.trim()||"";
   const payment=document.getElementById("paymentMethod").value;
   const notes=document.getElementById("orderNotes").value.trim();
@@ -1166,7 +1166,7 @@ async function sendOrder(){
       p_delivery_address_text:deliveryType==="delivery"?address:null,
       p_delivery_geocoded_address:null,
       p_delivery_reference:deliveryType==="delivery"?deliveryReference:null,
-      p_delivery_locality:null,
+      p_delivery_locality:deliveryType==="delivery"?(document.getElementById("deliveryLocality")?.value.trim()||null):null,
       p_delivery_region:deliveryType==="delivery"?"Yucatán":null,
       p_delivery_postcode:null,
       p_delivery_country_code:deliveryType==="delivery"?"MX":null
