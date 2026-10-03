@@ -365,7 +365,43 @@ function removeDesignImage(type){localFiles[type]=null;if(type==="background")de
 function resetDesignPosition(){design.cover.x=design.cover.y=0;design.cover.scale=1;design.profile.x=design.profile.y=0;design.profile.scale=1;syncDesignControls();updateDesignPreview()}
 function updateDesignPreview(){previewBackground.style.backgroundColor=design.background.color;previewBackground.style.backgroundImage=design.background.type==="image"&&design.background.url?`url(${JSON.stringify(design.background.url)})`:"none";previewOverlay.style.background=`rgba(0,0,0,${design.background.overlay})`;if(design.cover.url){previewCover.src=design.cover.url;previewCover.classList.remove("hidden");previewCover.style.left=`calc(50% + ${design.cover.x}%)`;previewCover.style.top=`calc(50% + ${design.cover.y}%)`;previewCover.style.transform=`translate(-50%,-50%) scale(${design.cover.scale})`}else previewCover.classList.add("hidden");if(design.profile.url){previewProfile.src=design.profile.url;previewProfile.classList.remove("hidden");previewProfile.style.left=`calc(50% + ${design.profile.x}%)`;previewProfile.style.top=`calc(50% + ${design.profile.y}%)`;previewProfile.style.transform=`translate(-50%,-50%) scale(${design.profile.scale})`}else previewProfile.classList.add("hidden");previewCategoryTitle.style.cssText=`font-family:${FONT_MAP[design.category.font]||FONT_MAP.Arial};font-size:${Math.min(design.category.size,previewDevice.classList.contains("mobile")?34:48)}px;color:${design.category.color};font-weight:800`}
 function setPreviewDevice(t){previewDevice.classList.toggle("mobile",t==="mobile");updateDesignPreview()}
-async function saveDesign(){designMessage.innerHTML="";try{for(const type of ["cover","profile","background"]){if(localFiles[type]){const url=await uploadFile(localFiles[type],"design",type);if(type==="background")design.background.url=url;else design[type].url=url;localFiles[type]=null}}const pairs={cover_image:design.cover.url,cover_x:design.cover.x,cover_y:design.cover.y,cover_scale:design.cover.scale,profile_image:design.profile.url,profile_x:design.profile.x,profile_y:design.profile.y,profile_scale:design.profile.scale,background_type:design.background.type,background_color:design.background.color,background_image:design.background.url,background_overlay:design.background.overlay,category_title_font:design.category.font,category_title_size:design.category.size,category_title_color:design.category.color};await Promise.all(Object.entries(pairs).map(([k,v])=>saveSetting(k,v)));showMessage("designMessage","Diseño guardado correctamente.");await loadDesign()}catch(e){showMessage("designMessage",e.message,false)}}
+async function saveDesign(){
+  designMessage.innerHTML="";
+  const oldUrls={cover:design.cover.url||"",profile:design.profile.url||"",background:design.background.url||""};
+  const uploaded={};
+  try{
+    for(const type of ["cover","profile","background"]){
+      if(localFiles[type]){
+        const url=await uploadFile(localFiles[type],"design",type);
+        uploaded[type]=url;
+        if(type==="background")design.background.url=url;else design[type].url=url;
+        localFiles[type]=null;
+      }
+    }
+
+    const pairs={
+      cover_image:design.cover.url,cover_x:design.cover.x,cover_y:design.cover.y,cover_scale:design.cover.scale,
+      profile_image:design.profile.url,profile_x:design.profile.x,profile_y:design.profile.y,profile_scale:design.profile.scale,
+      background_type:design.background.type,background_color:design.background.color,background_image:design.background.url,
+      background_overlay:design.background.overlay,category_title_font:design.category.font,category_title_size:design.category.size,
+      category_title_color:design.category.color
+    };
+    await Promise.all(Object.entries(pairs).map(([k,v])=>saveSetting(k,v)));
+
+    for(const type of ["cover","profile","background"]){
+      const current=type==="background"?design.background.url:design[type].url;
+      if(oldUrls[type]&&oldUrls[type]!==current)await removeStoredImage(oldUrls[type]);
+    }
+
+    showMessage("designMessage","Diseño guardado correctamente.");
+    await loadDesign();
+  }catch(e){
+    for(const url of Object.values(uploaded)){
+      if(url)await removeStoredImage(url);
+    }
+    showMessage("designMessage",e.message,false);
+  }
+}
 
 async function loadBusinessSettings(){const keys=["business_name","slogan","whatsapp","business_address","opening_time","closing_time","delivery_cost","pickup_maps_url","bank_name","bank_holder","bank_clabe","bank_card"];const {data}=await db.from("settings").select("key,value").in("key",keys);const s={};(data||[]).forEach(r=>s[r.key]=r.value);keys.forEach(k=>{const el=document.getElementById(k);if(el)el.value=s[k]||""})}
 async function saveBusinessSettings(){for(const k of ["business_name","slogan","whatsapp","business_address","opening_time","closing_time","delivery_cost","pickup_maps_url"])await saveSetting(k,document.getElementById(k).value);showMessage("businessMessage","Configuración guardada correctamente.")}
