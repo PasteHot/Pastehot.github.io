@@ -1131,7 +1131,7 @@ function updateDeliveryProviderUI(){
   const sendButton=document.getElementById("sendTrackingButton");
   const saveButton=document.getElementById("saveDeliveryProviderButton");
   const privateNote=document.getElementById("privateCourierNote");
-  const usesTracking=["Uber","DiDi","Otro"].includes(provider);
+  const usesTracking=["Uber Envíos","DiDi Entrega","Otro"].includes(provider);
 
   if(trackingWrap)trackingWrap.style.display=usesTracking?"block":"none";
   if(sendButton)sendButton.style.display=usesTracking?"inline-flex":"none";
@@ -1203,7 +1203,7 @@ function openOrderModal(id){
       deliveryBox+='<p><strong>Precisión GPS:</strong> ±'+Math.round(Number(o.delivery_accuracy_m)||0)+' m</p>';
       deliveryBox+='<div class="delivery-admin-actions"><a class="btn btn-light btn-small" href="'+escapeAttr(mapUrl)+'" target="_blank" rel="noopener">📍 Abrir ubicación</a><button class="btn btn-dark btn-small" onclick="printDeliveryTicket(\''+o.id+'\')">🛵 Ticket de reparto</button></div><div id="deliveryQrBox" class="delivery-qr"></div>';
     }
-    deliveryBox+='<div class="grid grid-2" style="margin-top:14px"><div class="form-group"><label>Proveedor</label><select id="deliveryProviderInput" onchange="updateDeliveryProviderUI()"><option value="">Sin asignar</option><option value="Uber" '+(o.delivery_provider==="Uber"?"selected":"")+'>Uber</option><option value="DiDi" '+(o.delivery_provider==="DiDi"?"selected":"")+'>DiDi</option><option value="Repartidor particular" '+(o.delivery_provider==="Repartidor particular"?"selected":"")+'>Repartidor particular</option><option value="Otro" '+(o.delivery_provider==="Otro"?"selected":"")+'>Otro</option></select></div><div id="trackingFieldWrap" class="form-group"><label>Enlace de seguimiento</label><input id="trackingUrlInput" value="'+escapeAttr(o.tracking_url||"")+'" placeholder="Pega aquí el enlace de Uber, DiDi u otro"></div></div>';
+    deliveryBox+='<div class="grid grid-2" style="margin-top:14px"><div class="form-group"><label>Proveedor</label><select id="deliveryProviderInput" onchange="updateDeliveryProviderUI()"><option value="">Sin asignar</option><option value="Uber Envíos" '+(o.delivery_provider==="Uber Envíos"?"selected":"")+'>Uber Envíos</option><option value="DiDi Entrega" '+(o.delivery_provider==="DiDi Entrega"?"selected":"")+'>DiDi Entrega</option><option value="Repartidor particular" '+(o.delivery_provider==="Repartidor particular"?"selected":"")+'>Repartidor particular</option><option value="Otro" '+(o.delivery_provider==="Otro"?"selected":"")+'>Otro</option></select></div><div id="trackingFieldWrap" class="form-group"><label>Enlace de seguimiento</label><input id="trackingUrlInput" value="'+escapeAttr(o.tracking_url||"")+'" placeholder="Pega aquí el enlace de seguimiento de Uber Envíos, DiDi Entrega u otro"></div></div>';
     deliveryBox+='<div id="privateCourierNote" class="hint" style="display:none;margin-top:10px"><strong>Repartidor particular:</strong> no necesitas un enlace de seguimiento. Usa el ticket de reparto con QR de Google Maps, dirección, referencia y teléfonos de contacto.</div>';
     deliveryBox+='<div class="delivery-admin-actions"><button id="saveDeliveryProviderButton" class="btn btn-primary btn-small" onclick="saveDeliveryTracking(\''+o.id+'\')">Guardar seguimiento</button><button id="sendTrackingButton" class="btn btn-success btn-small" onclick="sendTrackingWhatsApp(\''+o.id+'\')">📲 Enviar seguimiento</button></div></div>';
   }
