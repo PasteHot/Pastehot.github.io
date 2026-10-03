@@ -1125,13 +1125,28 @@ function printOrderTicket(id){
 
 function mapsPointUrl(lat,lng){return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`}
 function mapsDirectionsUrl(lat,lng){return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${lat},${lng}`)}&travelmode=driving`}
+function updateDeliveryProviderUI(){
+  const provider=document.getElementById("deliveryProviderInput")?.value||"";
+  const trackingWrap=document.getElementById("trackingFieldWrap");
+  const sendButton=document.getElementById("sendTrackingButton");
+  const saveButton=document.getElementById("saveDeliveryProviderButton");
+  const privateNote=document.getElementById("privateCourierNote");
+  const usesTracking=["Uber","DiDi","Otro"].includes(provider);
+
+  if(trackingWrap)trackingWrap.style.display=usesTracking?"block":"none";
+  if(sendButton)sendButton.style.display=usesTracking?"inline-flex":"none";
+  if(privateNote)privateNote.style.display=provider==="Repartidor particular"?"block":"none";
+  if(saveButton)saveButton.textContent=provider==="Repartidor particular"?"Guardar repartidor":"Guardar seguimiento";
+}
+
 async function saveDeliveryTracking(id){
   const provider=document.getElementById("deliveryProviderInput")?.value||"";
-  const tracking=document.getElementById("trackingUrlInput")?.value.trim()||"";
+  const rawTracking=document.getElementById("trackingUrlInput")?.value.trim()||"";
+  const tracking=provider==="Repartidor particular"?"":rawTracking;
   const {error}=await db.from("orders").update({delivery_provider:provider||null,tracking_url:tracking||null,updated_at:new Date().toISOString()}).eq("id",id);
-  if(error){alert("No se pudo guardar el seguimiento.");return}
+  if(error){alert("No se pudo guardar la información de reparto.");return}
   const o=orders.find(x=>String(x.id)===String(id));if(o){o.delivery_provider=provider;o.tracking_url=tracking}
-  alert("Seguimiento guardado.");
+  alert(provider==="Repartidor particular"?"Repartidor particular guardado.":"Seguimiento guardado.");
 }
 function sendTrackingWhatsApp(id){
   const o=orders.find(x=>String(x.id)===String(id));if(!o)return;
@@ -1188,8 +1203,9 @@ function openOrderModal(id){
       deliveryBox+='<p><strong>Precisión GPS:</strong> ±'+Math.round(Number(o.delivery_accuracy_m)||0)+' m</p>';
       deliveryBox+='<div class="delivery-admin-actions"><a class="btn btn-light btn-small" href="'+escapeAttr(mapUrl)+'" target="_blank" rel="noopener">📍 Abrir ubicación</a><button class="btn btn-dark btn-small" onclick="printDeliveryTicket(\''+o.id+'\')">🛵 Ticket de reparto</button></div><div id="deliveryQrBox" class="delivery-qr"></div>';
     }
-    deliveryBox+='<div class="grid grid-2" style="margin-top:14px"><div class="form-group"><label>Proveedor</label><select id="deliveryProviderInput"><option value="">Sin asignar</option><option value="Uber" '+(o.delivery_provider==="Uber"?"selected":"")+'>Uber</option><option value="DiDi" '+(o.delivery_provider==="DiDi"?"selected":"")+'>DiDi</option><option value="Repartidor particular" '+(o.delivery_provider==="Repartidor particular"?"selected":"")+'>Repartidor particular</option><option value="Otro" '+(o.delivery_provider==="Otro"?"selected":"")+'>Otro</option></select></div><div class="form-group"><label>Enlace de seguimiento</label><input id="trackingUrlInput" value="'+escapeAttr(o.tracking_url||"")+'" placeholder="Pega aquí el enlace de Uber, DiDi u otro"></div></div>';
-    deliveryBox+='<div class="delivery-admin-actions"><button class="btn btn-primary btn-small" onclick="saveDeliveryTracking(\''+o.id+'\')">Guardar seguimiento</button><button class="btn btn-success btn-small" onclick="sendTrackingWhatsApp(\''+o.id+'\')">📲 Enviar seguimiento</button></div></div>';
+    deliveryBox+='<div class="grid grid-2" style="margin-top:14px"><div class="form-group"><label>Proveedor</label><select id="deliveryProviderInput" onchange="updateDeliveryProviderUI()"><option value="">Sin asignar</option><option value="Uber" '+(o.delivery_provider==="Uber"?"selected":"")+'>Uber</option><option value="DiDi" '+(o.delivery_provider==="DiDi"?"selected":"")+'>DiDi</option><option value="Repartidor particular" '+(o.delivery_provider==="Repartidor particular"?"selected":"")+'>Repartidor particular</option><option value="Otro" '+(o.delivery_provider==="Otro"?"selected":"")+'>Otro</option></select></div><div id="trackingFieldWrap" class="form-group"><label>Enlace de seguimiento</label><input id="trackingUrlInput" value="'+escapeAttr(o.tracking_url||"")+'" placeholder="Pega aquí el enlace de Uber, DiDi u otro"></div></div>';
+    deliveryBox+='<div id="privateCourierNote" class="hint" style="display:none;margin-top:10px"><strong>Repartidor particular:</strong> no necesitas un enlace de seguimiento. Usa el ticket de reparto con QR de Google Maps, dirección, referencia y teléfonos de contacto.</div>';
+    deliveryBox+='<div class="delivery-admin-actions"><button id="saveDeliveryProviderButton" class="btn btn-primary btn-small" onclick="saveDeliveryTracking(\''+o.id+'\')">Guardar seguimiento</button><button id="sendTrackingButton" class="btn btn-success btn-small" onclick="sendTrackingWhatsApp(\''+o.id+'\')">📲 Enviar seguimiento</button></div></div>';
   }
   let actions='<div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:12px">';
   if(o.order_status==="pendiente_confirmacion")actions+='<button class="btn btn-success btn-small" onclick="updateOrderStatus(\''+o.id+'\',\'confirmado\');closeOrderModal()">✓ Confirmar pedido</button>';
@@ -1203,6 +1219,7 @@ function openOrderModal(id){
     '<div class="order-detail-list">'+items.map(i=>'<div class="order-detail-item"><span>'+escapeHtml(i.quantity)+' × '+escapeHtml(i.name)+'</span><strong>'+formatMoney(i.subtotal)+'</strong></div>').join("")+'</div>'+
     '<p style="text-align:right;font-size:20px"><strong>Total: '+formatMoney(o.total)+'</strong></p>';
   orderModal.classList.add("show");
+  updateDeliveryProviderUI();
   if(hasLocation)setTimeout(()=>renderDeliveryQr(o),0);
 }
 function closeOrderModal(){orderModal.classList.remove("show")}
