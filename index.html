@@ -273,7 +273,7 @@ let products=[];
 let settings={};
 let cart={};
 let deliveryLocation=null;
-const DEFAULT_DELIVERY_FEE=30;
+const DEFAULT_DELIVERY_FEE=0;
 const FALLBACK_CATEGORIES=["Pastes salados","Pastes dulces","Pastes de temporada","Bebidas","Promociones"];
 let batchPublicInterval=null;
 const FONT_MAP={
@@ -300,7 +300,10 @@ function shouldShowStockLimit(p,q=0){
   return stock<=lowStockThreshold(p)||Number(q)>=stock;
 }
 function formatMoney(n){return "$"+Number(n||0).toFixed(2)}
-function getDeliveryFee(){const n=Number(settings.delivery_cost);return Number.isFinite(n)&&n>=0?n:DEFAULT_DELIVERY_FEE}
+function getDeliveryFee(){
+  const n=Number(deliveryLocation?.fee);
+  return Number.isFinite(n)&&n>=0?n:DEFAULT_DELIVERY_FEE;
+}
 function getDeliveryType(){return document.querySelector('input[name="deliveryType"]:checked')?.value||"delivery"}
 function getAppliedDeliveryFee(){return getDeliveryType()==="delivery"?getDeliveryFee():0}
 function safeJson(value,fallback){try{return typeof value==="string"?JSON.parse(value):value??fallback}catch{return fallback}}
@@ -746,8 +749,9 @@ function updateCart(){
     ctr.append(minus,qty,plus);row.append(info,ctr);container.appendChild(row);
   });
   const delivery=getAppliedDeliveryFee(),total=productsTotal+delivery;
+  const waitingForZone=getDeliveryType()==="delivery"&&!deliveryLocation;
   document.getElementById("cartProductsTotal").textContent=formatMoney(productsTotal);
-  document.getElementById("cartDeliveryFee").textContent=formatMoney(delivery);
+  document.getElementById("cartDeliveryFee").textContent=waitingForZone?"Por calcular":formatMoney(delivery);
   document.getElementById("cartTotal").textContent=formatMoney(total);
   document.getElementById("cartCount").textContent=count;
   products.forEach(p=>updateProductCard(p.id));
@@ -776,15 +780,28 @@ function requestDeliveryLocation(){
       }
       if(!validation?.ok){
         deliveryLocation=null;document.getElementById("address").value="";
-        status.textContent=validation?.code==="UBICACION_IMPRECISA"
-          ?`La ubicación es demasiado imprecisa (±${accuracy} m). Activa la ubicación precisa/GPS e inténtalo otra vez.`
-          :"La ubicación detectada está fuera del estado de Yucatán.";
+        if(validation?.code==="UBICACION_IMPRECISA"){
+          status.textContent=`La ubicación es demasiado imprecisa (±${accuracy} m). Activa la ubicación precisa/GPS e inténtalo otra vez.`;
+        }else if(validation?.code==="UBICACION_FUERA_DE_YUCATAN"){
+          status.textContent="El servicio de entrega solo está disponible dentro de Yucatán.";
+        }else if(validation?.code==="ZONAS_NO_CONFIGURADAS"){
+          status.textContent="Las zonas de entrega todavía se están configurando. Puedes elegir recoger tu pedido.";
+        }else{
+          status.textContent="Por el momento no contamos con cobertura de entrega en tu ubicación. Puedes elegir recoger o escribirnos por WhatsApp para revisar disponibilidad.";
+        }
+        updateDeliverySubtitle();updateCart();
         button.disabled=false;return;
       }
-      deliveryLocation={lat,lng,accuracy};
+      deliveryLocation={
+        lat,lng,accuracy,
+        zoneId:validation.zone_id||null,
+        zoneName:validation.zone_name||"Zona de entrega",
+        fee:Number(validation.fee)||0
+      };
       document.getElementById("address").value=`Ubicación GPS ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      status.textContent=`✓ Ubicación validada dentro de Yucatán · precisión aproximada ±${accuracy} m`;
-      button.textContent="✓ Ubicación dentro de Yucatán validada · actualizar";
+      status.textContent=`✓ ${deliveryLocation.zoneName} · envío ${formatMoney(deliveryLocation.fee)} · precisión aproximada ±${accuracy} m`;
+      button.textContent="✓ Ubicación y tarifa validadas · actualizar";
+      updateDeliverySubtitle();updateCart();
       button.disabled=false;
     },
     ()=>{
@@ -797,7 +814,13 @@ function requestDeliveryLocation(){
 }
 document.getElementById("useLocationButton")?.addEventListener("click",requestDeliveryLocation);
 
-function updateDeliverySubtitle(){document.getElementById("deliverySubtitle").textContent=`+${formatMoney(getDeliveryFee())} de envío`}
+function updateDeliverySubtitle(){
+  const el=document.getElementById("deliverySubtitle");
+  if(getDeliveryType()!=="delivery"){el.textContent="";return}
+  el.textContent=deliveryLocation
+    ?`${deliveryLocation.zoneName} · ${formatMoney(deliveryLocation.fee)} de envío`
+    :"Costo de envío calculado automáticamente con tu ubicación";
+}
 function updateDeliveryUI(){const pickup=getDeliveryType()==="pickup",addressEl=document.getElementById("address"),maps=document.getElementById("mapsButton"),locBtn=document.getElementById("useLocationButton"),locStatus=document.getElementById("locationStatus");addressEl.style.display=pickup?"none":"block";if(locBtn)locBtn.style.display=pickup?"none":"block";if(locStatus)locStatus.style.display=pickup?"none":"block";if(pickup){addressEl.value="";deliveryLocation=null}else if(locStatus)locStatus.style.display="block";if(pickup&&settings.pickup_maps_url){maps.style.display="block";maps.href=settings.pickup_maps_url}else maps.style.display="none";updateCart();saveCheckoutState()}
 document.querySelectorAll('input[name="deliveryType"]').forEach(r=>r.addEventListener("change",updateDeliveryUI));
 function escapeHtml(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
@@ -942,7 +965,10 @@ async function sendOrder(){
         showOrderMessage(msg,"warn");
         alert(msg);
       }else if(raw.includes("UBICACION_FUERA_DE_YUCATAN")){
-        const msg="La ubicación detectada está fuera de la zona permitida de Yucatán.";
+        const msg="El servicio de entrega solo está disponible dentro de Yucatán.";
+        showOrderMessage(msg,"warn");alert(msg);
+      }else if(raw.includes("FUERA_DE_ZONA_DE_REPARTO")){
+        const msg="Por el momento no contamos con cobertura de entrega en tu ubicación. Puedes elegir recoger o escribirnos por WhatsApp para revisar disponibilidad.";
         showOrderMessage(msg,"warn");alert(msg);
       }else if(raw.includes("UBICACION_IMPRECISA")||raw.includes("UBICACION_REQUERIDA")){
         const msg="No pudimos validar una ubicación suficientemente precisa. Activa la ubicación precisa/GPS y vuelve a intentarlo.";
@@ -976,7 +1002,11 @@ async function sendOrder(){
   const finalCode=confirmed?.order_code||orderCode;
 
   let message=`*NUEVO PEDIDO ${business.toUpperCase()}*\n*Pedido:* ${finalCode}\n\n*Cliente:* ${name}\n*Teléfono:* ${phone}\n*Modalidad:* ${deliveryType==="delivery"?"Envío a domicilio":"Pasar a recoger"}\n`;
-  if(deliveryType==="delivery"){message+=`*Ubicación:* ${address}\n`;message+=`*Google Maps:* ${customerMapsUrl(deliveryLocation.lat,deliveryLocation.lng)}\n`;}
+  if(deliveryType==="delivery"){
+    message+=`*Zona:* ${confirmed?.delivery_zone_name||deliveryLocation.zoneName||"Zona de entrega"}\n`;
+    message+=`*Ubicación:* ${address}\n`;
+    message+=`*Google Maps:* ${customerMapsUrl(deliveryLocation.lat,deliveryLocation.lng)}\n`;
+  }
   message+="\n*PRODUCTOS*\n";
   confirmedItems.forEach(i=>message+=`${i.quantity} x ${i.name} — ${formatMoney(i.subtotal)}\n`);
   message+=`\n*Subtotal:* ${formatMoney(subtotal)}\n*Envío:* ${formatMoney(deliveryFee)}\n*TOTAL:* ${formatMoney(total)}\n*Pago:* ${payment==="transfer"?"Transferencia":"Efectivo"}\n`;
@@ -987,6 +1017,7 @@ async function sendOrder(){
   cart={};
   deliveryLocation=null;
   document.getElementById("address").value="";
+  updateDeliverySubtitle();
   saveCheckoutState();
   await reloadProducts();
 
