@@ -243,6 +243,7 @@ button:disabled{cursor:not-allowed}
         <label class="delivery-row"><input type="radio" name="deliveryType" value="delivery" checked><span class="delivery-icon">🛵</span><span class="delivery-text"><strong>Envío a domicilio</strong><small id="deliverySubtitle"></small></span><span class="delivery-check"></span></label>
         <label class="delivery-row"><input type="radio" name="deliveryType" value="pickup"><span class="delivery-icon">🛍️</span><span class="delivery-text"><strong>Pasar a recoger</strong><small>Recoge tu pedido en nuestro punto de venta</small></span><span class="delivery-check"></span></label>
       </div>
+      <div id="rainSurchargeNotice" style="display:none;margin:10px 0;padding:12px 13px;border-radius:12px;background:#eef6ff;border:1px solid #cfe3f7;color:#274b6d;font-size:13px;line-height:1.45"></div>
       <button id="useLocationButton" type="button" style="width:100%;border:0;border-radius:12px;padding:13px;background:#111;color:#fff;font-weight:900">📍 Usar mi ubicación actual</button>
       <div id="locationStatus" style="font-size:12px;color:#666;line-height:1.4"></div>
       <input id="address" type="text" readonly placeholder="La ubicación se completará automáticamente">
@@ -306,6 +307,16 @@ function getDeliveryFee(){
 }
 function getDeliveryType(){return document.querySelector('input[name="deliveryType"]:checked')?.value||"delivery"}
 function getAppliedDeliveryFee(){return getDeliveryType()==="delivery"?getDeliveryFee():0}
+function rainSurchargeActive(){return boolSetting(settings.rain_surcharge_enabled,false)}
+function rainSurchargeAmount(){const n=Number(settings.rain_surcharge_amount);return Number.isFinite(n)&&n>=0?n:10}
+function rainSurchargeMessage(){return settings.rain_surcharge_message||"Debido a la lluvia, se aplica temporalmente un cargo adicional al envío. Este ajuste reconoce las condiciones adicionales de reparto y el mayor cuidado requerido durante el traslado. Gracias por tu comprensión."}
+function updateRainSurchargeUI(){
+  const el=document.getElementById("rainSurchargeNotice");
+  if(!el)return;
+  const show=getDeliveryType()==="delivery"&&rainSurchargeActive();
+  el.style.display=show?"block":"none";
+  if(show)el.textContent=`🌧️ ${rainSurchargeMessage()} Recargo temporal: ${formatMoney(rainSurchargeAmount())}.`;
+}
 function safeJson(value,fallback){try{return typeof value==="string"?JSON.parse(value):value??fallback}catch{return fallback}}
 
 const STORE_TIME_ZONE="America/Merida";
@@ -796,12 +807,15 @@ function requestDeliveryLocation(){
         lat,lng,accuracy,
         zoneId:validation.zone_id||null,
         zoneName:validation.zone_name||"Zona de entrega",
+        baseFee:Number(validation.base_fee)||0,
+        rainSurcharge:Number(validation.rain_surcharge)||0,
         fee:Number(validation.fee)||0
       };
       document.getElementById("address").value=`Ubicación GPS ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      status.textContent=`✓ ${deliveryLocation.zoneName} · envío ${formatMoney(deliveryLocation.fee)} · precisión aproximada ±${accuracy} m`;
+      const rainText=deliveryLocation.rainSurcharge>0?` · incluye +${formatMoney(deliveryLocation.rainSurcharge)} por lluvia`:"";
+      status.textContent=`✓ ${deliveryLocation.zoneName} · envío ${formatMoney(deliveryLocation.fee)}${rainText} · precisión aproximada ±${accuracy} m`;
       button.textContent="✓ Ubicación y tarifa validadas · actualizar";
-      updateDeliverySubtitle();updateCart();
+      updateDeliverySubtitle();updateRainSurchargeUI();updateCart();
       button.disabled=false;
     },
     ()=>{
@@ -817,11 +831,13 @@ document.getElementById("useLocationButton")?.addEventListener("click",requestDe
 function updateDeliverySubtitle(){
   const el=document.getElementById("deliverySubtitle");
   if(getDeliveryType()!=="delivery"){el.textContent="";return}
-  el.textContent=deliveryLocation
-    ?`${deliveryLocation.zoneName} · ${formatMoney(deliveryLocation.fee)} de envío`
-    :"Costo de envío calculado automáticamente con tu ubicación";
+  if(!deliveryLocation){el.textContent="Costo de envío calculado automáticamente con tu ubicación";return}
+  const rain=Number(deliveryLocation.rainSurcharge)||0;
+  el.textContent=rain>0
+    ?`${deliveryLocation.zoneName} · ${formatMoney(deliveryLocation.fee)} de envío (incluye ${formatMoney(rain)} por lluvia)`
+    :`${deliveryLocation.zoneName} · ${formatMoney(deliveryLocation.fee)} de envío`;
 }
-function updateDeliveryUI(){const pickup=getDeliveryType()==="pickup",addressEl=document.getElementById("address"),maps=document.getElementById("mapsButton"),locBtn=document.getElementById("useLocationButton"),locStatus=document.getElementById("locationStatus");addressEl.style.display=pickup?"none":"block";if(locBtn)locBtn.style.display=pickup?"none":"block";if(locStatus)locStatus.style.display=pickup?"none":"block";if(pickup){addressEl.value="";deliveryLocation=null}else if(locStatus)locStatus.style.display="block";if(pickup&&settings.pickup_maps_url){maps.style.display="block";maps.href=settings.pickup_maps_url}else maps.style.display="none";updateCart();saveCheckoutState()}
+function updateDeliveryUI(){const pickup=getDeliveryType()==="pickup",addressEl=document.getElementById("address"),maps=document.getElementById("mapsButton"),locBtn=document.getElementById("useLocationButton"),locStatus=document.getElementById("locationStatus");addressEl.style.display=pickup?"none":"block";if(locBtn)locBtn.style.display=pickup?"none":"block";if(locStatus)locStatus.style.display=pickup?"none":"block";if(pickup){addressEl.value="";deliveryLocation=null}else if(locStatus)locStatus.style.display="block";if(pickup&&settings.pickup_maps_url){maps.style.display="block";maps.href=settings.pickup_maps_url}else maps.style.display="none";updateDeliverySubtitle();updateRainSurchargeUI();updateCart();saveCheckoutState()}
 document.querySelectorAll('input[name="deliveryType"]').forEach(r=>r.addEventListener("change",updateDeliveryUI));
 function escapeHtml(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
 function copyBankValue(value,button){
@@ -1009,7 +1025,12 @@ async function sendOrder(){
   }
   message+="\n*PRODUCTOS*\n";
   confirmedItems.forEach(i=>message+=`${i.quantity} x ${i.name} — ${formatMoney(i.subtotal)}\n`);
-  message+=`\n*Subtotal:* ${formatMoney(subtotal)}\n*Envío:* ${formatMoney(deliveryFee)}\n*TOTAL:* ${formatMoney(total)}\n*Pago:* ${payment==="transfer"?"Transferencia":"Efectivo"}\n`;
+  message+=`\n*Subtotal:* ${formatMoney(subtotal)}\n`;
+  if(deliveryType==="delivery"&&Number(confirmed?.delivery_rain_surcharge)>0){
+    message+=`*Tarifa base de envío:* ${formatMoney(confirmed?.delivery_base_fee)}\n`;
+    message+=`*Recargo temporal por lluvia:* ${formatMoney(confirmed?.delivery_rain_surcharge)}\n`;
+  }
+  message+=`*Envío:* ${formatMoney(deliveryFee)}\n*TOTAL:* ${formatMoney(total)}\n*Pago:* ${payment==="transfer"?"Transferencia":"Efectivo"}\n`;
   if(notes)message+=`*Notas:* ${notes}\n`;
   message+="\n*Importante:* El pedido queda pendiente hasta que PasteHot confirme su recepción.\n";
   if(deliveryType==="delivery")message+="*Entrega:* A PIE DE CALLE.\n";
@@ -1018,6 +1039,7 @@ async function sendOrder(){
   deliveryLocation=null;
   document.getElementById("address").value="";
   updateDeliverySubtitle();
+  updateRainSurchargeUI();
   saveCheckoutState();
   await reloadProducts();
 
