@@ -1235,11 +1235,7 @@ async function sendOrder(){
   const finalCode=confirmed?.order_code||orderCode;
   const deliveryCode=String(confirmed?.delivery_verification_code||"").trim();
 
-  let message=`*NUEVO PEDIDO ${business.toUpperCase()}*\n*Pedido:* ${finalCode}\n`;
-  if(deliveryType==="delivery"&&deliveryCode){
-    message+=`\n🔐 *CÓDIGO DE ENTREGA: ${deliveryCode}*\n*Conserva este código y díselo al repartidor únicamente cuando recibas tu pedido.*\n`;
-  }
-  message+=`\n*Cliente:* ${name}\n*Teléfono:* ${phone}\n*Modalidad:* ${deliveryType==="delivery"?"Envío a domicilio":"Pasar a recoger"}\n`;
+  let message=`*NUEVO PEDIDO ${business.toUpperCase()}*\n*Pedido:* ${finalCode}\n\n*Cliente:* ${name}\n*Teléfono:* ${phone}\n*Modalidad:* ${deliveryType==="delivery"?"Envío a domicilio":"Pasar a recoger"}\n`;
   if(deliveryType==="delivery"){
     message+=`*Zona:* ${confirmed?.delivery_zone_name||deliveryLocation.zoneName||"Zona de entrega"}\n`;
     message+=`*Dirección:* ${address}\n`;
@@ -1255,8 +1251,11 @@ async function sendOrder(){
   }
   message+=`*Envío:* ${formatMoney(deliveryFee)}\n*TOTAL:* ${formatMoney(total)}\n*Pago:* ${payment==="transfer"?"Transferencia":"Efectivo"}\n`;
   if(notes)message+=`*Notas:* ${notes}\n`;
-  message+="\n*Importante:* El pedido queda pendiente hasta que PasteHot confirme su recepción.\n";
+  message+="\n*Solicitud registrada:* PasteHot revisará tu pedido y te confirmará por este mismo medio en breve.\n";
   if(deliveryType==="delivery")message+="*Entrega:* A PIE DE CALLE.\n";
+  if(deliveryType==="delivery"&&deliveryCode){
+    message+=`\n🔐 *CÓDIGO DE ENTREGA: ${deliveryCode}*\n*Conserva este código. Díselo al repartidor únicamente cuando tengas el pedido frente a ti.*\n`;
+  }
 
   cart={};
   deliveryLocation=null;
