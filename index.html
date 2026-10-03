@@ -1212,7 +1212,13 @@ async function sendOrder(){
 
     confirmed=data||{};
     localStorage.setItem("pastehot_last_order",confirmed.order_code||orderCode);
-    showOrderMessage(`Pedido ${confirmed.order_code||orderCode} registrado como pendiente. Abriendo WhatsApp…`,"ok");
+    if(deliveryType==="delivery"&&confirmed.delivery_verification_code){
+      localStorage.setItem("pastehot_last_delivery_code",confirmed.delivery_verification_code);
+    }
+    const codeNotice=deliveryType==="delivery"&&confirmed.delivery_verification_code
+      ? ` · Código de entrega: ${confirmed.delivery_verification_code}`
+      : "";
+    showOrderMessage(`Pedido ${confirmed.order_code||orderCode} registrado como pendiente${codeNotice}. Abriendo WhatsApp…`,"ok");
   }catch(error){
     console.error("Error inesperado al registrar pedido:",error);
     showOrderMessage("Hubo un problema registrando el pedido. Intenta de nuevo.","warn");
@@ -1228,8 +1234,13 @@ async function sendOrder(){
   const deliveryFee=Number(confirmed?.delivery_fee||0);
   const total=Number(confirmed?.total||0);
   const finalCode=confirmed?.order_code||orderCode;
+  const deliveryCode=String(confirmed?.delivery_verification_code||"").trim();
 
-  let message=`*NUEVO PEDIDO ${business.toUpperCase()}*\n*Pedido:* ${finalCode}\n\n*Cliente:* ${name}\n*Teléfono:* ${phone}\n*Modalidad:* ${deliveryType==="delivery"?"Envío a domicilio":"Pasar a recoger"}\n`;
+  let message=`*NUEVO PEDIDO ${business.toUpperCase()}*\n*Pedido:* ${finalCode}\n`;
+  if(deliveryType==="delivery"&&deliveryCode){
+    message+=`\n🔐 *CÓDIGO DE ENTREGA: ${deliveryCode}*\n*Conserva este código y díselo al repartidor únicamente cuando recibas tu pedido.*\n`;
+  }
+  message+=`\n*Cliente:* ${name}\n*Teléfono:* ${phone}\n*Modalidad:* ${deliveryType==="delivery"?"Envío a domicilio":"Pasar a recoger"}\n`;
   if(deliveryType==="delivery"){
     message+=`*Zona:* ${confirmed?.delivery_zone_name||deliveryLocation.zoneName||"Zona de entrega"}\n`;
     message+=`*Dirección:* ${address}\n`;
