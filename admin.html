@@ -90,7 +90,10 @@
       <h2>Zonas de entrega</h2>
       <p>Dibuja visualmente las áreas de cobertura y modifica sus tarifas cuando lo necesites.</p>
     </div>
-    <button class="btn btn-light" onclick="loadDeliveryZones()">Actualizar</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="createDeliveryZone()">+ Nueva zona</button>
+      <button class="btn btn-light" onclick="loadDeliveryZones()">Actualizar</button>
+    </div>
   </div>
   <div class="card">
     <div class="hint"><strong>Cómo funciona:</strong> el cliente comparte su ubicación exacta, el sistema identifica automáticamente la zona y aplica la tarifa guardada. Si su punto no cae dentro de ninguna zona activa, el envío se bloquea y se ofrece la opción de recoger.</div>
@@ -579,6 +582,37 @@ async function saveDeliveryZone(id,fromDraw=false){
 function focusDeliveryZone(id){
   const layer=deliveryZoneLayers.get(String(id));
   if(layer&&deliveryZonesMap){deliveryZonesMap.fitBounds(layer.getBounds(),{padding:[24,24]});}
+}
+
+async function createDeliveryZone(){
+  const name=prompt("Nombre de la nueva zona de entrega:");
+  if(name===null)return;
+  const cleanName=name.trim();
+  if(!cleanName){alert("Escribe un nombre para la zona.");return}
+
+  const feeText=prompt("Costo de envío para esta zona:", "50");
+  if(feeText===null)return;
+  const fee=Number(String(feeText).replace(",","."));
+  if(!Number.isFinite(fee)||fee<0){alert("Escribe un costo de envío válido.");return}
+
+  const nextPriority=deliveryZones.length
+    ? Math.max(...deliveryZones.map(z=>Number(z.priority)||0))+10
+    : 10;
+
+  const {data,error}=await db.from("delivery_zones")
+    .insert({name:cleanName,fee,priority:nextPriority,enabled:true})
+    .select("id,name,fee,priority,enabled")
+    .single();
+
+  if(error){
+    console.error(error);
+    alert(error.code==="23505"?"Ya existe una zona con ese nombre.":"No se pudo crear la zona.");
+    return;
+  }
+
+  await loadDeliveryZones();
+  zoneMapStatus.textContent=`Zona “${cleanName}” creada con tarifa de ${formatMoney(fee)}. Ahora dibuja su área en el mapa.`;
+  setTimeout(()=>drawDeliveryZone(data.id),120);
 }
 async function savePaymentSettings(){for(const k of ["bank_name","bank_holder","bank_clabe","bank_card"])await saveSetting(k,document.getElementById(k).value);showMessage("paymentMessage","Datos de transferencia guardados.")}
 
