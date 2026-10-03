@@ -1129,12 +1129,12 @@ function printOrderTicket(id){
   if(!popup){alert("El navegador bloqueó la ventana del ticket. Permite ventanas emergentes para imprimir.");return}
   popup.document.open();
   popup.document.write(`<!DOCTYPE html><html lang="es-MX"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ticket ${escapeHtml(o.order_code||"")}</title><style>
-    @page{size:58mm auto;margin:0}
+    @page{size:80mm auto;margin:0}
     *{box-sizing:border-box}
-    html,body{margin:0;padding:0;width:58mm;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif}
+    html,body{margin:0;padding:0;width:80mm;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif}
     body{font-size:10.5px;line-height:1.32}
-    .ticket{width:58mm;padding:2.5mm 3mm 4mm;margin:0 auto}
-    .logo{display:block;max-width:46mm;max-height:27mm;object-fit:contain;margin:0 auto .7mm}
+    .ticket{width:80mm;padding:3.5mm 4mm 5mm;margin:0 auto}
+    .logo{display:block;max-width:68mm;max-height:30mm;object-fit:contain;margin:0 auto .7mm}
     .brand-fallback{text-align:center;font-size:21px;font-weight:900;margin:.5mm 0 1mm}
     .brand{text-align:center;font-size:16.5px;font-weight:900;line-height:1.05;margin-top:.2mm}
     .registered{font-size:6px;vertical-align:super;line-height:0;margin-left:.5px}
@@ -1150,7 +1150,7 @@ function printOrderTicket(id){
     .totals{display:grid;gap:1.2mm}.total-row{display:flex;justify-content:space-between;gap:2mm}.grand{font-size:15px;font-weight:900;border-top:1.5px solid #000;padding-top:2mm;margin-top:1mm}
     .notes{margin-top:2.5mm;padding:2mm;border:1px solid #000;overflow-wrap:anywhere}.notes strong{display:block;font-size:8px;margin-bottom:1mm}
     .footer{text-align:center;font-size:7.5px;line-height:1.35;margin-top:3mm}.website{font-size:10px;font-weight:900;margin:2mm 0}.legal{margin-top:2mm}.copyright{font-size:7px;margin-top:2mm}
-    @media print{html,body{width:58mm}.ticket{page-break-after:auto}}
+    @media print{html,body{width:80mm}.ticket{page-break-after:auto}}
   </style></head><body><main class="ticket">
     ${logoHtml}
     <div class="brand">PasteHot<span class="registered">®</span></div>
@@ -1270,7 +1270,7 @@ function openOrderModal(id){
   }
   let actions='<div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:12px">';
   if(o.order_status==="pendiente_confirmacion")actions+='<button class="btn btn-success btn-small" onclick="updateOrderStatus(\''+o.id+'\',\'confirmado\');closeOrderModal()">✓ Confirmar pedido</button>';
-  actions+='<button class="btn btn-dark btn-small" onclick="printOrderTicket(\''+o.id+'\')">🖨 Imprimir ticket 58 mm</button></div>';
+  actions+='<button class="btn btn-dark btn-small" onclick="printOrderTicket(\''+o.id+'\')">🖨 Imprimir ticket 80 mm</button></div>';
   orderDetail.innerHTML=actions+
     '<p><strong>Cliente:</strong> '+escapeHtml(o.customer_name||"")+' · '+escapeHtml(o.customer_phone||"")+'</p>'+
     '<p><strong>Modalidad:</strong> '+escapeHtml(ticketDeliveryLabel(o.delivery_type))+'</p>'+
