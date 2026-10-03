@@ -130,6 +130,7 @@ button:disabled{cursor:not-allowed}
 
 .whatsapp-button{width:100%;border:0;border-radius:14px;padding:15px;background:#20b957;color:#fff;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:9px}.whatsapp-button:disabled{opacity:.6}.order-status-message{display:none;padding:11px 12px;border-radius:10px;font-size:13px}.order-status-message.show{display:block}.order-status-message.ok{background:#e8f8ee;color:#0c6f34}.order-status-message.warn{background:#fff5dd;color:#805d00}
 .curbside-modal{position:fixed;inset:0;z-index:1200;display:none;align-items:center;justify-content:center;padding:22px;background:rgba(0,0,0,.62);backdrop-filter:blur(4px)}.curbside-modal.show{display:flex}.curbside-card{width:min(470px,100%);background:#fff;border-radius:22px;padding:25px;box-shadow:0 26px 80px rgba(0,0,0,.3);text-align:center}.curbside-card h3{margin:0 0 12px;font-size:22px}.curbside-alert{margin:0;padding:16px;border-radius:14px;background:#fff0f1;color:#9a1118;font-size:20px;font-weight:950;line-height:1.2}.curbside-copy{margin:13px 0 0;color:#555;font-size:13px;line-height:1.5}.curbside-actions{display:grid;grid-template-columns:1fr 1.35fr;gap:9px;margin-top:20px}.curbside-actions button{border:0;border-radius:11px;padding:12px;font-weight:900}.curbside-back{background:#eee;color:#222}.curbside-accept{background:#111;color:#fff}
+.yucatan-modal{position:fixed;inset:0;z-index:1300;display:none;align-items:center;justify-content:center;padding:22px;background:rgba(0,0,0,.72);backdrop-filter:blur(5px)}.yucatan-modal.show{display:flex}.yucatan-card{width:min(450px,100%);background:#fff;border-radius:24px;padding:28px 24px;box-shadow:0 30px 90px rgba(0,0,0,.38);text-align:center;border-top:8px solid #d71920}.yucatan-icon{font-size:46px;line-height:1;margin-bottom:10px}.yucatan-card h3{margin:0 0 11px;font-size:24px;color:#171717}.yucatan-message{margin:0;color:#444;font-size:15px;line-height:1.55}.yucatan-highlight{display:block;margin:15px 0 0;padding:13px 14px;border-radius:14px;background:#fff0f1;color:#9a1118;font-weight:950;font-size:17px}.yucatan-close{width:100%;margin-top:20px;border:0;border-radius:12px;padding:13px 16px;background:#111;color:#fff;font-weight:900;font-size:15px}
 
 
 .product.store-closed .add-controls button{opacity:.28;cursor:not-allowed}
@@ -267,6 +268,15 @@ button:disabled{cursor:not-allowed}
 </div>
 
 <div id="curbsideModal" class="curbside-modal" role="dialog" aria-modal="true" aria-labelledby="curbsideTitle"><div class="curbside-card"><h3 id="curbsideTitle">Importante</h3><p class="curbside-alert">LOS PEDIDOS SE ENTREGAN A PIE DE CALLE.</p><p class="curbside-copy">Al continuar confirmas que estás de acuerdo con esta modalidad de entrega.</p><div class="curbside-actions"><button id="curbsideBack" class="curbside-back" type="button">Volver</button><button id="curbsideAccept" class="curbside-accept" type="button">Entendido, enviar pedido</button></div></div></div>
+<div id="yucatanOnlyModal" class="yucatan-modal" role="dialog" aria-modal="true" aria-labelledby="yucatanOnlyTitle">
+  <div class="yucatan-card">
+    <div class="yucatan-icon" aria-hidden="true">📍</div>
+    <h3 id="yucatanOnlyTitle">Servicio de entrega no disponible</h3>
+    <p class="yucatan-message">La ubicación detectada se encuentra fuera de nuestra zona de servicio.</p>
+    <span class="yucatan-highlight">Por el momento, las entregas de PasteHot solo están disponibles en Yucatán.</span>
+    <button id="yucatanOnlyClose" class="yucatan-close" type="button">Cerrar</button>
+  </div>
+</div>
 <div id="imageLightbox" class="image-lightbox" role="dialog" aria-modal="true" aria-label="Vista ampliada del producto">
   <div class="image-lightbox-content">
     <button id="imageLightboxClose" class="image-lightbox-close" type="button" aria-label="Cerrar imagen">×</button>
@@ -868,6 +878,22 @@ function showDeliveryAddressFields(show){
   if(box)box.style.display=show?"block":"none";
 }
 
+function showYucatanOnlyModal(){
+  const modal=document.getElementById("yucatanOnlyModal");
+  if(!modal)return;
+  modal.classList.add("show");
+  document.body.style.overflow="hidden";
+  setTimeout(()=>document.getElementById("yucatanOnlyClose")?.focus(),0);
+}
+function closeYucatanOnlyModal(){
+  const modal=document.getElementById("yucatanOnlyModal");
+  if(!modal)return;
+  modal.classList.remove("show");
+  document.body.style.overflow="";
+}
+document.getElementById("yucatanOnlyClose")?.addEventListener("click",closeYucatanOnlyModal);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&document.getElementById("yucatanOnlyModal")?.classList.contains("show"))closeYucatanOnlyModal()});
+
 function requestDeliveryLocation(){
   const status=document.getElementById("locationStatus"),button=document.getElementById("useLocationButton");
   const addressEl=document.getElementById("address");
@@ -894,7 +920,8 @@ function requestDeliveryLocation(){
         if(validation?.code==="UBICACION_IMPRECISA"){
           status.textContent="La ubicación es demasiado imprecisa (±"+accuracy+" m). Activa la ubicación precisa/GPS e inténtalo otra vez.";
         }else if(validation?.code==="UBICACION_FUERA_DE_YUCATAN"){
-          status.textContent="El servicio de entrega solo está disponible dentro de Yucatán.";
+          status.textContent="La ubicación detectada está fuera de Yucatán.";
+          showYucatanOnlyModal();
         }else if(validation?.code==="ZONAS_NO_CONFIGURADAS"){
           status.textContent="Las zonas de entrega todavía se están configurando. Puedes elegir recoger tu pedido.";
         }else{
@@ -1124,7 +1151,7 @@ async function sendOrder(){
         alert(msg);
       }else if(raw.includes("UBICACION_FUERA_DE_YUCATAN")){
         const msg="El servicio de entrega solo está disponible dentro de Yucatán.";
-        showOrderMessage(msg,"warn");alert(msg);
+        showOrderMessage(msg,"warn");showYucatanOnlyModal();
       }else if(raw.includes("FUERA_DE_ZONA_DE_REPARTO")){
         const msg="Por el momento no contamos con cobertura de entrega en tu ubicación. Puedes elegir recoger o escribirnos por WhatsApp para revisar disponibilidad.";
         showOrderMessage(msg,"warn");alert(msg);
