@@ -285,13 +285,66 @@ function showTab(name,button){document.querySelectorAll(".section").forEach(s=>s
 async function loadProducts(){const {data,error}=await db.from("products").select("*").order("sort_order",{ascending:true}).order("created_at",{ascending:true});if(error){productsList.innerHTML='<div class="message error">No se pudieron cargar los productos.</div>';return}products=data||[];renderProducts()}
 function renderProducts(){if(!products.length){productsList.innerHTML='<p style="color:#777">No hay productos.</p>';return}productsList.innerHTML=products.map(p=>{const tracked=!!p.track_stock,stock=Math.max(0,Number(p.stock)||0),threshold=Math.max(0,Number(p.low_stock_threshold)||0);const stockClass=!tracked?"off":stock===0?"zero":stock<=threshold?"low":"ok";const stockText=!tracked?"Inventario: no controlado":stock===0?"Inventario: AGOTADO":stock<=threshold?`Inventario: ${stock} · pocas unidades`:`Inventario: ${stock} disponibles`;return `<div class="product-admin-card"><img class="product-admin-image" src="${escapeAttr(p.image_url||"")}" alt=""><div class="product-admin-info"><h3>${escapeHtml(p.name)}</h3><p>${escapeHtml(p.category||"")}</p><p>${formatMoney(p.price)}</p><p class="stock-line ${stockClass}">${escapeHtml(stockText)}</p></div><div class="product-admin-actions"><button class="status-toggle ${p.available?"status-on":"status-off"}" onclick="toggleProduct('${p.id}',${!p.available})">${p.available?"● Disponible":"● Agotado"}</button><button class="btn btn-light btn-small" onclick="editProduct('${p.id}')">Editar</button><button class="btn btn-danger btn-small" onclick="deleteProduct('${p.id}')">Borrar</button></div></div>`}).join("")}
 async function toggleProduct(id,value){const {error}=await db.from("products").update({available:value,updated_at:new Date().toISOString()}).eq("id",id);if(error){alert("No se pudo actualizar.");return}const p=products.find(x=>String(x.id)===String(id));if(p)p.available=value;renderProducts()}
-async function deleteProduct(id){const p=products.find(x=>String(x.id)===String(id));if(!p||!confirm(`¿Borrar "${p.name}"?`))return;const {error}=await db.from("products").delete().eq("id",id);if(error){alert("No se pudo borrar.");return}await loadProducts()}
+function storagePathFromPublicUrl(url){
+  try{
+    const marker="/storage/v1/object/public/product-images/";
+    const i=String(url||"").indexOf(marker);
+    if(i<0)return null;
+    return decodeURIComponent(String(url).slice(i+marker.length).split("?")[0]);
+  }catch{return null}
+}
+async function removeStoredImage(url){
+  const path=storagePathFromPublicUrl(url);
+  if(!path)return;
+  const {error}=await db.storage.from("product-images").remove([path]);
+  if(error)console.warn("No se pudo eliminar la imagen anterior de Storage.",error);
+}
+async function deleteProduct(id){
+  const p=products.find(x=>String(x.id)===String(id));
+  if(!p||!confirm(`¿Borrar "${p.name}"?`))return;
+  const oldImage=p.image_url||"";
+  const {error}=await db.from("products").delete().eq("id",id);
+  if(error){alert("No se pudo borrar.");return}
+  await removeStoredImage(oldImage);
+  await loadProducts();
+}
 function populateCategorySelect(selected=""){productCategory.innerHTML=categories.map(c=>`<option value="${escapeAttr(c)}" ${c===selected?"selected":""}>${escapeHtml(c)}</option>`).join("")}
 function openProductModal(product=null){editingProductId=product?.id||null;productModalTitle.textContent=product?"Editar producto":"Nuevo producto";productName.value=product?.name||"";productDescription.value=product?.description||"";productPrice.value=product?.price??"";productAvailable.value=product?String(product.available):"true";productTrackStock.value=product?String(!!product.track_stock):"false";productStock.value=product?.stock??0;productLowStockThreshold.value=product?.low_stock_threshold??3;populateCategorySelect(product?.category||"");productImageFile.value="";if(product?.image_url){productImagePreview.src=product.image_url;productImagePreview.classList.remove("hidden")}else productImagePreview.classList.add("hidden");syncInventoryFields();productMessage.innerHTML="";productModal.classList.add("show")}
 function syncInventoryFields(){const tracked=productTrackStock.value==="true";productStock.disabled=!tracked;productLowStockThreshold.disabled=!tracked;inventoryFieldNote.textContent=tracked?"El menú limitará las compras a las piezas disponibles y mostrará aviso de pocas unidades según el umbral.":"Sin control de inventario: este producto seguirá vendiéndose mientras su disponibilidad manual esté en Disponible."}
 function editProduct(id){const p=products.find(x=>String(x.id)===String(id));if(p)openProductModal(p)}function closeProductModal(){productModal.classList.remove("show")}
 function previewProductImage(e){const f=e.target.files[0];if(!f)return;productImagePreview.src=URL.createObjectURL(f);productImagePreview.classList.remove("hidden")}
-async function saveProduct(){const name=productName.value.trim(),description=productDescription.value.trim(),price=Number(productPrice.value),category=productCategory.value,available=productAvailable.value==="true",trackStock=productTrackStock.value==="true",stock=Number(productStock.value),lowStockThreshold=Number(productLowStockThreshold.value),file=productImageFile.files[0];productMessage.innerHTML="";if(!name){showMessage("productMessage","Escribe el nombre.",false);return}if(!Number.isFinite(price)||price<0){showMessage("productMessage","Escribe un precio válido.",false);return}if(trackStock&&(!Number.isInteger(stock)||stock<0)){showMessage("productMessage","Disponibles debe ser un número entero de 0 o más.",false);return}if(trackStock&&(!Number.isInteger(lowStockThreshold)||lowStockThreshold<0)){showMessage("productMessage","El aviso de pocas unidades debe ser un número entero de 0 o más.",false);return}let imageUrl="";if(editingProductId)imageUrl=products.find(p=>String(p.id)===String(editingProductId))?.image_url||"";try{if(file)imageUrl=await uploadFile(file,"products","product")}catch(e){showMessage("productMessage",e.message,false);return}const payload={name,description,price,category,available,track_stock:trackStock,stock:Number.isFinite(stock)&&stock>=0?Math.floor(stock):0,low_stock_threshold:Number.isFinite(lowStockThreshold)&&lowStockThreshold>=0?Math.floor(lowStockThreshold):3,image_url:imageUrl,updated_at:new Date().toISOString()};let error;if(editingProductId)({error}=await db.from("products").update(payload).eq("id",editingProductId));else{payload.sort_order=products.length+1;({error}=await db.from("products").insert(payload))}if(error){showMessage("productMessage",error.message,false);return}showMessage("productMessage","Producto guardado.");await loadProducts();setTimeout(closeProductModal,450)}
+async function saveProduct(){
+  const name=productName.value.trim(),description=productDescription.value.trim(),price=Number(productPrice.value),category=productCategory.value,available=productAvailable.value==="true",trackStock=productTrackStock.value==="true",stock=Number(productStock.value),lowStockThreshold=Number(productLowStockThreshold.value),file=productImageFile.files[0];
+  productMessage.innerHTML="";
+  if(!name){showMessage("productMessage","Escribe el nombre.",false);return}
+  if(!Number.isFinite(price)||price<0){showMessage("productMessage","Escribe un precio válido.",false);return}
+  if(trackStock&&(!Number.isInteger(stock)||stock<0)){showMessage("productMessage","Disponibles debe ser un número entero de 0 o más.",false);return}
+  if(trackStock&&(!Number.isInteger(lowStockThreshold)||lowStockThreshold<0)){showMessage("productMessage","El aviso de pocas unidades debe ser un número entero de 0 o más.",false);return}
+
+  const previous=editingProductId?products.find(p=>String(p.id)===String(editingProductId)):null;
+  const oldImage=previous?.image_url||"";
+  let imageUrl=oldImage;
+
+  try{
+    if(file)imageUrl=await uploadFile(file,"products","product");
+  }catch(e){showMessage("productMessage",e.message,false);return}
+
+  const payload={name,description,price,category,available,track_stock:trackStock,stock:Number.isFinite(stock)&&stock>=0?Math.floor(stock):0,low_stock_threshold:Number.isFinite(lowStockThreshold)&&lowStockThreshold>=0?Math.floor(lowStockThreshold):3,image_url:imageUrl,updated_at:new Date().toISOString()};
+  let error;
+  if(editingProductId)({error}=await db.from("products").update(payload).eq("id",editingProductId));
+  else{payload.sort_order=products.length+1;({error}=await db.from("products").insert(payload))}
+
+  if(error){
+    if(file&&imageUrl&&imageUrl!==oldImage)await removeStoredImage(imageUrl);
+    showMessage("productMessage",error.message,false);
+    return;
+  }
+
+  if(file&&oldImage&&oldImage!==imageUrl)await removeStoredImage(oldImage);
+  showMessage("productMessage","Producto guardado.");
+  await loadProducts();
+  setTimeout(closeProductModal,450);
+}
 
 async function loadCategories(){const {data}=await db.from("settings").select("value").eq("key","categories").maybeSingle();if(data?.value){try{const p=JSON.parse(data.value);if(Array.isArray(p)&&p.length)categories=p}catch{}}populateCategorySelect();renderCategories()}
 function renderCategories(){categoriesList.innerHTML=categories.map((c,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid #eee"><strong>${i+1}. ${escapeHtml(c)}</strong><button class="btn btn-danger btn-small" onclick="deleteCategory(${i})">Eliminar</button></div>`).join("")}
