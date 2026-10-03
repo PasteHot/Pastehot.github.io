@@ -251,7 +251,7 @@ button:disabled{cursor:not-allowed}
         <label for="address" style="display:block;font-size:12px;font-weight:800;margin-bottom:6px">Dirección de entrega *</label>
         <textarea id="address" rows="3" placeholder="Revisa y corrige tu dirección, especialmente el número exterior"></textarea>
         <div style="font-size:11px;color:#666;line-height:1.4;margin-top:5px">La dirección se sugiere a partir de tu ubicación. Si el número de casa no es correcto, corrígelo antes de continuar.</div>
-        <div style="font-size:10px;color:#777;line-height:1.4;margin-top:4px">Dirección sugerida con datos de OpenStreetMap/Nominatim.</div>
+        <div style="font-size:10px;color:#777;line-height:1.4;margin-top:4px">Dirección sugerida con datos de <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener" style="color:inherit">© OpenStreetMap contributors</a> mediante Nominatim.</div>
         <label for="deliveryReference" style="display:block;font-size:12px;font-weight:800;margin:12px 0 6px">Referencia del lugar a entregar *</label>
         <textarea id="deliveryReference" rows="2" placeholder="Ej. Casa de dos pisos color roja con portón azul"></textarea>
       </div>
@@ -1164,8 +1164,8 @@ async function sendOrder(){
   let message=`*NUEVO PEDIDO ${business.toUpperCase()}*\n*Pedido:* ${finalCode}\n\n*Cliente:* ${name}\n*Teléfono:* ${phone}\n*Modalidad:* ${deliveryType==="delivery"?"Envío a domicilio":"Pasar a recoger"}\n`;
   if(deliveryType==="delivery"){
     message+=`*Zona:* ${confirmed?.delivery_zone_name||deliveryLocation.zoneName||"Zona de entrega"}\n`;
-    message+=`*Dirección:* ${address}
-`;\n    message+=`*Referencia:* ${deliveryReference}\n`;
+    message+=`*Dirección:* ${address}\n`;
+    message+=`*Referencia:* ${deliveryReference}\n`;
     message+=`*Google Maps:* ${customerMapsUrl(deliveryLocation.lat,deliveryLocation.lng)}\n`;
   }
   message+="\n*PRODUCTOS*\n";
