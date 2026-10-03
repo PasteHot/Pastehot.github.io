@@ -759,6 +759,20 @@ function requestDeliveryLocation(){
   navigator.geolocation.getCurrentPosition(
     position=>{
       const lat=Number(position.coords.latitude),lng=Number(position.coords.longitude),accuracy=Math.round(Number(position.coords.accuracy)||0);
+      if(!Number.isFinite(lat)||!Number.isFinite(lng)||!accuracy){
+        deliveryLocation=null;document.getElementById("address").value="";
+        status.textContent="No se obtuvo una ubicación válida.";button.disabled=false;return;
+      }
+      if(accuracy>150){
+        deliveryLocation=null;document.getElementById("address").value="";
+        status.textContent=`La ubicación es demasiado imprecisa (±${accuracy} m). Activa la ubicación precisa/GPS e inténtalo otra vez.`;
+        button.disabled=false;return;
+      }
+      if(lat<19.40||lat>21.80||lng< -90.70||lng> -87.20){
+        deliveryLocation=null;document.getElementById("address").value="";
+        status.textContent="La ubicación detectada está fuera de la zona permitida de Yucatán.";
+        button.disabled=false;return;
+      }
       deliveryLocation={lat,lng,accuracy};
       document.getElementById("address").value=`Ubicación GPS ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
       status.textContent=`✓ Ubicación obtenida · precisión aproximada ±${accuracy} m`;
