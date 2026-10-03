@@ -478,7 +478,6 @@ function saveCheckoutState(){
       quantities,
       name:document.getElementById("customerName")?.value||"",
       phone:document.getElementById("customerPhone")?.value||"",
-      address:document.getElementById("address")?.value||"",
       notes:document.getElementById("orderNotes")?.value||"",
       payment:document.getElementById("paymentMethod")?.value||"cash",
       delivery:getDeliveryType()
@@ -499,7 +498,6 @@ function restoreCheckoutState(){
     }
     if(state?.name)customerName.value=state.name;
     if(state?.phone)customerPhone.value=state.phone;
-    if(state?.address)address.value=state.address;
     if(state?.notes)orderNotes.value=state.notes;
     if(["cash","transfer"].includes(state?.payment))paymentMethod.value=state.payment;
     if(["delivery","pickup"].includes(state?.delivery)){
@@ -778,7 +776,7 @@ function requestDeliveryLocation(){
 document.getElementById("useLocationButton")?.addEventListener("click",requestDeliveryLocation);
 
 function updateDeliverySubtitle(){document.getElementById("deliverySubtitle").textContent=`+${formatMoney(getDeliveryFee())} de envío`}
-function updateDeliveryUI(){const pickup=getDeliveryType()==="pickup",address=document.getElementById("address"),maps=document.getElementById("mapsButton");address.style.display=pickup?"none":"block";if(pickup)address.value="";if(pickup&&settings.pickup_maps_url){maps.style.display="block";maps.href=settings.pickup_maps_url}else maps.style.display="none";updateCart();saveCheckoutState()}
+function updateDeliveryUI(){const pickup=getDeliveryType()==="pickup",addressEl=document.getElementById("address"),maps=document.getElementById("mapsButton"),locBtn=document.getElementById("useLocationButton"),locStatus=document.getElementById("locationStatus");addressEl.style.display=pickup?"none":"block";if(locBtn)locBtn.style.display=pickup?"none":"block";if(locStatus)locStatus.style.display=pickup?"none":"block";if(pickup){addressEl.value="";deliveryLocation=null}else if(locStatus)locStatus.style.display="block";if(pickup&&settings.pickup_maps_url){maps.style.display="block";maps.href=settings.pickup_maps_url}else maps.style.display="none";updateCart();saveCheckoutState()}
 document.querySelectorAll('input[name="deliveryType"]').forEach(r=>r.addEventListener("change",updateDeliveryUI));
 function escapeHtml(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
 function copyBankValue(value,button){
@@ -827,7 +825,7 @@ document.getElementById("paymentMethod").addEventListener("change",updatePayment
 document.getElementById("cartButton").onclick=()=>{document.getElementById("cartPanel").classList.add("open");updateCart()};
 document.getElementById("closeCartButton").onclick=()=>document.getElementById("cartPanel").classList.remove("open");
 document.getElementById("cartPanel").addEventListener("click",e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove("open")});
-["customerName","customerPhone","address","orderNotes"].forEach(id=>{
+["customerName","customerPhone","orderNotes"].forEach(id=>{
   document.getElementById(id)?.addEventListener("input",saveCheckoutState);
 });
 window.addEventListener("pagehide",saveCheckoutState);
@@ -854,6 +852,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&imageLightbox.class
 
 function showOrderMessage(text,type){const el=document.getElementById("orderStatusMessage");el.className=`order-status-message show ${type}`;el.textContent=text}
 function orderItemsPayload(){return Object.values(cart).map(i=>({product_id:i.product.id,quantity:i.quantity}))}
+function customerMapsUrl(lat,lng){return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`}
 function generateOrderCode(){const now=new Date(),stamp=now.toISOString().replace(/\D/g,"").slice(2,12);return `PJ-${stamp}-${Math.random().toString(36).slice(2,6).toUpperCase()}`}
 function confirmCurbsideDelivery(){return new Promise(resolve=>{const modal=document.getElementById("curbsideModal"),back=document.getElementById("curbsideBack"),accept=document.getElementById("curbsideAccept");const finish=value=>{modal.classList.remove("show");document.body.style.overflow="";back.onclick=null;accept.onclick=null;resolve(value)};back.onclick=()=>finish(false);accept.onclick=()=>finish(true);modal.classList.add("show");document.body.style.overflow="hidden"})}
 async function sendOrder(){
@@ -870,7 +869,8 @@ async function sendOrder(){
 
   if(!name){alert("Escribe tu nombre.");return}
   if(!phone){alert("Escribe tu teléfono.");return}
-  if(deliveryType==="delivery"&&!address){alert("Escribe la dirección de entrega.");return}
+  if(deliveryType==="delivery"&&!deliveryLocation){alert("Para solicitar entrega a domicilio debes usar “Usar mi ubicación actual”.");document.getElementById("useLocationButton")?.scrollIntoView({behavior:"smooth",block:"center"});return}
+  if(deliveryType==="delivery"&&Number(deliveryLocation.accuracy)>150){alert("La ubicación es demasiado imprecisa. Activa la ubicación precisa/GPS y vuelve a intentarlo.");return}
 
   const whatsapp=normalizePhone(settings.whatsapp);
   if(!whatsapp){alert("El número de WhatsApp todavía no está configurado.");return}
@@ -895,14 +895,14 @@ async function sendOrder(){
       p_payment_method:payment,
       p_notes:notes,
       p_items:itemPayload,
-      p_delivery_lat:null,
-      p_delivery_lng:null,
-      p_delivery_accuracy_m:null,
+      p_delivery_lat:deliveryType==="delivery"?deliveryLocation.lat:null,
+      p_delivery_lng:deliveryType==="delivery"?deliveryLocation.lng:null,
+      p_delivery_accuracy_m:deliveryType==="delivery"?deliveryLocation.accuracy:null,
       p_delivery_address_text:deliveryType==="delivery"?address:null,
       p_delivery_locality:null,
-      p_delivery_region:null,
+      p_delivery_region:deliveryType==="delivery"?"Yucatán":null,
       p_delivery_postcode:null,
-      p_delivery_country_code:null
+      p_delivery_country_code:deliveryType==="delivery"?"MX":null
     });
 
     if(error){
@@ -919,6 +919,12 @@ async function sendOrder(){
           : "Ya no hay suficientes existencias para completar el pedido. Ajusta tu carrito.";
         showOrderMessage(msg,"warn");
         alert(msg);
+      }else if(raw.includes("UBICACION_FUERA_DE_YUCATAN")){
+        const msg="La ubicación detectada está fuera de la zona permitida de Yucatán.";
+        showOrderMessage(msg,"warn");alert(msg);
+      }else if(raw.includes("UBICACION_IMPRECISA")||raw.includes("UBICACION_REQUERIDA")){
+        const msg="No pudimos validar una ubicación suficientemente precisa. Activa la ubicación precisa/GPS y vuelve a intentarlo.";
+        showOrderMessage(msg,"warn");alert(msg);
       }else{
         const msg=raw.includes("no está disponible")?raw:"No pudimos registrar el pedido. Intenta de nuevo.";
         showOrderMessage(msg,"warn");
@@ -948,7 +954,7 @@ async function sendOrder(){
   const finalCode=confirmed?.order_code||orderCode;
 
   let message=`*NUEVO PEDIDO ${business.toUpperCase()}*\n*Pedido:* ${finalCode}\n\n*Cliente:* ${name}\n*Teléfono:* ${phone}\n*Modalidad:* ${deliveryType==="delivery"?"Envío a domicilio":"Pasar a recoger"}\n`;
-  if(deliveryType==="delivery")message+=`*Dirección:* ${address}\n`;
+  if(deliveryType==="delivery"){message+=`*Ubicación:* ${address}\n`;message+=`*Google Maps:* ${customerMapsUrl(deliveryLocation.lat,deliveryLocation.lng)}\n`;}
   message+="\n*PRODUCTOS*\n";
   confirmedItems.forEach(i=>message+=`${i.quantity} x ${i.name} — ${formatMoney(i.subtotal)}\n`);
   message+=`\n*Subtotal:* ${formatMoney(subtotal)}\n*Envío:* ${formatMoney(deliveryFee)}\n*TOTAL:* ${formatMoney(total)}\n*Pago:* ${payment==="transfer"?"Transferencia":"Efectivo"}\n`;
@@ -957,6 +963,8 @@ async function sendOrder(){
   if(deliveryType==="delivery")message+="*Entrega:* A PIE DE CALLE.\n";
 
   cart={};
+  deliveryLocation=null;
+  document.getElementById("address").value="";
   saveCheckoutState();
   await reloadProducts();
 
