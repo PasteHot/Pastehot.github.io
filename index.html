@@ -784,7 +784,7 @@ function requestDeliveryLocation(){
       deliveryLocation={lat,lng,accuracy};
       document.getElementById("address").value=`Ubicación GPS ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
       status.textContent=`✓ Ubicación validada dentro de Yucatán · precisión aproximada ±${accuracy} m`;
-      button.textContent="✓ Ubicación validada · actualizar";
+      button.textContent="✓ Ubicación dentro de Yucatán validada · actualizar";
       button.disabled=false;
     },
     ()=>{
