@@ -1067,15 +1067,14 @@ function updatePaymentUI(){
   const bankRows=[
     bankRow("Banco",settings.bank_name||""),
     bankRow("Titular",settings.bank_holder||""),
-    bankRow("Número de tarjeta",settings.bank_card||""),
-    bankRow("CLABE",settings.bank_clabe||"")
+    bankRow("CLABE interbancaria",settings.bank_clabe||"")
   ].filter(Boolean).join("");
   panel.innerHTML=`
     <div class="transfer-title">🏦 Transferencia bancaria</div>
-    <p class="transfer-intro">Copia los datos, realiza la transferencia en tu aplicación bancaria y vuelve a este menú para finalizar el pedido.</p>
+    <p class="transfer-intro">Usa la CLABE interbancaria para realizar tu transferencia. Puedes copiar cada dato para evitar errores al capturarlo en tu aplicación bancaria.</p>
     <div class="bank-data">${bankRows||'<div style="color:#777">Los datos bancarios todavía no están configurados.</div>'}</div>
-    <div class="transfer-steps"><strong>Orden recomendado</strong><ol><li>Deja tu carrito preparado.</li><li>Copia la CLABE o tarjeta y realiza la transferencia.</li><li>Regresa a esta pestaña: tu carrito y tus datos permanecerán guardados.</li><li>Presiona <strong>Enviar pedido por WhatsApp</strong> para enviar el pedido.</li><li>Después, envía la captura o comprobante por WhatsApp.</li></ol></div>
-    <div class="transfer-safety">Tu carrito y los datos escritos se guardan temporalmente en este dispositivo para que no se pierdan al cambiar a tu app bancaria.</div>
+    <div class="transfer-steps"><strong>Orden recomendado</strong><ol><li>Deja tu carrito preparado.</li><li>Copia el banco, el nombre del titular y la CLABE interbancaria según lo solicite tu aplicación bancaria.</li><li>Verifica los datos antes de confirmar la transferencia.</li><li>Regresa a esta pestaña: tu carrito y tus datos permanecerán guardados.</li><li>Presiona <strong>Enviar pedido por WhatsApp</strong> para enviar el pedido.</li><li>Después, envía la captura o comprobante por WhatsApp.</li></ol></div>
+    <div class="transfer-safety">Verifica que la transferencia se haya enviado correctamente. Tu carrito y los datos escritos se guardan temporalmente en este dispositivo mientras cambias a tu aplicación bancaria.</div>
     <div class="transfer-proof"><button class="transfer-whatsapp secondary" id="proofWhatsappButton" type="button">📎 Enviar comprobante por WhatsApp</button></div>`;
   panel.classList.add("show");
   panel.querySelectorAll("[data-copy-value]").forEach(btn=>btn.addEventListener("click",()=>copyBankValue(btn.dataset.copyValue,btn)));
