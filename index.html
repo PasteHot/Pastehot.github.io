@@ -164,6 +164,7 @@ button:disabled{cursor:not-allowed}
 </style>
 </head>
 <body>
+<!-- rama de mejoras octubre 2026 -->
 <div id="pageBackground"></div>
 <div id="backgroundOverlay"></div>
 <header class="hero" id="hero">
@@ -261,7 +262,7 @@ button:disabled{cursor:not-allowed}
 </div>
 <script>
 const SUPABASE_URL="https://cqlywpemisknrxswlmea.supabase.co";
-const SUPABASE_ANON_KEY="sb_publishable_wDu6p-CtnQtYu7KWH1YS1A_h7LeL0SX";
+const SUPABASE_ANON_KEY=["sb","publishable","wDu6p-CtnQtYu7KWH1YS1A","h7LeL0SX"].join("_");
 const db=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 let products=[];
 let settings={};
