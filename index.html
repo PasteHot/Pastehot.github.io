@@ -602,6 +602,10 @@ function startPublicRealtime(){
       clearTimeout(publicSettingsRefreshTimer);
       publicSettingsRefreshTimer=setTimeout(()=>reloadPublicSettings(),250);
     })
+    .on("postgres_changes",{event:"*",schema:"public",table:"delivery_zones"},()=>{
+      clearTimeout(publicSettingsRefreshTimer);
+      publicSettingsRefreshTimer=setTimeout(()=>revalidateCurrentDeliveryLocation(),250);
+    })
     .subscribe();
 }
 
