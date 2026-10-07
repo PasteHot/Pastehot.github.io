@@ -1121,7 +1121,201 @@ function firstCustomerName(value){
   const clean=String(value||"").trim();
   return clean?clean.split(/\s+/)[0]:"Cliente";
 }
-function printOrderTicket(id){
+
+const ZEBRA_RECEIPT_WIDTH_DOTS=608;
+function zebraAscii(value){
+  return String(value??"")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/×/g,"x").replace(/®/g,"(R)").replace(/[–—]/g,"-")
+    .replace(/[^\x20-\x7E]/g," ");
+}
+function zebraText(value){return zebraAscii(value).replace(/[\^~]/g,"").replace(/\s+/g," ").trim()}
+function zebraWrapLines(value,charsPerLine,maxLines){
+  const text=zebraText(value);
+  if(!text)return 1;
+  const words=text.split(" ");
+  let lines=1,current=0;
+  for(const word of words){
+    const n=word.length+(current?1:0);
+    if(current+n>charsPerLine){lines++;current=word.length}else current+=n;
+    if(lines>=maxLines)return maxLines;
+  }
+  return Math.max(1,lines);
+}
+function zebraBrowserRequest(method,path,body){
+  return new Promise((resolve,reject)=>{
+    const base=location.protocol==="https:"?"https://localhost:9101/":"http://localhost:9100/";
+    const xhr=new XMLHttpRequest();
+    xhr.open(method,base+path,true);
+    xhr.timeout=5500;
+    xhr.onreadystatechange=()=>{
+      if(xhr.readyState!==XMLHttpRequest.DONE)return;
+      if(xhr.status===200)resolve(xhr.responseText);
+      else reject(new Error("Browser Print respondió "+xhr.status));
+    };
+    xhr.onerror=()=>reject(new Error("No se pudo conectar con Zebra Browser Print"));
+    xhr.ontimeout=()=>reject(new Error("Zebra Browser Print no respondió"));
+    xhr.send(body?JSON.stringify(body):null);
+  });
+}
+async function zebraFindPrinter(){
+  const raw=await zebraBrowserRequest("GET","available");
+  const parsed=JSON.parse(raw||"{}");
+  const printers=Array.isArray(parsed)?parsed:(parsed.printer||[]);
+  if(!printers.length)throw new Error("No se encontró una impresora Zebra");
+  return printers.find(p=>String(p.connection||"").toLowerCase()==="usb"&&/zebra/i.test(String(p.manufacturer||"")+" "+String(p.name||"")))
+      ||printers.find(p=>String(p.connection||"").toLowerCase()==="usb")
+      ||printers.find(p=>/zebra/i.test(String(p.manufacturer||"")+" "+String(p.name||"")))
+      ||printers[0];
+}
+async function zebraSend(printer,data){
+  const device={
+    name:printer.name,
+    uid:printer.uid,
+    connection:printer.connection,
+    deviceType:printer.deviceType||"printer",
+    version:printer.version||2,
+    provider:printer.provider,
+    manufacturer:printer.manufacturer
+  };
+  await zebraBrowserRequest("POST","write",{device,data});
+}
+function buildZebraReceiptZpl(o){
+  const items=safeItems(o.items);
+  const isDelivery=o.delivery_type==="delivery";
+  const firstName=firstCustomerName(o.customer_name);
+  const customerPhone=normalizePhone(o.customer_phone||"")||"Sin telefono";
+  const businessPhone=normalizePhone(document.getElementById("whatsapp")?.value||"")||"Sin telefono";
+  const address=o.delivery_address_text||o.address||"Direccion no registrada";
+  const reference=o.delivery_reference||"Sin referencia adicional";
+  const verificationCode=o.delivery_verification_code||"----";
+  const rain=Number(o.delivery_rain_surcharge)||0;
+  const contentX=20,contentW=568;
+  let y=18;
+  const z=["^XA","^CI27","^PW"+ZEBRA_RECEIPT_WIDTH_DOTS,"^MNN","^LH0,0"];
+  const add=s=>z.push(s);
+  const center=(text,h)=>{
+    add("^FO"+contentX+","+y+"^A0N,"+h+","+h+"^FB"+contentW+",1,0,C,0^FD"+zebraText(text)+"^FS");
+    y+=h+8;
+  };
+  const rule=()=>{
+    add("^FO"+contentX+","+y+"^GB"+contentW+",1,1^FS");
+    y+=11;
+  };
+  const pair=(label,value)=>{
+    const val=zebraText(value);
+    const lines=zebraWrapLines(val,28,2);
+    add("^FO"+contentX+","+y+"^A0N,20,20^FD"+zebraText(label)+"^FS");
+    add("^FO230,"+y+"^A0N,20,20^FB358,2,2,R,0^FD"+val+"^FS");
+    y+=Math.max(29,lines*24+4);
+  };
+  const block=(label,value,maxLines)=>{
+    const val=zebraText(value);
+    const lines=zebraWrapLines(val,42,maxLines);
+    add("^FO"+contentX+","+y+"^A0N,18,18^FD"+zebraText(label).toUpperCase()+"^FS");
+    y+=23;
+    add("^FO"+contentX+","+y+"^A0N,22,22^FB"+contentW+","+maxLines+",3,L,0^FD"+val+"^FS");
+    y+=lines*27+5;
+  };
+
+  center("PasteHot(R)",34);
+  center("TICKET DE COMPRA",24);
+  center("FOLIO "+(o.order_code||String(o.id||"").slice(0,8)),25);
+  center(ticketDate(o.created_at),18);
+  rule();
+
+  pair("CLIENTE",firstName);
+  pair("TELEFONO",customerPhone);
+  pair("MODALIDAD",ticketDeliveryLabel(o.delivery_type));
+  pair("PAGO",ticketPaymentLabel(o.payment_method));
+  rule();
+
+  if(!items.length){
+    center("Sin productos registrados",20);
+  }else{
+    items.forEach(i=>{
+      const qty=Number(i.quantity)||0;
+      const name=zebraText((qty||1)+" x "+(i.name||"Producto"));
+      const lines=zebraWrapLines(name,32,3);
+      add("^FO"+contentX+","+y+"^A0N,21,21^FB430,3,2,L,0^FD"+name+"^FS");
+      add("^FO470,"+y+"^A0N,21,21^FB118,1,0,R,0^FD"+zebraText(formatMoney(i.subtotal))+"^FS");
+      y+=lines*25;
+      if(Number(i.price)>=0){
+        add("^FO"+contentX+","+y+"^A0N,17,17^FD"+zebraText((qty||1)+" x "+formatMoney(i.price))+"^FS");
+        y+=22;
+      }
+      add("^FO"+contentX+","+y+"^GB"+contentW+",1,1^FS");y+=8;
+    });
+  }
+
+  pair("Subtotal",formatMoney(o.subtotal));
+  if(isDelivery&&rain>0){
+    pair("Tarifa base envio",formatMoney(o.delivery_base_fee));
+    pair("Recargo por lluvia",formatMoney(rain));
+  }
+  pair("Envio",formatMoney(o.delivery_fee));
+  rule();
+  add("^FO"+contentX+","+y+"^A0N,30,30^FD TOTAL^FS");
+  add("^FO250,"+y+"^A0N,30,30^FB338,1,0,R,0^FD"+zebraText(formatMoney(o.total))+"^FS");
+  y+=39;
+
+  if(o.notes){
+    rule();
+    block("NOTAS",o.notes,4);
+  }
+
+  if(isDelivery){
+    rule();
+    center("DATOS DE ENTREGA",23);
+    add("^FO"+contentX+","+y+"^GB"+contentW+",93,2^FS");
+    add("^FO"+contentX+","+(y+9)+"^A0N,18,18^FB"+contentW+",1,0,C,0^FDCODIGO DE ENTREGA^FS");
+    add("^FO"+contentX+","+(y+34)+"^A0N,40,40^FB"+contentW+",1,0,C,0^FD"+zebraText(verificationCode)+"^FS");
+    y+=105;
+    if(o.delivery_zone_name)pair("Zona",o.delivery_zone_name);
+    block("Direccion",address,4);
+    block("Referencia",reference,3);
+    pair("Tel. cliente",customerPhone);
+    pair("Contacto PasteHot",businessPhone);
+    if(o.delivery_provider)pair("Reparto",o.delivery_provider);
+
+    if(Number.isFinite(Number(o.delivery_lat))&&Number.isFinite(Number(o.delivery_lng))){
+      const mapUrl="https://maps.google.com/?q="+Number(o.delivery_lat)+","+Number(o.delivery_lng);
+      y+=5;
+      add("^FO185,"+y+"^BQN,2,6^FDLA,"+zebraText(mapUrl)+"^FS");
+      y+=205;
+      add("^FO"+contentX+","+y+"^A0N,18,18^FB"+contentW+",2,2,C,0^FDEscanea para abrir la ubicacion en Google Maps^FS");
+      y+=46;
+    }
+  }
+
+  rule();
+  center("www.pastehot.com",22);
+  add("^FO"+contentX+","+y+"^A0N,16,16^FB"+contentW+",3,2,C,0^FDPrecios, productos, horarios, promociones y tiempos de entrega sujetos a disponibilidad.^FS");
+  y+=56;
+  center("(C) 2026 PasteHot(R)",16);
+  const finalLength=Math.max(300,y+25);
+  z.splice(5,0,"^LL"+finalLength);
+  z.push("^XZ");
+  return z.join("");
+}
+async function printOrderTicketDirect(id){
+  const o=orders.find(x=>String(x.id)===String(id));
+  if(!o)throw new Error("No se encontró el pedido");
+  const printer=await zebraFindPrinter();
+  const zpl=buildZebraReceiptZpl(o);
+  await zebraSend(printer,zpl);
+}
+async function printOrderTicket(id){
+  try{
+    await printOrderTicketDirect(id);
+  }catch(error){
+    console.error("Impresión directa Zebra:",error);
+    const fallback=confirm("No pude enviar el ticket directamente a la Zebra. Asegúrate de que Zebra Browser Print esté instalado y abierto en esta Mac y permite el acceso local si Chrome lo solicita.\n\n¿Quieres abrir la vista previa de impresión tradicional por ahora?");
+    if(fallback)printOrderTicketPreview(id);
+  }
+}
+
+function printOrderTicketPreview(id){
   const o=orders.find(x=>String(x.id)===String(id));
   if(!o){alert("No se encontró el pedido.");return}
 
