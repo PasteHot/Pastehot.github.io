@@ -1286,8 +1286,13 @@ function rawBtEscPosTicket(o){
 
   rule();
   align(1);
-  bold(true);line("www.pastehot.com");bold(false);
   line("Gracias por tu compra");
+  blank();
+  wrapped("Precios, productos, horarios, promociones y tiempos de entrega sujetos a disponibilidad y cambios sin previo aviso.",32);
+  blank();
+  bold(true);line("www.pastehot.com");bold(false);
+  blank();
+  wrapped("(c) 2026 PasteHot es una marca registrada. Todos los derechos reservados.",32);
   blank();blank();blank();blank();
   align(0);
   return new Uint8Array(bytes);
