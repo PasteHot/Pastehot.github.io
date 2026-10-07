@@ -1122,7 +1122,7 @@ function firstCustomerName(value){
   return clean?clean.split(/\s+/)[0]:"Cliente";
 }
 
-const ZEBRA_RECEIPT_WIDTH_DOTS=464;
+const ZEBRA_RECEIPT_WIDTH_DOTS=608;
 function zebraAscii(value){
   return String(value??"")
     .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
@@ -1180,6 +1180,46 @@ async function zebraSend(printer,data){
   };
   await zebraBrowserRequest("POST","write",{device,data});
 }
+
+const ZEBRA_USB_VENDOR_ID=0x0A5F;
+function isAndroidDevice(){return /Android/i.test(navigator.userAgent||"")}
+async function zebraWebUsbFindDevice(){
+  if(!navigator.usb)throw new Error("WebUSB no está disponible en este navegador");
+  let devices=await navigator.usb.getDevices();
+  let device=devices.find(d=>d.vendorId===ZEBRA_USB_VENDOR_ID);
+  if(!device){
+    device=await navigator.usb.requestDevice({filters:[{vendorId:ZEBRA_USB_VENDOR_ID}]});
+  }
+  if(!device)throw new Error("No se seleccionó una impresora Zebra");
+  return device;
+}
+async function zebraWebUsbSend(data){
+  const device=await zebraWebUsbFindDevice();
+  if(!device.opened)await device.open();
+  if(!device.configuration)await device.selectConfiguration(1);
+
+  let selected=null;
+  for(const iface of device.configuration.interfaces){
+    for(const alt of iface.alternates){
+      const outEndpoint=alt.endpoints.find(ep=>ep.direction==="out");
+      if(!outEndpoint)continue;
+      const candidate={interfaceNumber:iface.interfaceNumber,alternateSetting:alt.alternateSetting,interfaceClass:alt.interfaceClass,endpointNumber:outEndpoint.endpointNumber};
+      if(!selected||alt.interfaceClass===7)selected=candidate;
+      if(alt.interfaceClass===7)break;
+    }
+    if(selected?.interfaceClass===7)break;
+  }
+  if(!selected)throw new Error("No encontré el canal USB de impresión");
+
+  await device.claimInterface(selected.interfaceNumber);
+  if(selected.alternateSetting)await device.selectAlternateInterface(selected.interfaceNumber,selected.alternateSetting);
+  try{
+    const result=await device.transferOut(selected.endpointNumber,new TextEncoder().encode(data));
+    if(result.status!=="ok")throw new Error("La Zebra no aceptó los datos de impresión");
+  }finally{
+    try{await device.releaseInterface(selected.interfaceNumber)}catch(_){}
+  }
+}
 function buildZebraReceiptZpl(o){
   const items=safeItems(o.items);
   const isDelivery=o.delivery_type==="delivery";
@@ -1190,9 +1230,9 @@ function buildZebraReceiptZpl(o){
   const reference=o.delivery_reference||"Sin referencia adicional";
   const verificationCode=o.delivery_verification_code||"----";
   const rain=Number(o.delivery_rain_surcharge)||0;
-  const contentX=16,contentW=432;
+  const contentX=20,contentW=568;
   let y=18;
-  const z=["^XA","^CI27","^PW"+ZEBRA_RECEIPT_WIDTH_DOTS,"^MNN","^LH0,0"];
+  const z=["^XA","^CI27","^PW"+ZEBRA_RECEIPT_WIDTH_DOTS,"^MNN","^MTD","^LH0,0"];
   const add=s=>z.push(s);
   const center=(text,h)=>{
     add("^FO"+contentX+","+y+"^A0N,"+h+","+h+"^FB"+contentW+",1,0,C,0^FD"+zebraText(text)+"^FS");
@@ -1206,7 +1246,7 @@ function buildZebraReceiptZpl(o){
     const val=zebraText(value);
     const lines=zebraWrapLines(val,20,2);
     add("^FO"+contentX+","+y+"^A0N,18,18^FD"+zebraText(label)+"^FS");
-    add("^FO170,"+y+"^A0N,18,18^FB278,2,2,R,0^FD"+val+"^FS");
+    add("^FO210,"+y+"^A0N,18,18^FB378,2,2,R,0^FD"+val+"^FS");
     y+=Math.max(27,lines*22+4);
   };
   const block=(label,value,maxLines)=>{
@@ -1237,8 +1277,8 @@ function buildZebraReceiptZpl(o){
       const qty=Number(i.quantity)||0;
       const name=zebraText((qty||1)+" x "+(i.name||"Producto"));
       const lines=zebraWrapLines(name,24,3);
-      add("^FO"+contentX+","+y+"^A0N,18,18^FB315,3,2,L,0^FD"+name+"^FS");
-      add("^FO340,"+y+"^A0N,18,18^FB108,1,0,R,0^FD"+zebraText(formatMoney(i.subtotal))+"^FS");
+      add("^FO"+contentX+","+y+"^A0N,18,18^FB425,3,2,L,0^FD"+name+"^FS");
+      add("^FO475,"+y+"^A0N,18,18^FB113,1,0,R,0^FD"+zebraText(formatMoney(i.subtotal))+"^FS");
       y+=lines*22;
       if(Number(i.price)>=0){
         add("^FO"+contentX+","+y+"^A0N,15,15^FD"+zebraText((qty||1)+" x "+formatMoney(i.price))+"^FS");
@@ -1256,7 +1296,7 @@ function buildZebraReceiptZpl(o){
   pair("Envio",formatMoney(o.delivery_fee));
   rule();
   add("^FO"+contentX+","+y+"^A0N,26,26^FD TOTAL^FS");
-  add("^FO190,"+y+"^A0N,26,26^FB258,1,0,R,0^FD"+zebraText(formatMoney(o.total))+"^FS");
+  add("^FO260,"+y+"^A0N,26,26^FB328,1,0,R,0^FD"+zebraText(formatMoney(o.total))+"^FS");
   y+=35;
 
   if(o.notes){
@@ -1281,7 +1321,7 @@ function buildZebraReceiptZpl(o){
     if(Number.isFinite(Number(o.delivery_lat))&&Number.isFinite(Number(o.delivery_lng))){
       const mapUrl="https://maps.google.com/?q="+Number(o.delivery_lat)+","+Number(o.delivery_lng);
       y+=5;
-      add("^FO145,"+y+"^BQN,2,6^FDLA,"+zebraText(mapUrl)+"^FS");
+      add("^FO202,"+y+"^BQN,2,6^FDLA,"+zebraText(mapUrl)+"^FS");
       y+=205;
       add("^FO"+contentX+","+y+"^A0N,18,18^FB"+contentW+",2,2,C,0^FDEscanea para abrir la ubicacion en Google Maps^FS");
       y+=46;
@@ -1306,12 +1346,27 @@ async function printOrderTicketDirect(id){
   await zebraSend(printer,zpl);
 }
 async function printOrderTicket(id){
+  const o=orders.find(x=>String(x.id)===String(id));
+  if(!o){alert("No se encontró el pedido.");return}
+  const zpl=buildZebraReceiptZpl(o);
+
+  if(isAndroidDevice()&&navigator.usb){
+    try{
+      await zebraWebUsbSend(zpl);
+      return;
+    }catch(error){
+      if(error?.name==="NotFoundError")return;
+      console.error("Impresión directa USB desde Android:",error);
+      printOrderTicketPreview(id);
+      return;
+    }
+  }
+
   try{
     await printOrderTicketDirect(id);
   }catch(error){
     console.error("Impresión directa Zebra:",error);
-    const fallback=confirm("No pude enviar el ticket directamente a la Zebra. Asegúrate de que Zebra Browser Print esté instalado y abierto en esta Mac y permite el acceso local si Chrome lo solicita.\n\n¿Quieres abrir la vista previa de impresión tradicional por ahora?");
-    if(fallback)printOrderTicketPreview(id);
+    printOrderTicketPreview(id);
   }
 }
 
@@ -1362,12 +1417,12 @@ function printOrderTicketPreview(id){
 
     popup.document.open();
     popup.document.write(`<!DOCTYPE html><html lang="es-MX"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ticket ${escapeHtml(o.order_code||"")}</title><style>
-      @page{size:58mm auto;margin:0}
+      @page{size:76mm auto;margin:0}
       *{box-sizing:border-box}
-      html,body{margin:0;padding:0;width:58mm;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif}
+      html,body{margin:0;padding:0;width:76mm;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif}
       body{font-size:9.5px;line-height:1.32}
-      .ticket{width:58mm;padding:2.5mm 2mm 4mm;margin:0 auto}
-      .logo{display:block;max-width:50mm;max-height:24mm;object-fit:contain;margin:0 auto .7mm}
+      .ticket{width:76mm;padding:2.5mm 2mm 4mm;margin:0 auto}
+      .logo{display:block;max-width:66mm;max-height:24mm;object-fit:contain;margin:0 auto .7mm}
       .brand-fallback{text-align:center;font-size:18px;font-weight:900;margin:.5mm 0 1mm}
       .brand{text-align:center;font-size:15px;font-weight:900;line-height:1.05;margin-top:.2mm}
       .registered{font-size:6px;vertical-align:super;line-height:0;margin-left:.5px}
@@ -1398,7 +1453,7 @@ function printOrderTicketPreview(id){
       .qr{display:block;width:36mm;height:36mm;object-fit:contain;margin:2.5mm auto 1mm}
       .qr-note{text-align:center;font-size:8.5px;font-weight:800;margin-bottom:2mm}
       .footer{text-align:center;font-size:7.5px;line-height:1.35;margin-top:3mm}.website{font-size:10px;font-weight:900;margin:2mm 0}.legal{margin-top:2mm}.copyright{font-size:7px;margin-top:2mm}
-      @media print{html,body{width:58mm}.ticket{page-break-after:auto}}
+      @media print{html,body{width:76mm}.ticket{page-break-after:auto}}
     </style></head><body><main class="ticket">
       ${logoHtml}
       <div class="brand">PasteHot<span class="registered">®</span></div>
@@ -1512,12 +1567,12 @@ function openOrderModal(id){
       deliveryBox+='<div class="delivery-admin-actions"><a class="btn btn-light btn-small" href="'+escapeAttr(mapUrl)+'" target="_blank" rel="noopener">📍 Abrir ubicación</a></div><div id="deliveryQrBox" class="delivery-qr"></div>';
     }
     deliveryBox+='<div class="grid grid-2" style="margin-top:14px"><div class="form-group"><label>Proveedor</label><select id="deliveryProviderInput" onchange="updateDeliveryProviderUI()"><option value="">Sin asignar</option><option value="Uber Envíos" '+(o.delivery_provider==="Uber Envíos"?"selected":"")+'>Uber Envíos</option><option value="DiDi Entrega" '+(o.delivery_provider==="DiDi Entrega"?"selected":"")+'>DiDi Entrega</option><option value="Repartidor particular" '+(o.delivery_provider==="Repartidor particular"?"selected":"")+'>Repartidor particular</option><option value="Otro" '+(o.delivery_provider==="Otro"?"selected":"")+'>Otro</option></select></div><div id="trackingFieldWrap" class="form-group"><label>Enlace de seguimiento</label><input id="trackingUrlInput" value="'+escapeAttr(o.tracking_url||"")+'" placeholder="Pega aquí el enlace de seguimiento de Uber Envíos, DiDi Entrega u otro"></div></div>';
-    deliveryBox+='<div id="privateCourierNote" class="hint" style="display:none;margin-top:10px"><strong>Repartidor particular:</strong> no necesitas un enlace de seguimiento. Usa el ticket de compra de 58 mm, que ya incluye QR de Google Maps, dirección, referencia, teléfonos y código de entrega.</div>';
+    deliveryBox+='<div id="privateCourierNote" class="hint" style="display:none;margin-top:10px"><strong>Repartidor particular:</strong> no necesitas un enlace de seguimiento. Usa el ticket de compra de 76 mm, que ya incluye QR de Google Maps, dirección, referencia, teléfonos y código de entrega.</div>';
     deliveryBox+='<div class="delivery-admin-actions"><button id="saveDeliveryProviderButton" class="btn btn-primary btn-small" onclick="saveDeliveryTracking(\''+o.id+'\')">Guardar seguimiento</button><button id="sendTrackingButton" class="btn btn-success btn-small" onclick="sendTrackingWhatsApp(\''+o.id+'\')">📲 Enviar seguimiento</button></div></div>';
   }
   let actions='<div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:12px">';
   if(o.order_status==="pendiente_confirmacion")actions+='<button class="btn btn-success btn-small" onclick="updateOrderStatus(\''+o.id+'\',\'confirmado\');closeOrderModal()">✓ Confirmar pedido</button>';
-  actions+='<button class="btn btn-dark btn-small" onclick="printOrderTicket(\''+o.id+'\')">🖨 Imprimir ticket de compra 58 mm</button></div>';
+  actions+='<button class="btn btn-dark btn-small" onclick="printOrderTicket(\''+o.id+'\')">🖨 Imprimir ticket de compra 76 mm</button></div>';
   orderDetail.innerHTML=actions+
     '<p><strong>Cliente:</strong> '+escapeHtml(o.customer_name||"")+' · '+escapeHtml(o.customer_phone||"")+'</p>'+
     '<p><strong>Modalidad:</strong> '+escapeHtml(ticketDeliveryLabel(o.delivery_type))+'</p>'+
