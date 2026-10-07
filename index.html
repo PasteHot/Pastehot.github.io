@@ -367,6 +367,32 @@ function getDeliveryFee(){
 }
 function getDeliveryType(){return document.querySelector('input[name="deliveryType"]:checked')?.value||"delivery"}
 function getAppliedDeliveryFee(){return getDeliveryType()==="delivery"?getDeliveryFee():0}
+function deliveryTransferOnlyEnabled(){return boolSetting(settings.delivery_transfer_only,false)}
+function updatePaymentOptions(){
+  const select=document.getElementById("paymentMethod");
+  if(!select)return;
+  const transferOnly=getDeliveryType()==="delivery"&&deliveryTransferOnlyEnabled();
+  const previous=select.value;
+  select.innerHTML="";
+  if(transferOnly){
+    const transfer=document.createElement("option");
+    transfer.value="transfer";
+    transfer.textContent="Transferencia bancaria";
+    select.appendChild(transfer);
+    select.value="transfer";
+  }else{
+    const cash=document.createElement("option");
+    cash.value="cash";
+    cash.textContent=getDeliveryType()==="delivery"?"Efectivo al recibir":"Efectivo al recoger";
+    select.appendChild(cash);
+    const transfer=document.createElement("option");
+    transfer.value="transfer";
+    transfer.textContent="Transferencia bancaria";
+    select.appendChild(transfer);
+    select.value=["cash","transfer"].includes(previous)?previous:"cash";
+  }
+  updatePaymentUI();
+}
 function rainSurchargeActive(){return boolSetting(settings.rain_surcharge_enabled,false)}
 function rainSurchargeAmount(){const n=Number(settings.rain_surcharge_amount);return Number.isFinite(n)&&n>=0?n:10}
 function rainSurchargeMessage(){return settings.rain_surcharge_message||"Debido a la lluvia, se aplica temporalmente un cargo adicional al envío. Este ajuste reconoce las condiciones adicionales de reparto y el mayor cuidado requerido durante el traslado. Gracias por tu comprensión."}
@@ -630,7 +656,7 @@ async function reloadPublicSettings(){
   if(error){console.warn("No se pudo actualizar la configuración.",error);return false}
   settings={};(data||[]).forEach(r=>settings[r.key]=r.value);
   applyDesign();
-  updatePaymentUI();
+  updatePaymentOptions();
   updateDeliverySubtitle();
   updateRainSurchargeUI();
   startPublicBatchClock();
@@ -671,7 +697,7 @@ async function init(){
   if(pr.error){console.error(pr.error);document.getElementById("menu").textContent="No se pudo cargar el menú.";return}
   if(sr.error){console.error(sr.error);return}
   products=pr.data||[]; settings={}; (sr.data||[]).forEach(r=>settings[r.key]=r.value);
-  applyDesign(); renderMenu(); restoreCheckoutState(); updateDeliverySubtitle(); updateDeliveryUI(); updatePaymentUI(); updateCart(); renderMarketingBadges(); startPublicBatchClock(); startStoreClock(); startPublicRealtime();
+  applyDesign(); renderMenu(); restoreCheckoutState(); updateDeliverySubtitle(); updateDeliveryUI(); updateCart(); renderMarketingBadges(); startPublicBatchClock(); startStoreClock(); startPublicRealtime();
 }
 
 function applyDesign(){
@@ -1033,7 +1059,7 @@ function updateDeliveryUI(){
     if(locBtn)locBtn.textContent="📍 Compartir geolocalización para precisar la entrega";
   }
   if(pickup&&settings.pickup_maps_url){maps.style.display="block";maps.href=settings.pickup_maps_url}else maps.style.display="none";
-  updateDeliverySubtitle();updateRainSurchargeUI();updateCart();saveCheckoutState();
+  updateDeliverySubtitle();updateRainSurchargeUI();updatePaymentOptions();updateCart();saveCheckoutState();
 }
 document.querySelectorAll('input[name="deliveryType"]').forEach(r=>r.addEventListener("change",updateDeliveryUI));
 ["deliveryStreet","deliveryHouseNumber","deliveryCrossStreets","deliveryNeighborhood","deliveryLocality"].forEach(id=>{
@@ -1125,7 +1151,8 @@ async function sendOrder(){
   const deliveryType=getDeliveryType();
   const address=composeManualDeliveryAddress();
   const deliveryReference=document.getElementById("deliveryReference")?.value.trim()||"";
-  const payment=document.getElementById("paymentMethod").value;
+  let payment=document.getElementById("paymentMethod").value;
+  if(deliveryType==="delivery"&&deliveryTransferOnlyEnabled())payment="transfer";
   const notes=document.getElementById("orderNotes").value.trim();
 
   if(!name){alert("Escribe tu nombre.");return}

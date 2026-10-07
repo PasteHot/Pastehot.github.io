@@ -192,6 +192,28 @@
     </div>
 
     <div class="operation-card">
+      <h3>💳 Métodos de pago</h3>
+      <p>Controla si los pedidos con envío a domicilio deben pagarse únicamente por transferencia.</p>
+
+      <div class="switch-row">
+        <div>
+          <strong>Solo transferencia en envíos</strong>
+          <div style="color:var(--muted);font-size:13px;margin-top:3px">Activado: envío a domicilio = solo transferencia. Pasar a recoger = efectivo o transferencia.</div>
+        </div>
+        <label class="switch">
+          <input id="deliveryTransferOnly" type="checkbox" onchange="previewPaymentRestriction()">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+
+      <div id="paymentRestrictionPreview" class="hint" style="margin-top:14px"></div>
+      <div class="operation-actions">
+        <button class="btn btn-primary" onclick="savePaymentRestriction()">Guardar configuración de pago</button>
+      </div>
+      <div id="paymentRestrictionMessage"></div>
+    </div>
+
+    <div class="operation-card">
       <h3>🌧️ Recargo por lluvia</h3>
       <p>Actívalo únicamente cuando las condiciones de lluvia hagan más exigente el reparto. El recargo se suma automáticamente a todas las zonas de entrega.</p>
 
@@ -671,6 +693,7 @@ let operationSettings={
   socialEnabled:true,
   socialCount:230,
   socialSuffix:"pedidos esta semana",
+  deliveryTransferOnly:false,
   rainEnabled:false,
   rainAmount:10,
   rainMessage:"Debido a la lluvia, se aplica temporalmente un cargo adicional al envío. Este ajuste reconoce las condiciones adicionales de reparto y el mayor cuidado requerido durante el traslado. Gracias por tu comprensión.",
@@ -698,6 +721,7 @@ async function loadOperationSettings(){
     "store_manual_closed","store_manual_close_reason","weekly_schedule",
     "delivery_badge_enabled","delivery_badge_text",
     "social_proof_enabled","social_proof_count","social_proof_suffix",
+    "delivery_transfer_only",
     "rain_surcharge_enabled","rain_surcharge_amount","rain_surcharge_message"
   ];
   const {data,error}=await db.from("settings").select("key,value").in("key",keys);
@@ -711,6 +735,7 @@ async function loadOperationSettings(){
   operationSettings.socialEnabled=parseSettingBool(s.social_proof_enabled,true);
   operationSettings.socialCount=Math.max(0,Number(s.social_proof_count)||0);
   operationSettings.socialSuffix=s.social_proof_suffix||"pedidos esta semana";
+  operationSettings.deliveryTransferOnly=parseSettingBool(s.delivery_transfer_only,false);
   operationSettings.rainEnabled=parseSettingBool(s.rain_surcharge_enabled,false);
   operationSettings.rainAmount=Math.max(0,Number(s.rain_surcharge_amount)||10);
   operationSettings.rainMessage=s.rain_surcharge_message||"Debido a la lluvia, se aplica temporalmente un cargo adicional al envío. Este ajuste reconoce las condiciones adicionales de reparto y el mayor cuidado requerido durante el traslado. Gracias por tu comprensión.";
@@ -728,12 +753,14 @@ async function loadOperationSettings(){
     socialProofEnabled.checked=operationSettings.socialEnabled;
     socialProofCount.value=operationSettings.socialCount;
     socialProofSuffix.value=operationSettings.socialSuffix;
+    deliveryTransferOnly.checked=operationSettings.deliveryTransferOnly;
     rainSurchargeEnabled.checked=operationSettings.rainEnabled;
     rainSurchargeAmount.value=operationSettings.rainAmount;
     rainSurchargeMessage.value=operationSettings.rainMessage;
     renderWeeklySchedule();
     previewOperationStatus();
     updateMarketingPreview();
+    previewPaymentRestriction();
     previewRainSurcharge();
   }
 }
@@ -845,6 +872,31 @@ async function saveMarketingSettings(){
     updateMarketingPreview();
     showMessage("marketingMessage","Mensajes comerciales guardados.");
   }catch(e){showMessage("marketingMessage",e.message,false)}
+}
+
+function previewPaymentRestriction(){
+  const toggle=document.getElementById("deliveryTransferOnly");
+  const preview=document.getElementById("paymentRestrictionPreview");
+  if(!toggle||!preview)return;
+  preview.innerHTML=toggle.checked
+    ? "<strong>Activado:</strong> envío a domicilio = solo transferencia. Pasar a recoger = efectivo o transferencia."
+    : "<strong>Desactivado:</strong> tanto envío a domicilio como pasar a recoger permiten efectivo o transferencia.";
+}
+
+async function savePaymentRestriction(){
+  const box=document.getElementById("paymentRestrictionMessage");
+  if(box)box.innerHTML="";
+  try{
+    const enabled=document.getElementById("deliveryTransferOnly").checked;
+    await saveSetting("delivery_transfer_only",enabled);
+    operationSettings.deliveryTransferOnly=enabled;
+    previewPaymentRestriction();
+    showMessage("paymentRestrictionMessage",enabled
+      ?"Restricción activada: los envíos a domicilio solo aceptarán transferencia."
+      :"Restricción desactivada: efectivo y transferencia disponibles en ambas modalidades.");
+  }catch(e){
+    showMessage("paymentRestrictionMessage","No se pudo guardar la configuración de pago: "+e.message,false);
+  }
 }
 
 function previewRainSurcharge(){
