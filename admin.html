@@ -1331,7 +1331,10 @@ function printOrderTicket(id){
   const isAndroid=/Android/i.test(navigator.userAgent||"");
   if(isAndroid){
     const ticket=rawBtZplTicket(o);
-    const rawBtIntent="intent:"+encodeURIComponent(ticket)+"#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
+    // RawBT debe recibir el ZPL como datos RAW. Si se envía como texto,
+    // imprime literalmente los ceros/letras del gráfico y los comandos ZPL.
+    const rawBtPayload=btoa(ticket);
+    const rawBtIntent="intent:base64,"+encodeURIComponent(rawBtPayload)+"#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
     window.location.href=rawBtIntent;
     return;
   }
