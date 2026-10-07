@@ -1222,20 +1222,6 @@ function rawBtBytesToBase64(bytes){
   }
   return btoa(binary);
 }
-const RAWBT_PASTEHOT_LOGO_ESC_POS_BASE64="HXYwABQAfgAAAAAAAAAAP/////8AAAAAAAAAAAAAAAAAAP/////////gAAAAAAAAAAAAAAB////////////gAAAAAAAAAAAAB//+AAAAAAA///4AAAAAAAAAAAD/+AAAAAAAAAAD//gAAAAAAAAAH/8AAAAAAAAAAAAf/8AAAAAAAAH/wAAAAAAAAAAAAAA//gAAAAAAH/AAAAAAAAAAAAAAAAB/4AAAAAD+AAAAAAAAAAAAAAAAAAH8AAAAD8AAAAAAAAAAAAAAAAAAAB/AACB8AAAAAAAAAAAAAAAAAAAAAPwAecAAAAAAAAAAAAAAAAAAAAAAD4z+AAAAAAAAAAAAAAAAAAAAAAAA3/wAAAAAAAAAAAAAAAAAAAAAAAA/+AAAAAAAAAAAAAAAAAAAAAAAAB94AAAAAAAAAAAAAAAAAAAAAAAAHwAAAAAD/4AAAAAAAAEAAAAAAAAOAAAAA///4AAAAAA//8AAAAAAAAAAAAD////4AAAAAH//wAAAAAAAAAAAAf////wAAAAAf//gAAAAAAAAAAAB/////gAAAAB//+AAAAAAAAAAAAH/////AAAAAH//4AAAAAAAAAAAAf////8AAAAAf//gAAAAAAAAAAAB/////4AAAAB///gAAAAAAAAAAAH/////gAAAAf///AAAAAAAAAAAAf/////AAD+B///8AAAAAAAAAAAB/////8AB//n///wAAAAAAAAAAAH/////4Af//////AAAAAAAAAAAAP/////AH//////8AAAAAAAAAAAA/////8A///////wAAAAAAAAAAAD/////wH///////AAAAAAAAAAAAP/////A///////8AAAAAAAAAAAA/////8D///////wAAAAAAAAAAAD/////wf///////AAAAAAAAAAAAP/////B///////8AAAAAAAAAAAA//////n///////wAAAAAAAAAAAD/////////////8D8AAAAAAAAAAH/////////////w/8AAAAAAAAAAf/////////////P/8AAAAAAAAAB/////////////9//8AAAAAAAAAH////////////////wAAAAAAAAAf////////////////gAAAAAAAAB////////////////+AAAAAAAAAH////////////////4AAAAAAAAAf////////////////gAAAAAAAAA////////////////+AAAAAAAAAD////////////////4AAAAAAAAAP////////////////gAAAAAAAAA////////////////+AAAAAAAAAD////////////////8AAAAAAAAAP////////////////wAAAAAAAAA/////////////////AAAAAAAAAD////////////////8AAAAAAAAAH////////////////wAAAAAAAAAf////////////////AAAAAAAAAB////////////////8AAAAAAAAAH////////////////wAAAAAAAAAf/////////+//////AAAAAAAAAB//////////z/////4AAAAAAAAAH/////////+H/////AAAAAAAAAAf/////////wf/+f/4AAAAAAAAAA//////4//8Af/w/+AAAAAAAAAAD//+fv/A//AA/8AAAAAAAAAAAAAP/8AAf4AAAAAAAAAAAAAAAAAAAAf4AAAeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgAAAAAAAAcAAAAAAAAAAAAAAAw/jAAAAAAAD//8f/+AAAAAAAAAH//+AAAAAAAP//z//+AAAAAAAHI///8AAAAAAA//+P//wAAABwAAb3///wAAAAAAD//8///AAAP/gAA1f///gAAAAAAP//z//8AAB//AABf+eH/wAAAAAA///P//wAAH/8AAD/////gAAAAAD//8///D/wf/wAAf/gD/+AAAAAAP/////8//x//gAD/wAB/4AAAAAA//////3/////AAP8AAD/gAAAAAD///////////8AA/gAAf+AAAAAAP///////////wAB+AAB/8AAAAAA////////////AB/4AAP/wAAAAAD///////////8AP/gAB//AAAAAAf///////////wA//AA//8AAAAAB////////////AD//B///wAAAAAH///////////8AP/////+AAAAAAf///////////wA//////gAAAAAB////////////AB/////wAAAAAAH///////////4Af////+AAAAAAAf///////////AD/////wAAAAAAB///////////+AP////+AAAAAAAH///////////4A/////wAAAAAAAf///////////gD////+AAAAAAAB///////////+AH////wAAAAAAAH///////////4Af///8AAAAAAAAf///////////gA////gAAAAAAAB////////////gH///8AAAAAAAAH///////////+Af///AAAAAAAAAf///////////4D///wAAAAAAAAB////////////gP//8AAAAAAAAAH///////////+Af//AAAA8AAAAAf///////////4A//wAAAH4AAAAB//+f////////gA/wAAAA2gAAAAH//5//////n/+AD+AAAADaAAAAAf//H/////+f/wAPwAAAAE4AAAAB//8f//v//x//AAfAAAAAfAAAAAH//x//+f/+D/4AAQAAAAAQAAAAAf//H//4f/gH/AAAAAAAAAAAAAAB//8f//gPwAHwAAAAAAAAAAAAAAAAAA//+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOeAAAAAAAAAAAAAAAAAAAAAAAAB/4AAAAAAAAAAAAAAAAAAAAAAAAH/gAAAAAAAAAAAAAAAAAAAAAAAA//gAAAAAAAAAAAAAAAAAAAAAAAN97wAAAAAAAAAAAAAAAAAAAAAAPjCB8AAAAAAAAAAAAAAAAAAAAAPwAAA/AAAAAAAAAAAAAAAAAAAAP4AAAAfwAAAAAAAAAAAAAAAAAAf4AAAAAH+AAAAAAAAAAAAAAAAB/4AAAAAAB/4AAAAAAAAAAAAAAH/4AAAAAAAAf/wAAAAAAAAAAAA//4AAAAAAAAAH/8AAAAAAAAAAD//gAAAAAAAAAAAf//gAAAAAAH//+AAAAAAAAAAAAAH///////////+AAAAAAAAAAAAAAAf/////////wAAAAAAAAAAAAAAAAAH//////gAAAAAAAAAA=";
-function rawBtLogoRasterBytes(){
-  try{
-    let b64=String(RAWBT_PASTEHOT_LOGO_ESC_POS_BASE64||"").replace(/\s+/g,"");
-    while(b64.length%4)b64+="=";
-    const binary=atob(b64);
-    const bytes=new Uint8Array(binary.length);
-    for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i)&255;
-    return bytes;
-  }catch(e){
-    console.error("No se pudo decodificar el logo térmico de PasteHot:",e);
-    return new Uint8Array();
-  }
-}
 function rawBtEscPosTicket(o){
   const items=safeItems(o.items);
   const isDelivery=o.delivery_type==="delivery";
@@ -1280,11 +1266,6 @@ function rawBtEscPosTicket(o){
   // ESC/POS: inicializa una impresora térmica estándar de 58 mm.
   push(27,64);
   align(1);
-  const logoBytes=rawBtLogoRasterBytes();
-  if(logoBytes.length){
-    for(let i=0;i<logoBytes.length;i++)bytes.push(logoBytes[i]);
-    blank();
-  }
   bold(true);
   size(2,2);
   line("PasteHot");
@@ -1386,8 +1367,6 @@ function printOrderTicket(id){
   }
 
   const items=safeItems(o.items);
-  const logo=design?.profile?.url||"";
-  const logoHtml=logo?`<img class="logo" src="${escapeAttr(logo)}" alt="PasteHot">`:`<div class="brand-fallback">PasteHot®</div>`;
   const itemRows=items.map(i=>`<div class="item"><div class="item-name"><strong>${escapeHtml(i.quantity)} × ${escapeHtml(i.name||"Producto")}</strong>${Number(i.price)>=0?`<small>${escapeHtml(i.quantity)} × ${formatMoney(i.price)}</small>`:""}</div><strong class="item-total">${formatMoney(i.subtotal)}</strong></div>`).join("");
   const notes=o.notes?`<div class="notes"><strong>NOTAS</strong><div>${escapeHtml(o.notes)}</div></div>`:"";
   const isDelivery=o.delivery_type==="delivery";
@@ -1431,8 +1410,6 @@ function printOrderTicket(id){
       html,body{margin:0;padding:0;width:58mm;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif}
       body{font-size:9px;line-height:1.28}
       .ticket{width:58mm;padding:2.5mm 2mm 4mm;margin:0 auto}
-      .logo{display:block;max-width:48mm;max-height:24mm;object-fit:contain;margin:0 auto .6mm}
-      .brand-fallback{text-align:center;font-size:18px;font-weight:900;margin:.5mm 0 1mm}
       .brand{text-align:center;font-size:14px;font-weight:900;line-height:1.05;margin-top:.2mm}
       .registered{font-size:5px;vertical-align:super;line-height:0;margin-left:.4px}
       .subtitle{text-align:center;font-size:9px;font-weight:900;margin-top:.7mm;letter-spacing:.4px}
@@ -1456,7 +1433,6 @@ function printOrderTicket(id){
       .footer{text-align:center;font-size:6.8px;line-height:1.3;margin-top:2mm}.website{font-size:9px;font-weight:900;margin:1.5mm 0}.legal{margin-top:1.5mm}.copyright{font-size:6.2px;margin-top:1.5mm}
       @media print{html,body{width:58mm}.ticket{page-break-after:auto}}
     </style></head><body><main class="ticket">
-      ${logoHtml}
       <div class="brand">PasteHot<span class="registered">®</span></div>
       <div class="subtitle">TICKET DE COMPRA</div>
       <div class="order-code">FOLIO ${escapeHtml(o.order_code||String(o.id||"").slice(0,8))}</div>
