@@ -1121,256 +1121,7 @@ function firstCustomerName(value){
   const clean=String(value||"").trim();
   return clean?clean.split(/\s+/)[0]:"Cliente";
 }
-
-const ZEBRA_RECEIPT_WIDTH_DOTS=608;
-function zebraAscii(value){
-  return String(value??"")
-    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
-    .replace(/×/g,"x").replace(/®/g,"(R)").replace(/[–—]/g,"-")
-    .replace(/[^\x20-\x7E]/g," ");
-}
-function zebraText(value){return zebraAscii(value).replace(/[\^~]/g,"").replace(/\s+/g," ").trim()}
-function zebraWrapLines(value,charsPerLine,maxLines){
-  const text=zebraText(value);
-  if(!text)return 1;
-  const words=text.split(" ");
-  let lines=1,current=0;
-  for(const word of words){
-    const n=word.length+(current?1:0);
-    if(current+n>charsPerLine){lines++;current=word.length}else current+=n;
-    if(lines>=maxLines)return maxLines;
-  }
-  return Math.max(1,lines);
-}
-function zebraBrowserRequest(method,path,body){
-  return new Promise((resolve,reject)=>{
-    const base=location.protocol==="https:"?"https://localhost:9101/":"http://localhost:9100/";
-    const xhr=new XMLHttpRequest();
-    xhr.open(method,base+path,true);
-    xhr.timeout=5500;
-    xhr.onreadystatechange=()=>{
-      if(xhr.readyState!==XMLHttpRequest.DONE)return;
-      if(xhr.status===200)resolve(xhr.responseText);
-      else reject(new Error("Browser Print respondió "+xhr.status));
-    };
-    xhr.onerror=()=>reject(new Error("No se pudo conectar con Zebra Browser Print"));
-    xhr.ontimeout=()=>reject(new Error("Zebra Browser Print no respondió"));
-    xhr.send(body?JSON.stringify(body):null);
-  });
-}
-async function zebraFindPrinter(){
-  const raw=await zebraBrowserRequest("GET","available");
-  const parsed=JSON.parse(raw||"{}");
-  const printers=Array.isArray(parsed)?parsed:(parsed.printer||[]);
-  if(!printers.length)throw new Error("No se encontró una impresora Zebra");
-  return printers.find(p=>String(p.connection||"").toLowerCase()==="usb"&&/zebra/i.test(String(p.manufacturer||"")+" "+String(p.name||"")))
-      ||printers.find(p=>String(p.connection||"").toLowerCase()==="usb")
-      ||printers.find(p=>/zebra/i.test(String(p.manufacturer||"")+" "+String(p.name||"")))
-      ||printers[0];
-}
-async function zebraSend(printer,data){
-  const device={
-    name:printer.name,
-    uid:printer.uid,
-    connection:printer.connection,
-    deviceType:printer.deviceType||"printer",
-    version:printer.version||2,
-    provider:printer.provider,
-    manufacturer:printer.manufacturer
-  };
-  await zebraBrowserRequest("POST","write",{device,data});
-}
-
-const ZEBRA_USB_VENDOR_ID=0x0A5F;
-function isAndroidDevice(){return /Android/i.test(navigator.userAgent||"")}
-async function zebraWebUsbFindDevice(){
-  if(!navigator.usb)throw new Error("WebUSB no está disponible en este navegador");
-  let devices=await navigator.usb.getDevices();
-  let device=devices.find(d=>d.vendorId===ZEBRA_USB_VENDOR_ID);
-  if(!device){
-    device=await navigator.usb.requestDevice({filters:[{vendorId:ZEBRA_USB_VENDOR_ID}]});
-  }
-  if(!device)throw new Error("No se seleccionó una impresora Zebra");
-  return device;
-}
-async function zebraWebUsbSend(data){
-  const device=await zebraWebUsbFindDevice();
-  if(!device.opened)await device.open();
-  if(!device.configuration)await device.selectConfiguration(1);
-
-  let selected=null;
-  for(const iface of device.configuration.interfaces){
-    for(const alt of iface.alternates){
-      const outEndpoint=alt.endpoints.find(ep=>ep.direction==="out");
-      if(!outEndpoint)continue;
-      const candidate={interfaceNumber:iface.interfaceNumber,alternateSetting:alt.alternateSetting,interfaceClass:alt.interfaceClass,endpointNumber:outEndpoint.endpointNumber};
-      if(!selected||alt.interfaceClass===7)selected=candidate;
-      if(alt.interfaceClass===7)break;
-    }
-    if(selected?.interfaceClass===7)break;
-  }
-  if(!selected)throw new Error("No encontré el canal USB de impresión");
-
-  await device.claimInterface(selected.interfaceNumber);
-  if(selected.alternateSetting)await device.selectAlternateInterface(selected.interfaceNumber,selected.alternateSetting);
-  try{
-    const result=await device.transferOut(selected.endpointNumber,new TextEncoder().encode(data));
-    if(result.status!=="ok")throw new Error("La Zebra no aceptó los datos de impresión");
-  }finally{
-    try{await device.releaseInterface(selected.interfaceNumber)}catch(_){}
-  }
-}
-function buildZebraReceiptZpl(o){
-  const items=safeItems(o.items);
-  const isDelivery=o.delivery_type==="delivery";
-  const firstName=firstCustomerName(o.customer_name);
-  const customerPhone=normalizePhone(o.customer_phone||"")||"Sin telefono";
-  const businessPhone=normalizePhone(document.getElementById("whatsapp")?.value||"")||"Sin telefono";
-  const address=o.delivery_address_text||o.address||"Direccion no registrada";
-  const reference=o.delivery_reference||"Sin referencia adicional";
-  const verificationCode=o.delivery_verification_code||"----";
-  const rain=Number(o.delivery_rain_surcharge)||0;
-  const contentX=20,contentW=568;
-  let y=18;
-  const z=["^XA","^CI27","^PW"+ZEBRA_RECEIPT_WIDTH_DOTS,"^MNN","^MTD","^LH0,0"];
-  const add=s=>z.push(s);
-  const center=(text,h)=>{
-    add("^FO"+contentX+","+y+"^A0N,"+h+","+h+"^FB"+contentW+",1,0,C,0^FD"+zebraText(text)+"^FS");
-    y+=h+8;
-  };
-  const rule=()=>{
-    add("^FO"+contentX+","+y+"^GB"+contentW+",1,1^FS");
-    y+=11;
-  };
-  const pair=(label,value)=>{
-    const val=zebraText(value);
-    const lines=zebraWrapLines(val,20,2);
-    add("^FO"+contentX+","+y+"^A0N,18,18^FD"+zebraText(label)+"^FS");
-    add("^FO210,"+y+"^A0N,18,18^FB378,2,2,R,0^FD"+val+"^FS");
-    y+=Math.max(27,lines*22+4);
-  };
-  const block=(label,value,maxLines)=>{
-    const val=zebraText(value);
-    const lines=zebraWrapLines(val,31,maxLines);
-    add("^FO"+contentX+","+y+"^A0N,16,16^FD"+zebraText(label).toUpperCase()+"^FS");
-    y+=21;
-    add("^FO"+contentX+","+y+"^A0N,19,19^FB"+contentW+","+maxLines+",3,L,0^FD"+val+"^FS");
-    y+=lines*24+5;
-  };
-
-  center("PasteHot(R)",34);
-  center("TICKET DE COMPRA",24);
-  center("FOLIO "+(o.order_code||String(o.id||"").slice(0,8)),25);
-  center(ticketDate(o.created_at),18);
-  rule();
-
-  pair("CLIENTE",firstName);
-  pair("TELEFONO",customerPhone);
-  pair("MODALIDAD",ticketDeliveryLabel(o.delivery_type));
-  pair("PAGO",ticketPaymentLabel(o.payment_method));
-  rule();
-
-  if(!items.length){
-    center("Sin productos registrados",20);
-  }else{
-    items.forEach(i=>{
-      const qty=Number(i.quantity)||0;
-      const name=zebraText((qty||1)+" x "+(i.name||"Producto"));
-      const lines=zebraWrapLines(name,24,3);
-      add("^FO"+contentX+","+y+"^A0N,18,18^FB425,3,2,L,0^FD"+name+"^FS");
-      add("^FO475,"+y+"^A0N,18,18^FB113,1,0,R,0^FD"+zebraText(formatMoney(i.subtotal))+"^FS");
-      y+=lines*22;
-      if(Number(i.price)>=0){
-        add("^FO"+contentX+","+y+"^A0N,15,15^FD"+zebraText((qty||1)+" x "+formatMoney(i.price))+"^FS");
-        y+=20;
-      }
-      add("^FO"+contentX+","+y+"^GB"+contentW+",1,1^FS");y+=8;
-    });
-  }
-
-  pair("Subtotal",formatMoney(o.subtotal));
-  if(isDelivery&&rain>0){
-    pair("Tarifa base envio",formatMoney(o.delivery_base_fee));
-    pair("Recargo por lluvia",formatMoney(rain));
-  }
-  pair("Envio",formatMoney(o.delivery_fee));
-  rule();
-  add("^FO"+contentX+","+y+"^A0N,26,26^FD TOTAL^FS");
-  add("^FO260,"+y+"^A0N,26,26^FB328,1,0,R,0^FD"+zebraText(formatMoney(o.total))+"^FS");
-  y+=35;
-
-  if(o.notes){
-    rule();
-    block("NOTAS",o.notes,4);
-  }
-
-  if(isDelivery){
-    rule();
-    center("DATOS DE ENTREGA",23);
-    add("^FO"+contentX+","+y+"^GB"+contentW+",93,2^FS");
-    add("^FO"+contentX+","+(y+9)+"^A0N,18,18^FB"+contentW+",1,0,C,0^FDCODIGO DE ENTREGA^FS");
-    add("^FO"+contentX+","+(y+34)+"^A0N,40,40^FB"+contentW+",1,0,C,0^FD"+zebraText(verificationCode)+"^FS");
-    y+=105;
-    if(o.delivery_zone_name)pair("Zona",o.delivery_zone_name);
-    block("Direccion",address,4);
-    block("Referencia",reference,3);
-    pair("Tel. cliente",customerPhone);
-    pair("Contacto PasteHot",businessPhone);
-    if(o.delivery_provider)pair("Reparto",o.delivery_provider);
-
-    if(Number.isFinite(Number(o.delivery_lat))&&Number.isFinite(Number(o.delivery_lng))){
-      const mapUrl="https://maps.google.com/?q="+Number(o.delivery_lat)+","+Number(o.delivery_lng);
-      y+=5;
-      add("^FO202,"+y+"^BQN,2,6^FDLA,"+zebraText(mapUrl)+"^FS");
-      y+=205;
-      add("^FO"+contentX+","+y+"^A0N,18,18^FB"+contentW+",2,2,C,0^FDEscanea para abrir la ubicacion en Google Maps^FS");
-      y+=46;
-    }
-  }
-
-  rule();
-  center("www.pastehot.com",22);
-  add("^FO"+contentX+","+y+"^A0N,16,16^FB"+contentW+",3,2,C,0^FDPrecios, productos, horarios, promociones y tiempos de entrega sujetos a disponibilidad.^FS");
-  y+=56;
-  center("(C) 2026 PasteHot(R)",16);
-  const finalLength=Math.max(300,y+25);
-  z.splice(5,0,"^LL"+finalLength);
-  z.push("^XZ");
-  return z.join("");
-}
-async function printOrderTicketDirect(id){
-  const o=orders.find(x=>String(x.id)===String(id));
-  if(!o)throw new Error("No se encontró el pedido");
-  const printer=await zebraFindPrinter();
-  const zpl=buildZebraReceiptZpl(o);
-  await zebraSend(printer,zpl);
-}
-async function printOrderTicket(id){
-  const o=orders.find(x=>String(x.id)===String(id));
-  if(!o){alert("No se encontró el pedido.");return}
-  const zpl=buildZebraReceiptZpl(o);
-
-  if(isAndroidDevice()&&navigator.usb){
-    try{
-      await zebraWebUsbSend(zpl);
-      return;
-    }catch(error){
-      if(error?.name==="NotFoundError")return;
-      console.error("Impresión directa USB desde Android:",error);
-      printOrderTicketPreview(id);
-      return;
-    }
-  }
-
-  try{
-    await printOrderTicketDirect(id);
-  }catch(error){
-    console.error("Impresión directa Zebra:",error);
-    printOrderTicketPreview(id);
-  }
-}
-
-function printOrderTicketPreview(id){
+function printOrderTicket(id){
   const o=orders.find(x=>String(x.id)===String(id));
   if(!o){alert("No se encontró el pedido.");return}
 
@@ -1420,37 +1171,37 @@ function printOrderTicketPreview(id){
       @page{size:76mm auto;margin:0}
       *{box-sizing:border-box}
       html,body{margin:0;padding:0;width:76mm;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif}
-      body{font-size:9.5px;line-height:1.32}
-      .ticket{width:76mm;padding:2.5mm 2mm 4mm;margin:0 auto}
-      .logo{display:block;max-width:66mm;max-height:24mm;object-fit:contain;margin:0 auto .7mm}
-      .brand-fallback{text-align:center;font-size:18px;font-weight:900;margin:.5mm 0 1mm}
-      .brand{text-align:center;font-size:15px;font-weight:900;line-height:1.05;margin-top:.2mm}
+      body{font-size:10.5px;line-height:1.32}
+      .ticket{width:76mm;padding:3.5mm 3mm 5mm;margin:0 auto}
+      .logo{display:block;max-width:64mm;max-height:30mm;object-fit:contain;margin:0 auto .7mm}
+      .brand-fallback{text-align:center;font-size:21px;font-weight:900;margin:.5mm 0 1mm}
+      .brand{text-align:center;font-size:16.5px;font-weight:900;line-height:1.05;margin-top:.2mm}
       .registered{font-size:6px;vertical-align:super;line-height:0;margin-left:.5px}
-      .subtitle{text-align:center;font-size:9.5px;font-weight:900;margin-top:.8mm;letter-spacing:.4px}
-      .order-code{text-align:center;font-size:12px;font-weight:900;line-height:1.12;margin:2mm 0 .8mm;overflow-wrap:anywhere;letter-spacing:.1px}
+      .subtitle{text-align:center;font-size:10.5px;font-weight:900;margin-top:.8mm;letter-spacing:.55px}
+      .order-code{text-align:center;font-size:13.5px;font-weight:900;line-height:1.12;margin:2.2mm 0 .8mm;overflow-wrap:anywhere;letter-spacing:.15px}
       .date{text-align:center;font-size:9px;margin-bottom:2.2mm}
       .rule{border-top:1px dashed #000;margin:2.5mm 0}
       .label{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;margin-bottom:.5mm}
       .value{font-size:11px;font-weight:800;overflow-wrap:anywhere}
-      .meta{display:grid;grid-template-columns:1fr 1fr;gap:1.5mm 2.5mm}
+      .meta{display:grid;grid-template-columns:1fr 1fr;gap:2mm 4mm}
       .meta .wide{grid-column:1/-1}
-      .meta-line{grid-column:1/-1;display:flex;justify-content:space-between;align-items:baseline;gap:2mm;padding-top:1.3mm;border-top:1px dotted #aaa}
+      .meta-line{grid-column:1/-1;display:flex;justify-content:space-between;align-items:baseline;gap:4mm;padding-top:1.5mm;border-top:1px dotted #aaa}
       .meta-line .label{margin:0}
       .meta-line .value{text-align:right}
-      .item{display:grid;grid-template-columns:1fr auto;gap:1.5mm;align-items:start;padding:1.4mm 0;border-bottom:1px dotted #999}
+      .item{display:grid;grid-template-columns:1fr auto;gap:2mm;align-items:start;padding:1.5mm 0;border-bottom:1px dotted #999}
       .item-name{min-width:0;overflow-wrap:anywhere}.item-name small{display:block;font-size:8.5px;font-weight:400;margin-top:.5mm}.item-total{white-space:nowrap;font-size:10px}
-      .totals{display:grid;gap:1.2mm}.total-row{display:flex;justify-content:space-between;gap:2mm}.grand{font-size:14px;font-weight:900;border-top:1.5px solid #000;padding-top:1.8mm;margin-top:1mm}
+      .totals{display:grid;gap:1.2mm}.total-row{display:flex;justify-content:space-between;gap:2mm}.grand{font-size:15px;font-weight:900;border-top:1.5px solid #000;padding-top:2mm;margin-top:1mm}
       .notes{margin-top:2.5mm;padding:2mm;border:1px solid #000;overflow-wrap:anywhere}.notes strong{display:block;font-size:8px;margin-bottom:1mm}
       .delivery-title{text-align:center;font-size:10px;font-weight:900;letter-spacing:.7px;margin-bottom:2mm}
       .verify{border:2px solid #000;border-radius:2mm;padding:2.5mm;text-align:center;margin:2mm 0}
       .verify-label{font-size:8px;font-weight:900;text-transform:uppercase}
-      .verify-code{font-size:22px;font-weight:950;letter-spacing:1.5px;margin:.8mm 0}
+      .verify-code{font-size:24px;font-weight:950;letter-spacing:2px;margin:.8mm 0}
       .verify-note{font-size:8px;line-height:1.35}
       .data-block{margin:2mm 0}
       .data-row{display:flex;justify-content:space-between;gap:3mm;padding:1.5mm 0;border-bottom:1px dotted #aaa;font-size:9.5px}
       .data-row strong{text-align:right;overflow-wrap:anywhere}
-      .contacts{display:grid;grid-template-columns:1fr;gap:1mm}
-      .qr{display:block;width:36mm;height:36mm;object-fit:contain;margin:2.5mm auto 1mm}
+      .contacts{display:grid;grid-template-columns:1fr 1fr;gap:3mm}
+      .qr{display:block;width:42mm;height:42mm;object-fit:contain;margin:2.5mm auto 1mm}
       .qr-note{text-align:center;font-size:8.5px;font-weight:800;margin-bottom:2mm}
       .footer{text-align:center;font-size:7.5px;line-height:1.35;margin-top:3mm}.website{font-size:10px;font-weight:900;margin:2mm 0}.legal{margin-top:2mm}.copyright{font-size:7px;margin-top:2mm}
       @media print{html,body{width:76mm}.ticket{page-break-after:auto}}
