@@ -1222,67 +1222,12 @@ function rawBtBytesToBase64(bytes){
   }
   return btoa(binary);
 }
-function rawBtLoadLogoImage(){
-  return new Promise((resolve,reject)=>{
-    const img=new Image();
-    img.onload=()=>resolve(img);
-    img.onerror=()=>reject(new Error("No se pudo cargar el logo de PasteHot"));
-    img.src="/favicon.png?v=20261006";
-  });
-}
-function rawBtRasterizeLogo(img){
-  const source=document.createElement("canvas");
-  source.width=img.naturalWidth||img.width;
-  source.height=img.naturalHeight||img.height;
-  const sctx=source.getContext("2d",{willReadFrequently:true});
-  sctx.fillStyle="#fff";
-  sctx.fillRect(0,0,source.width,source.height);
-  sctx.drawImage(img,0,0);
-  const src=sctx.getImageData(0,0,source.width,source.height);
-  let minX=source.width,minY=source.height,maxX=-1,maxY=-1;
-  for(let y=0;y<source.height;y++){
-    for(let x=0;x<source.width;x++){
-      const p=(y*source.width+x)*4;
-      const r=src.data[p],g=src.data[p+1],b=src.data[p+2];
-      if(Math.min(r,g,b)<238){
-        if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;
-      }
-    }
-  }
-  if(maxX<minX||maxY<minY)return new Uint8Array();
-  const cropW=maxX-minX+1,cropH=maxY-minY+1;
-  const maxW=320,maxH=230;
-  const scale=Math.min(maxW/cropW,maxH/cropH);
-  const drawW=Math.max(1,Math.round(cropW*scale));
-  const drawH=Math.max(1,Math.round(cropH*scale));
-  const canvas=document.createElement("canvas");
-  canvas.width=384;
-  canvas.height=drawH+16;
-  const ctx=canvas.getContext("2d",{willReadFrequently:true});
-  ctx.fillStyle="#fff";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.drawImage(source,minX,minY,cropW,cropH,Math.round((384-drawW)/2),8,drawW,drawH);
-  const data=ctx.getImageData(0,0,canvas.width,canvas.height);
-  const widthBytes=Math.ceil(canvas.width/8);
-  const raster=[];
-  for(let y=0;y<canvas.height;y++){
-    for(let xb=0;xb<widthBytes;xb++){
-      let value=0;
-      for(let bit=0;bit<8;bit++){
-        const x=xb*8+bit;
-        if(x>=canvas.width)continue;
-        const p=(y*canvas.width+x)*4;
-        const gray=.299*data.data[p]+.587*data.data[p+1]+.114*data.data[p+2];
-        if(gray<190)value|=(1<<(7-bit));
-      }
-      raster.push(value);
-    }
-  }
-  return new Uint8Array([29,118,48,0,widthBytes&255,(widthBytes>>8)&255,canvas.height&255,(canvas.height>>8)&255,...raster]);
-}
-async function rawBtLogoRasterBytes(){
-  try{return rawBtRasterizeLogo(await rawBtLoadLogoImage())}
-  catch(e){console.error(e);return new Uint8Array()}
+const RAWBT_PASTEHOT_LOGO_ESC_POS_BASE64="HXYwACAAygAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf////////////gAAAAAAAAAAAAAAAAAAAAAAAAAAD/////////////////gAAAAAAAAAAAAAAAAAAAAAAAH//////////////////8AAAAAAAAAAAAAAAAAAAAAAP////AAAAAAAAAAA/////wAAAAAAAAAAAAAAAAAAAAP///AAAAAAAAAAAAAAH////AAAAAAAAAAAAAAAAAAD///4AAAAAAAAAAAAAAAAH///+AAAAAAAAAAAAAAAAD///gAAAAAAAAAAAAAAAAAAP///gAAAAAAAAAAAAAAD//+AAAAAAAAAAAAAAAAAAAAAf//4AAAAAAAAAAAAAB//AAAAAAAAAAAAAAAAAAAAAAAAH/+AAAAAAAAAAAAA/+AAAAAAAAAAAAAAAAAAAAAAAAAA//gAAAAAAAAAAB/+AAAAAAAAAAAAAAAAAAAAAAAAAAAP/+AAAAAAAAAA/+AAAAAAAAAAAAAAAAAAAAAAAAAAAAB/+AAAAAAAAAf+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/gAAAAAAAPwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/gAAAAAAH4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP4AAAB+H8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH+AAAP5+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB/D4A/+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAffwH/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/gf8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP+B/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/4D+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/gHwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH8AAAAAAAAAAAB+AAAAAAAAAAAAAAAAAAAAAAAAAAAAPgAAAAAAAAAH///4AAAAAAAAAAB//+AAAAAAAAAAAAAcAAAAAAAAA/////4AAAAAAAAAD///8AAAAAAAAAAAAAAAAAAAAAH//////wAAAAAAAAAf///4AAAAAAAAAAAAAAAAAAAAH///////wAAAAAAAAB////gAAAAAAAAAAAAAAAAAAAAf///////gAAAAAAAAH////AAAAAAAAAAAAAAAAAAAAB////////AAAAAAAAAf///8AAAAAAAAAAAAAAAAAAAAH///////+AAAAAAAAB////wAAAAAAAAAAAAAAAAAAAAf///////8AAAAAAAAH////AAAAAAAAAAAAAAAAAAAAB////////4AAAAAAAAf///4AAAAAAAAAAAAAAAAAAAAH////////gAAAAAAAB////wAAAAAAAAAAAAAAAAAAAAf////////AAAAAAAAP////4AAAAAAAAAAAAAAAAAAAB////////+AAAAAAAH/////wAAAAAAAAAAAAAAAAAAAH////////4AAAAAAAf/////AAAAAAAAAAAAAAAAAAAAf////////wAAAAAAB/////8AAAAAAAAAAAAAAAAAAAB////////+AAAD//4H/////wAAAAAAAAAAAAAAAAAAAH////////8AAB///8f/////AAAAAAAAAAAAAAAAAAAAf////////wAAf///9/////8AAAAAAAAAAAAAAAAAAAB/////////AAD//////////wAAAAAAAAAAAAAAAAAAAD////////8AAf//////////AAAAAAAAAAAAAAAAAAAAP////////wAH//////////8AAAAAAAAAAAAAAAAAAAA/////////AA///////////wAAAAAAAAAAAAAAAAAAAD////////8AH///////////AAAAAAAAAAAAAAAAAAAAP////////wA///////////+AAAAAAAAAAAAAAAAAAAA/////////AD///////////4AAAAAAAAAAAAAAAAAAAD////////8Af///////////gAAAAAAAAAAAAAAAAAAAH////////wD///////////+AAAAAAAAAAAAAAAAAAAAf////////AP///////////4AAAAAAAAAAAAAAAAAAAB////////8A////////////gAAAAAAAAAAAAAAAAAAAH////////wD///////////+AAAAAAAAAAAAAAAAAAAAf////////+P///////////wAAAAAAAAAAAAAAAAAAAB/////////+///////////+AAAAAAAAAAAAAAAAAAAAD/////////////////////gB/4AAAAAAAAAAAAAAAAAP////////////////////+A//8AAAAAAAAAAAAAAAAA/////////////////////4f//8AAAAAAAAAAAAAAAAD/////////////////////n///8AAAAAAAAAAAAAAAAP////////////////////+f///4AAAAAAAAAAAAAAAA/////////////////////7////gAAAAAAAAAAAAAAAD//////////////////////////AAAAAAAAAAAAAAAAH/////////////////////////+AAAAAAAAAAAAAAAAf/////////////////////////8AAAAAAAAAAAAAAAB//////////////////////////wAAAAAAAAAAAAAAAH//////////////////////////AAAAAAAAAAAAAAAAf/////////////////////////8AAAAAAAAAAAAAAAB//////////////////////////wAAAAAAAAAAAAAAAD//////////////////////////AAAAAAAAAAAAAAAAP/////////////////////////8AAAAAAAAAAAAAAAA//////////////////////////wAAAAAAAAAAAAAAAD//////////////////////////AAAAAAAAAAAAAAAAP/////////////////////////4AAAAAAAAAAAAAAAA//////////////////////////AAAAAAAAAAAAAAAAD//////////////////////////AAAAAAAAAAAAAAAAP/////////////////////////+AAAAAAAAAAAAAAAA//////////////////////////wAAAAAAAAAAAAAAAD//////////////////////////gAAAAAAAAAAAAAAAP/////////////////////////+AAAAAAAAAAAAAAAA//////////////////////////4AAAAAAAAAAAAAAAB//////////////////////////gAAAAAAAAAAAAAAAH/////////////////////////+AAAAAAAAAAAAAAAAf/////////////////////////4AAAAAAAAAAAAAAAB//////////////////////////gAAAAAAAAAAAAAAAH/////////////////////////+AAAAAAAAAAAAAAAAf/////////////////////////4AAAAAAAAAAAAAAAB//////////////////////////gAAAAAAAAAAAAAAAD////////////////v////////8AAAAAAAAAAAAAAAAP///////////////8/////////wAAAAAAAAAAAAAAAA////////////////h////////+AAAAAAAAAAAAAAAAD///////////////8D////////wAAAAAAAAAAAAAAAAP///////////////gP///8///+AAAAAAAAAAAAAAAAA//////////z////8Af///h///gAAAAAAAAAAAAAAAAB//////////D///+AAf//4D//wAAAAAAAAAAAAAAAAAH////9////4D///wAA//+AB/8AAAAAAAAAAAAAAAAAAf////h/n//gD//4AAA//wAAAAAAAAAAAAAAAAAAAAAB////wAAP/8AAPwAAAAfwAAAAAAAAAAAAAAAAAAAAAAH//AAAAAH+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPwAAAAAAAAAAAAAAPgAAAAAAAAAAAAAAAAAAAAAAA8H/weAAAAAAAAAAAAD////wIAAAAAAAAAAAAAAAAAAH8f/v+AAAAAAAAAAAAP////h////gAAAAAAAAAAAAAA/////4AAAAAAAAAAAA////+P////gAAAAAAAAAAA7IH/7/+/wAAAAAAAAAAAD////w////+AAAAAAAAAAAA3Y//////AAAAAAAAAAAAP////D////wAAAAD//wAAADuz////74AAAAAAAAAAAA////8P////AAAAA///gAAAG7P/////wAAAAAAAAAAAD////w////8AAAAD//+AAAAc2/9gH//+AAAAAAAAAAAP////D////wAAAAP//8AAAAzb+B8B//8AAAAAAAAAAA////8P////AAAAA///wAAAB//z//z//4AAAAAAAAAAD////w////8AP/AD///AAAAH///gP///gAAAAAAAAAAP////D////wP//AP//8AAAA///gAD//+AAAAAAAAAAA//////////B///g///wAAAD//gAAB//4AAAAAAAAAAD/////////8f///P///wAAAP/4AAAD/fgAAAAAAAAAAP/////////z////////AAAA//AAAAP/+AAAAAAAAAAA//////////f///////+AAAD/4AAAAf/4AAAAAAAAAAD//////////////////4AAAP+AAAAD//wAAAAAAAAAAP//////////////////gAAA/4AAAAP//gAAAAAAAAAA//////////////////+AAADfgAAAB/7+AAAAAAAAAAD//////////////////4AAP/+AAAAP//4AAAAAAAAAAP//////////////////gAB//8AAAB//7gAAAAAAAAAA//////////////////+AAH+/4AAAf//uAAAAAAAAAAH//////////////////4AA3//wAAP//94AAAAAAAAAAf//////////////////gADf//gAf//+/gAAAAAAAAAB//////////////////+AAP7////////8AAAAAAAAAAH//////////////////8AAf/////////gAAAAAAAAAAf//////////////////wABt////////wAAAAAAAAAAB//////////////////+AAD////////wAAAAAAAAAAAH//////////////////4AAP3//////+AAAAAAAAAAAAf//////////////////AAD////////wAAAAAAAAAAAB//////////////////4AAf7//////+AAAAAAAAAAAAH//////////////////AAD/v//////wAAAAAAAAAAAAf/////////////////+AAP///////+AAAAAAAAAAAAB//////////////////4AB/X//////wAAAAAAAAAAAAH//////////////////gAG/f/////+AAAAAAAAAAAAAf/////////////////+AAf9//////wAAAAAAAAAAAAB//////////////////4AA///////+AAAAAAAAAAAAAH//////////////////gAB///////wAAAAAAAAAAAAAf/////////////////+AAHv/////+AAAAAAAAAAAAAB//////////////////wAAOv/////gAAAAAAAAAAAAAH//////////////////gAAb/////4AAAAAAAAAAAAAAf/////////////////+AAD/////3AAAAAAAAAAAAAAB///////////////////AAf/////4AAAAAAAAAAAAAAH//////////////////+AB/////+AAAAAAAAAAAAAAAf//////////////////4AH/////gAAAAAAAAAAAAAAB///////////////////gA/X//94AAAAAAAAAAAAAAAH//////////////////+AD////vAAAAAAAAAAAAAAAAf//////////////////4AH///3wAAAAAOAAAAAAAAAB///////////////////gAf///8AAAAAD+AAAAAAAAAH//////////////////+AA///9AAAAAAf8AAAAAAAAAf///+H/////////////4AAf/+AAAAAABuQAAAAAAAAB////4f/////////////gAA3+AAAAAAAGtgAAAAAAAAH////h/////////+///8AADf4AAAAAAAzmAAAAAAAAAf///8H/////////z///wAAN/AAAAAAADOYAAAAAAAAB////wf///+/////H///AAA34AAAAAAAGtAAAAAAAAAH////B////7////4f//4AABvgAAAAAAAcYAAAAAAAAAf///8H////n////A///gAAH8AAAAAAAA/AAAAAAAAAB////wf///8P///4D//8AAAPgAAAAAAAA4AAAAAAAAAH////B////wf//+AH//gAAAAAAAAAAAAAAAAAAAAAAAf///8H////Af//gAH/4AAAAAAAAAAAAAAAAAAAAAAAB////wf///8AH/gAAH+AAAAAAAAAAAAAAAAAAAAAAAAD////B////4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+AHwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH8A/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/4H/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/gf8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP+B/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB/4H/4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB9/AP7+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/D4Afh/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/gCAAAAfgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfgAAAAAAPwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfwAAAAAAAH/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/4AAAAAAAAH/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/8AAAAAAAAAD/8AAAAAAAAAAAAAAAAAAAAAAAAAAAH/+AAAAAAAAAAAf/AAAAAAAAAAAAAAAAAAAAAAAAAAP/8AAAAAAAAAAAAH/4AAAAAAAAAAAAAAAAAAAAAAAAf/4AAAAAAAAAAAAAD//8AAAAAAAAAAAAAAAAAAAAAf//8AAAAAAAAAAAAAAA///wAAAAAAAAAAAAAAAAAAB///8AAAAAAAAAAAAAAAAf///AAAAAAAAAAAAAAAAAP///8AAAAAAAAAAAAAAAAAAf///AAAAAAAAAAAAAAH////AAAAAAAAAAAAAAAAAAAAH////gAAAAAAAAAAD////8AAAAAAAAAAAAAAAAAAAAAA///////////////////4AAAAAAAAAAAAAAAAAAAAAAAH/////////////////gAAAAAAAAAAAAAAAAAAAAAAAAAAP////////////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/////////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//////4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
+function rawBtLogoRasterBytes(){
+  const binary=atob(RAWBT_PASTEHOT_LOGO_ESC_POS_BASE64);
+  const bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i)&255;
+  return bytes;
 }
 async function rawBtEscPosTicket(o){
   const items=safeItems(o.items);
@@ -1328,12 +1273,12 @@ async function rawBtEscPosTicket(o){
   // ESC/POS: inicializa una impresora térmica estándar de 58 mm.
   push(27,64);
   align(1);
-  const logoBytes=await rawBtLogoRasterBytes();
-  if(logoBytes.length){
-    for(let i=0;i<logoBytes.length;i++)bytes.push(logoBytes[i]);
-    blank();
-  }
+  const logoBytes=rawBtLogoRasterBytes();
+  for(let i=0;i<logoBytes.length;i++)bytes.push(logoBytes[i]);
+  blank();
   bold(true);
+  size(2,2);
+  line("PasteHot");
   size(1,1);
   line("TICKET DE COMPRA");
   bold(false);
