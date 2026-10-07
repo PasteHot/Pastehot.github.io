@@ -1376,8 +1376,9 @@ function printOrderTicket(id){
     // RawBT recibe los bytes en base64 y los entrega a la impresora configurada.
     const ticketBytes=rawBtEscPosTicket(o);
     const rawBtPayload=rawBtBytesToBase64(ticketBytes);
-    const rawBtIntent="intent:base64,"+encodeURIComponent(rawBtPayload)+"#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
-    window.location.href=rawBtIntent;
+    // RawBT documenta el esquema rawbt:base64,<datos> para enviar bytes RAW.
+    // No codificar el Base64 con encodeURIComponent: rompe +, / y =.
+    window.location.href="rawbt:base64,"+rawBtPayload;
     return;
   }
 
