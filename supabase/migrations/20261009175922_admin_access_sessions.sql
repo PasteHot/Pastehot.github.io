@@ -1,4 +1,4 @@
--- PREPARED ONLY. Not applied to the live PasteHot database.
+-- Applied to production on 2026-10-09 after explicit owner approval.
 -- Install after preview approval. Device enforcement starts only through explicit owner activation.
 begin;
 create schema if not exists private;

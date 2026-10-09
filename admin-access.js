@@ -34,6 +34,7 @@ async function setupAdminAccess(session){
   renderAdminAccess();return true;
 }
 function denyAdminAccess(message){
+  clearStaffInvitation();
   adminAccessAllowed=false;stopAdminEnhancements();
   document.querySelectorAll('.modal.show').forEach(el=>el.classList.remove('show'));
   document.getElementById('orderDetail').textContent='';
@@ -134,13 +135,22 @@ async function renameAdminSession(){
 }
 async function inviteAdminStaff(event){
   event.preventDefault();if(!adminSecurityInstalled||!adminAccessState?.enforced)return;
+  clearStaffInvitation();
   const email=document.getElementById('staffInviteEmail').value.trim(),name=document.getElementById('staffInviteName').value.trim();
   await adminAccessAction(async()=>{
     const {data,error}=await db.functions.invoke('pastehot-invite-staff',{body:{email,name,redirectTo:location.origin+'/admin.html',deviceToken:adminDeviceToken(),role:document.getElementById('staffInviteRole').value}});
     if(error||data?.error)throw new Error(data?.error||'No se pudo enviar la invitación. Revisa el correo o intenta más tarde.');
+    if(data?.delivery==='manual'&&data.invitationLink){
+      const link=new URL(data.invitationLink);
+      if(link.origin!==SUPABASE_URL||link.pathname!=='/auth/v1/verify'||link.searchParams.get('type')!=='invite')throw new Error('No se pudo verificar la invitación.');
+      document.getElementById('staffInvitationLink').value=link.href;
+      document.getElementById('staffInvitationResult').classList.remove('hidden');
+    }
     document.getElementById('staffInviteForm').reset();
   });
 }
+function clearStaffInvitation(){const input=document.getElementById('staffInvitationLink');if(input)input.value='';document.getElementById('staffInvitationResult')?.classList.add('hidden');}
+async function copyStaffInvitation(){if(adminRole!=='owner'||!adminAccessAllowed)return;const input=document.getElementById('staffInvitationLink');if(!input?.value)return;try{await navigator.clipboard.writeText(input.value);showMessage('accessMessage','Enlace copiado. Compártelo únicamente con la persona invitada.');}catch{input.focus();input.select();showMessage('accessMessage','Selecciona y copia el enlace para entregarlo a la persona invitada.');}}
 function setupOrderInbox(){
   if(orderInbox)return;
   let reviewed=[];try{reviewed=JSON.parse(localStorage.getItem('pastehot_reviewed_'+adminSession.user.id)||'[]');if(!Array.isArray(reviewed))reviewed=[];}catch{}
@@ -211,6 +221,7 @@ async function requestAdminWakeLock(){
 }
 function startOrderRecovery(){clearInterval(adminRecoveryTimer);adminRecoveryTimer=setInterval(()=>{if(adminAccessAllowed&&navigator.onLine&&document.visibilityState==='visible'&&!adminRealtimeOnline)loadOrders();},30000);}
 function stopAdminEnhancements(){
+  clearStaffInvitation();
   stopStoreControl();resetAdminReports();stopOrderChime();
   clearInterval(adminAccessTimer);clearInterval(adminRecoveryTimer);clearInterval(orderSoundTimer);clearTimeout(orderSoundDebounce);
   clearTimeout(adminOrdersTimer);clearTimeout(adminProductsTimer);clearTimeout(adminSettingsTimer);clearTimeout(adminZonesTimer);

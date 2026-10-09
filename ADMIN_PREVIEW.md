@@ -1,6 +1,6 @@
 # Preview de mejoras del administrador
 
-No publicado en producción. La migración y la función de invitaciones están preparadas, pero no se han aplicado a Supabase. El dominio oficial conserva sus permisos actuales.
+Registro de preparación del preview. La publicación fue autorizada el 2026-10-09. La migración y las funciones ya están instaladas. Consulta RELEASE_20261009.md para el estado final; las instrucciones de preparación siguientes se conservan como referencia histórica.
 
 ## Revisar las mejoras sin modificar el negocio
 
