@@ -1,0 +1,1 @@
+{"name":"pastehot-admin-tests","private":true,"scripts":{"test":"node --test orders.test.cjs && node access.test.cjs && node interface.test.cjs && node invite.test.cjs"},"devDependencies":{"@electric-sql/pglite":"0.3.14","jsdom":"27.0.0"}}
