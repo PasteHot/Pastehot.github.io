@@ -20,13 +20,15 @@ Deno.serve(async(req:Request)=>{
     if(stateError||state?.role!=='owner'||!state.allowed||!state.enforced)return reply(403,{error:'Se requiere una sesión autorizada del propietario.'});
     const email=String(body.email||'').trim().toLowerCase(),name=String(body.name||'').trim();
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254||!name||name.length>80)return reply(400,{error:'Revisa el nombre y el correo.'});
+    const role=String(body.role||'staff');
+    if(!['manager','staff'].includes(role))return reply(400,{error:'Selecciona empleado o encargado.'});
     const redirect=String(body.redirectTo||'');
     if(redirect!==origin+'/admin.html')return reply(400,{error:'Destino no permitido.'});
     if(state.members?.some((m:{email:string})=>m.email?.toLowerCase()===email))return reply(409,{error:'Este acceso ya existe. Puedes habilitarlo desde Accesos.'});
     const service=createClient(url,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false,autoRefreshToken:false}});
     const {data:invited,error:inviteError}=await service.auth.admin.inviteUserByEmail(email,{redirectTo:redirect});
     if(inviteError||!invited.user)return reply(400,{error:'No se pudo enviar la invitación. El correo puede estar registrado o el servicio no estar disponible.'});
-    const {error:memberError}=await caller.rpc('pastehot_add_staff',{p_email:email,p_name:name});
+    const {error:memberError}=await caller.rpc('pastehot_add_staff',{p_email:email,p_name:name,p_role:role});
     // Without membership the invited account has zero operational permissions. A failed registration
     // never grants fallback access, and never deletes a potentially existing account.
     if(memberError)return reply(409,{error:'Se envió la invitación, pero no se habilitó el acceso. La cuenta no tiene permisos; revisa Accesos antes de volver a invitar.'});

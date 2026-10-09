@@ -8,7 +8,7 @@ create table private.pastehot_access_config (
 insert into private.pastehot_access_config(singleton) values(true);
 create table private.pastehot_members (
   user_id uuid primary key references auth.users(id) on delete cascade,
-  role text not null check(role in ('owner','staff')), enabled boolean not null default true,
+  role text not null check(role in ('owner','manager','staff')), enabled boolean not null default true,
   display_name text not null check(length(display_name) between 1 and 80)
 );
 create unique index pastehot_one_owner on private.pastehot_members(role) where role='owner';
@@ -38,24 +38,37 @@ create function private.pastehot_owner_allowed() returns boolean language sql st
 $$;
 create function private.pastehot_staff_allowed() returns boolean language sql stable security definer set search_path='' as $$
  select exists(select 1 from private.pastehot_members m,private.pastehot_access_config c
- where c.enforced and m.user_id=auth.uid() and m.role='staff' and m.enabled
+ where c.enforced and m.user_id=auth.uid() and m.role in ('manager','staff') and m.enabled
  and exists(select 1 from private.pastehot_sessions s join auth.sessions a on a.id=s.auth_session_id
  where s.auth_session_id=(auth.jwt()->>'session_id')::uuid and s.user_id=m.user_id and s.status='approved' and a.user_id=m.user_id));
 $$;
+create function private.pastehot_manager_allowed() returns boolean language sql stable security definer set search_path='' as $$
+ select exists(select 1 from private.pastehot_members m,private.pastehot_access_config c
+ where c.enforced and m.user_id=auth.uid() and m.role='manager' and m.enabled
+ and exists(select 1 from private.pastehot_sessions s join auth.sessions a on a.id=s.auth_session_id
+ where s.auth_session_id=(auth.jwt()->>'session_id')::uuid and s.user_id=m.user_id and s.status='approved' and a.user_id=m.user_id));
+$$;
+-- Managers may clean up replaced product photos, never photos still referenced by the menu.
+create function private.pastehot_unused_product_image(p_name text) returns boolean language plpgsql stable security definer set search_path='' as $$
+begin
+ if not private.pastehot_manager_allowed() or p_name not like 'products/%' then return false;end if;
+ return not exists(select 1 from public.products where image_url like '%/product-images/'||p_name)
+ and not exists(select 1 from public.settings where key in ('cover_image','profile_image','background_image') and value like '%/product-images/'||p_name);
+end;$$;
 -- All privileged implementation is private. Public API wrappers are SECURITY INVOKER.
 create function private.pastehot_access_dispatch(p_action text,p_args jsonb default '{}'::jsonb) returns jsonb
 language plpgsql security definer set search_path='' as $$
 declare
  v_uid uuid:=auth.uid();v_sid uuid:=(auth.jwt()->>'session_id')::uuid;
  v_member private.pastehot_members;v_current private.pastehot_sessions;
- v_enforced boolean;v_allowed boolean;v_target uuid;v_count integer;v_status text;v_email text;
+ v_enforced boolean;v_allowed boolean;v_target uuid;v_status text;v_email text;v_role text;
  v_token text;v_hash text;
  v_sessions jsonb:='[]';v_members jsonb:='[]';v_label text;
 begin
  if v_uid is null or v_sid is null or not exists(select 1 from auth.sessions where id=v_sid and user_id=v_uid) then raise exception 'NO_AUTORIZADO';end if;
  select * into v_member from private.pastehot_members where user_id=v_uid;
  if not found or not v_member.enabled then return jsonb_build_object('allowed',false,'status','disabled');end if;
- -- A single locked row serializes approvals and guarantees the limit even with concurrent requests.
+ -- A single locked row serializes activation, membership changes and browser approvals.
  select enforced into v_enforced from private.pastehot_access_config where singleton for update;
  if p_action='state' then
    v_token:=p_args->>'device_token';
@@ -75,31 +88,36 @@ begin
      update private.pastehot_access_config set enforced=true where singleton;
      v_enforced:=true;
    end if;
- elsif p_action in ('set_session','set_staff','add_staff') then
+ elsif p_action in ('set_session','set_staff','set_role','add_staff') then
    if not private.pastehot_owner_allowed() then raise exception 'NO_AUTORIZADO';end if;
    if p_action='set_session' then
      v_target:=(p_args->>'session_id')::uuid;v_status:=p_args->>'status';
      if v_status not in ('approved','revoked') or v_status is null then raise exception 'ESTADO_INVALIDO';end if;
      if exists(select 1 from private.pastehot_sessions where session_id=v_target and auth_session_id=v_sid) then raise exception 'NO_REVOQUES_TU_SESION_ACTUAL';end if;
      if not exists(select 1 from private.pastehot_sessions s join private.pastehot_members m on m.user_id=s.user_id where s.session_id=v_target and m.enabled) then raise exception 'SESION_NO_DISPONIBLE';end if;
-     if v_status='approved' then
-       select count(*) into v_count from private.pastehot_sessions where status='approved' and session_id<>v_target;
-       if v_count>=2 then raise exception 'LIMITE_DE_2_DISPOSITIVOS: revoca uno antes de autorizar otro.';end if;
-     end if;
      update private.pastehot_sessions set status=v_status,visible=false where session_id=v_target;
    elsif p_action='set_staff' then
      v_target:=(p_args->>'user_id')::uuid;
-     if not exists(select 1 from private.pastehot_members where user_id=v_target and role='staff') then raise exception 'EMPLEADO_NO_ENCONTRADO';end if;
+     if not exists(select 1 from private.pastehot_members where user_id=v_target and role in ('manager','staff')) then raise exception 'EMPLEADO_NO_ENCONTRADO';end if;
      update private.pastehot_members set enabled=(p_args->>'enabled')::boolean where user_id=v_target;
      update private.pastehot_sessions set status='revoked',visible=false where user_id=v_target;
+   elsif p_action='set_role' then
+     v_target:=(p_args->>'user_id')::uuid;v_role:=p_args->>'role';
+     if v_role is null or v_role not in ('manager','staff') then raise exception 'ROL_INVALIDO';end if;
+     if not exists(select 1 from private.pastehot_members where user_id=v_target and role in ('manager','staff')) then raise exception 'EMPLEADO_NO_ENCONTRADO';end if;
+     -- New permissions require an explicit fresh browser approval, including promotions.
+     update private.pastehot_members set role=v_role where user_id=v_target and role<>v_role;
+     if found then update private.pastehot_sessions set status='revoked',visible=false where user_id=v_target;end if;
    else
      if not v_enforced then raise exception 'ACTIVA_LA_PROTECCION_PRIMERO';end if;
+     v_role:=coalesce(p_args->>'role','staff');
+     if v_role not in ('manager','staff') then raise exception 'ROL_INVALIDO';end if;
      v_email:=lower(trim(p_args->>'email'));v_label:=trim(p_args->>'name');
      if v_label is null or length(v_label) not between 1 and 80 then raise exception 'NOMBRE_INVALIDO';end if;
      select id into v_target from auth.users where lower(email)=v_email;
      if v_target is null then raise exception 'USUARIO_NO_ENCONTRADO';end if;
      if exists(select 1 from private.pastehot_members where user_id=v_target) then raise exception 'EL_ACCESO_YA_EXISTE';end if;
-     insert into private.pastehot_members(user_id,role,display_name) values(v_target,'staff',v_label);
+     insert into private.pastehot_members(user_id,role,display_name) values(v_target,v_role,v_label);
    end if;
  else raise exception 'ACCION_INVALIDA';end if;
  select * into v_current from private.pastehot_sessions where auth_session_id=v_sid;
@@ -117,20 +135,24 @@ begin
  end if;
  return jsonb_build_object('allowed',v_allowed,'role',v_member.role,'status',v_current.status,'enforced',v_enforced,'device_id',v_current.session_id,'sessions',v_sessions,'members',v_members);
 end;$$;
-revoke all on function private.pastehot_access_dispatch(text,jsonb),private.pastehot_owner_allowed(),private.pastehot_staff_allowed() from public,anon;
+revoke all on function private.pastehot_access_dispatch(text,jsonb),private.pastehot_owner_allowed(),private.pastehot_staff_allowed(),private.pastehot_manager_allowed(),private.pastehot_unused_product_image(text) from public,anon;
 grant usage on schema private to authenticated;
-grant execute on function private.pastehot_access_dispatch(text,jsonb),private.pastehot_owner_allowed(),private.pastehot_staff_allowed() to authenticated;
+grant execute on function private.pastehot_access_dispatch(text,jsonb),private.pastehot_owner_allowed(),private.pastehot_staff_allowed(),private.pastehot_manager_allowed(),private.pastehot_unused_product_image(text) to authenticated;
 
 create function public.pastehot_admin_state(p_label text default null,p_visible boolean default false,p_device_token text default null) returns jsonb language sql security invoker set search_path='' as $$select private.pastehot_access_dispatch('state',jsonb_build_object('label',p_label,'visible',p_visible,'device_token',p_device_token));$$;
 create function public.pastehot_activate_security() returns jsonb language sql security invoker set search_path='' as $$select private.pastehot_access_dispatch('activate');$$;
 create function public.pastehot_set_session(p_session_id uuid,p_status text) returns jsonb language sql security invoker set search_path='' as $$select private.pastehot_access_dispatch('set_session',jsonb_build_object('session_id',p_session_id,'status',p_status));$$;
 create function public.pastehot_set_staff_enabled(p_user_id uuid,p_enabled boolean) returns jsonb language sql security invoker set search_path='' as $$select private.pastehot_access_dispatch('set_staff',jsonb_build_object('user_id',p_user_id,'enabled',p_enabled));$$;
-create function public.pastehot_add_staff(p_email text,p_name text) returns jsonb language sql security invoker set search_path='' as $$select private.pastehot_access_dispatch('add_staff',jsonb_build_object('email',p_email,'name',p_name));$$;
-revoke all on function public.pastehot_admin_state(text,boolean,text),public.pastehot_activate_security(),public.pastehot_set_session(uuid,text),public.pastehot_set_staff_enabled(uuid,boolean),public.pastehot_add_staff(text,text) from public,anon;
-grant execute on function public.pastehot_admin_state(text,boolean,text),public.pastehot_activate_security(),public.pastehot_set_session(uuid,text),public.pastehot_set_staff_enabled(uuid,boolean),public.pastehot_add_staff(text,text) to authenticated;
+create function public.pastehot_add_staff(p_email text,p_name text,p_role text default 'staff') returns jsonb language sql security invoker set search_path='' as $$select private.pastehot_access_dispatch('add_staff',jsonb_build_object('email',p_email,'name',p_name,'role',p_role));$$;
+create function public.pastehot_set_staff_role(p_user_id uuid,p_role text) returns jsonb language sql security invoker set search_path='' as $$select private.pastehot_access_dispatch('set_role',jsonb_build_object('user_id',p_user_id,'role',p_role));$$;
+revoke all on function public.pastehot_admin_state(text,boolean,text),public.pastehot_activate_security(),public.pastehot_set_session(uuid,text),public.pastehot_set_staff_enabled(uuid,boolean),public.pastehot_add_staff(text,text,text),public.pastehot_set_staff_role(uuid,text) from public,anon;
+grant execute on function public.pastehot_admin_state(text,boolean,text),public.pastehot_activate_security(),public.pastehot_set_session(uuid,text),public.pastehot_set_staff_enabled(uuid,boolean),public.pastehot_add_staff(text,text,text),public.pastehot_set_staff_role(uuid,text) to authenticated;
 
 -- Existing public browsing/order creation remains unchanged. Owner mutations gain session validation.
 alter policy "Authenticated users can manage products" on public.products using ((select private.pastehot_owner_allowed())) with check ((select private.pastehot_owner_allowed()));
+create policy "Approved managers can add products" on public.products for insert to authenticated with check ((select private.pastehot_manager_allowed()));
+create policy "Approved managers can edit products" on public.products for update to authenticated using ((select private.pastehot_manager_allowed())) with check ((select private.pastehot_manager_allowed()));
+create policy "Approved managers can read category order" on public.settings for select to authenticated using (key='categories' and (select private.pastehot_manager_allowed()));
 alter policy "Authenticated users can manage categories" on public.categories using ((select private.pastehot_owner_allowed())) with check ((select private.pastehot_owner_allowed()));
 alter policy "Authenticated users can manage customers" on public.customers using ((select private.pastehot_owner_allowed())) with check ((select private.pastehot_owner_allowed()));
 alter policy "Authenticated users can manage order items" on public.order_items using ((select private.pastehot_owner_allowed())) with check ((select private.pastehot_owner_allowed()));
@@ -143,6 +165,9 @@ create policy "Approved staff can read recent orders" on public.orders for selec
 alter policy "Authenticated users can delete product images" on storage.objects using (bucket_id='product-images' and (select private.pastehot_owner_allowed()));
 alter policy "Authenticated users can update product images" on storage.objects using (bucket_id='product-images' and (select private.pastehot_owner_allowed())) with check (bucket_id='product-images' and (select private.pastehot_owner_allowed()));
 alter policy "Authenticated users can upload product images" on storage.objects with check (bucket_id='product-images' and (select private.pastehot_owner_allowed()));
+
+create policy "Approved managers can upload product photos" on storage.objects for insert to authenticated with check (bucket_id='product-images' and name like 'products/%' and (select private.pastehot_manager_allowed()));
+create policy "Approved managers can clean unused product photos" on storage.objects for delete to authenticated using (bucket_id='product-images' and private.pastehot_unused_product_image(name));
 
 -- Preserve the stock transaction unchanged. Move privileged code into private and validate the caller
 -- at each operation, including tokens whose session/member has been revoked.

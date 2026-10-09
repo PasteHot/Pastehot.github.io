@@ -46,26 +46,31 @@ function showWaitingAccess(state){
     clearInterval(adminAccessTimer);adminAccessTimer=setInterval(()=>checkSession(),15000);
   }
 }
+function adminCanEditProducts(){return adminAccessAllowed&&['owner','manager'].includes(adminRole);}
+function adminCanOpenTab(name){return adminAccessAllowed&&(adminRole==='owner'||name==='orders'||(adminRole==='manager'&&name==='products'));}
+function adminRoleName(role){return {owner:'Propietario',manager:'Encargado',staff:'Empleado'}[role]||'Sin permisos';}
 function applyAdminPermissions(){
   const owner=adminRole==='owner';
-  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('hidden',!owner&&!b.getAttribute('onclick')?.includes("'orders'")));
+  if(window.PasteHotDemo)document.getElementById('demoRoleSelect').value=adminRole;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('hidden',!adminCanOpenTab(b.getAttribute('onclick')?.match(/showTab\('([^']+)'/)?.[1])));
   document.getElementById('ordersMetrics').classList.toggle('hidden',!owner);
   document.querySelector('#section-orders .analytics-grid').classList.toggle('hidden',!owner);
   document.getElementById('ordersPeriod').classList.toggle('hidden',!owner);
   document.querySelector('#section-orders .media-note').textContent=owner?'La búsqueda por folio revisa todo el historial, sin limitarse al periodo seleccionado.':'Busca entre los pedidos de las últimas 48 horas disponibles para atención.';
   document.querySelector('#section-orders .section-title h2').textContent=owner?'Pedidos y ventas':'Pedidos';
   document.querySelector('#section-orders .section-title p').textContent=owner?'Resumen calculado a partir de los pedidos registrados.':'Revisa, imprime y prepara los pedidos. Los datos son solo para atender al cliente.';
+  document.getElementById('categoryAdminCard').classList.toggle('hidden',!owner);
   if(!owner)showTab('orders');
 }
-function openAdminAccess(){if(adminRole==='owner')showTab('access');else alert('Acceso de empleado. El propietario administra los dispositivos autorizados.');}
+function openAdminAccess(){if(adminRole==='owner')showTab('access');else alert(`Acceso de ${adminRole==='manager'?'encargado':'empleado'}. El propietario administra los dispositivos autorizados.`);}
 function renderAdminAccess(){
   const state=adminAccessState||{},enforced=!!state.enforced,installed=adminSecurityInstalled;
   const sessions=state.sessions||[],members=state.members||[];
   const online=sessions.filter(s=>s.status==='approved'&&s.online);
-  document.getElementById('adminPresenceDots').innerHTML=online.slice(0,2).map(()=>'<span class="presence-dot" aria-hidden="true"></span>').join('');
+  document.getElementById('adminPresenceDots').innerHTML=online.map(()=>'<span class="presence-dot" aria-hidden="true"></span>').join('');
   document.getElementById('adminPresenceText').textContent=installed?`${online.length} conectado${online.length===1?'':'s'}`:'Accesos por preparar';
   document.getElementById('adminPresence').setAttribute('aria-label',installed?`Accesos: ${online.length} navegadores conectados`:'Ver preparación de accesos');
-  const note=!installed?'Preview: el control de empleados y dispositivos está preparado para prueba. Aún no se ha activado en la base de datos del negocio.':!enforced?'El control de empleados está instalado. El límite de dispositivos aún no está activo. Actívalo primero en tu teléfono y después autoriza la tablet.':'Protección activa: máximo 2 sesiones autorizadas. Un navegador nuevo requiere tu aprobación.';
+  const note=!installed?'Preview: el control de empleados y dispositivos está preparado para prueba. Aún no se ha activado en la base de datos del negocio.':!enforced?'El control de empleados está instalado. La autorización de navegadores aún no está activa. Actívalo primero en tu teléfono y después autoriza la tablet.':'Protección activa: cada navegador requiere tu aprobación. No hay un límite fijo de dispositivos.';
   document.getElementById('accessSetupNote').textContent=note;
   document.getElementById('accessProtectionText').textContent=note;
   document.getElementById('enableAdminSecurity').disabled=!installed||enforced||adminAccessBusy;
@@ -74,9 +79,9 @@ function renderAdminAccess(){
   document.getElementById('staffInviteForm').classList.toggle('hidden',adminRole!=='owner');
   document.getElementById('accessSessions').innerHTML=sessions.length?sessions.map(s=>{
     const pending=s.status==='pending',approved=s.status==='approved',current=s.current;
-    return `<div class="access-row"><div><strong>${escapeHtml(s.label||'Navegador sin nombre')}${current?' · este navegador':''}</strong><small>${escapeHtml(s.display_name||'')} · ${s.role==='owner'?'Propietario':'Empleado'}</small><span class="state-tag ${escapeAttr(s.status)}">${approved?'Autorizado':pending?'Esperando autorización':'Revocado'}</span> <span class="${s.online?'access-online':'access-offline'}">${s.online?'Conectado':'Sin actividad reciente'}</span></div><div class="access-row-actions">${!current&&adminRole==='owner'?(approved?`<button class="btn btn-danger" onclick="changeAdminSession('${s.session_id}','revoked')">Revocar acceso</button>`:`<button class="btn btn-dark" ${sessions.filter(x=>x.status==='approved').length>=2?'disabled':''} onclick="changeAdminSession('${s.session_id}','approved')">Autorizar</button>`):''}</div></div>`;
+    return `<div class="access-row"><div><strong>${escapeHtml(s.label||'Navegador sin nombre')}${current?' · este navegador':''}</strong><small>${escapeHtml(s.display_name||'')} · ${adminRoleName(s.role)}</small><span class="state-tag ${escapeAttr(s.status)}">${approved?'Autorizado':pending?'Esperando autorización':'Revocado'}</span> <span class="${s.online?'access-online':'access-offline'}">${s.online?'Conectado':'Sin actividad reciente'}</span></div><div class="access-row-actions">${!current&&adminRole==='owner'?(approved?`<button class="btn btn-danger" onclick="changeAdminSession('${s.session_id}','revoked')">Revocar acceso</button>`:`<button class="btn btn-dark" onclick="changeAdminSession('${s.session_id}','approved')">Autorizar</button>`):''}</div></div>`;
   }).join(''):'<p class="media-note">Las sesiones aparecerán aquí cuando se active el control de accesos.</p>';
-  document.getElementById('accessMembers').innerHTML=members.filter(m=>m.role==='staff').map(m=>`<div class="access-row"><div><strong>${escapeHtml(m.display_name)}</strong><small>${escapeHtml(m.email||'')}</small><span class="state-tag">${m.enabled?'Acceso habilitado':'Acceso desactivado'}</span></div><button class="btn ${m.enabled?'btn-danger':'btn-dark'}" onclick="changeAdminMember('${m.user_id}',${!m.enabled})">${m.enabled?'Desactivar empleado':'Habilitar empleado'}</button></div>`).join('')||'<p class="media-note">No hay empleados registrados.</p>';
+  document.getElementById('accessMembers').innerHTML=members.filter(m=>['staff','manager'].includes(m.role)).map(m=>`<div class="access-row"><div><strong>${escapeHtml(m.display_name)}</strong><small>${escapeHtml(m.email||'')} · ${adminRoleName(m.role)}</small><span class="state-tag">${m.enabled?'Acceso habilitado':'Acceso desactivado'}</span></div><div class="access-row-actions"><label>Permisos<select aria-label="Permisos de ${escapeAttr(m.display_name)}" ${adminAccessBusy?'disabled':''} onchange="changeAdminMemberRole('${m.user_id}',this.value)"><option value="staff" ${m.role==='staff'?'selected':''}>Empleado</option><option value="manager" ${m.role==='manager'?'selected':''}>Encargado</option></select></label><button class="btn ${m.enabled?'btn-danger':'btn-dark'}" onclick="changeAdminMember('${m.user_id}',${!m.enabled})">${m.enabled?'Desactivar acceso':'Habilitar acceso'}</button></div></div>`).join('')||'<p class="media-note">No hay empleados o encargados registrados.</p>';
   const banner=document.getElementById('adminAccessBanner');
   banner.classList.toggle('hidden',installed||adminRole!=='owner');
   banner.textContent=!installed?'Preview de mejoras: las alertas y categorías pueden probarse aquí. Los nuevos permisos de empleados aún no están activados en el negocio.':'';
@@ -87,7 +92,9 @@ async function refreshAdminAccess(){
   adminAccessRefreshPromise=(async()=>{
     const {data,error}=await db.rpc('pastehot_admin_state',{p_label:savedSessionLabel(),p_visible:document.visibilityState==='visible',p_device_token:adminDeviceToken()});
     if(error){denyAdminAccess('No se pudo verificar tu autorización. Se pausó el administrador hasta recuperar la conexión.');return false;}
+    const previousRole=adminRole;
     adminAccessState=data;adminAccessAllowed=!!data?.allowed;adminRole=data?.role;
+    if(previousRole!==adminRole&&adminAccessAllowed){denyAdminAccess('Tus permisos cambiaron. Vuelve a comprobar el acceso para cargar tu nueva interfaz.');return false;}
     if(!adminAccessAllowed){showWaitingAccess(data);return false;}
     renderAdminAccess();return true;
   })();
@@ -104,11 +111,18 @@ async function changeAdminSession(id,status){
   await adminAccessAction(async()=>{const {error}=await db.rpc('pastehot_set_session',{p_session_id:id,p_status:status});if(error)throw error;});
 }
 async function changeAdminMember(id,enabled){
-  if(!confirm(enabled?'¿Habilitar el acceso de este empleado? Sus navegadores deben autorizarse nuevamente.':'¿Desactivar al empleado y revocar todos sus navegadores?'))return;
+  if(!confirm(enabled?'¿Habilitar el acceso de esta cuenta? Sus navegadores deben autorizarse nuevamente.':'¿Desactivar esta cuenta y revocar todos sus navegadores?'))return;
   await adminAccessAction(async()=>{const {error}=await db.rpc('pastehot_set_staff_enabled',{p_user_id:id,p_enabled:enabled});if(error)throw error;});
 }
+async function changeAdminMemberRole(id,role){
+  if(!['manager','staff'].includes(role)||adminRole!=='owner'||!adminAccessAllowed)return;
+  const member=adminAccessState?.members?.find(m=>m.user_id===id);
+  if(!member||member.role===role)return;
+  if(!confirm(`¿Cambiar los permisos de ${member.display_name} a ${adminRoleName(role)}? Sus navegadores perderán la autorización y deberás aprobarlos nuevamente.`)){renderAdminAccess();return;}
+  await adminAccessAction(async()=>{const {error}=await db.rpc('pastehot_set_staff_role',{p_user_id:id,p_role:role});if(error)throw error;});
+}
 async function activateAdminProtection(){
-  if(!confirm('Se autorizará este navegador. Los demás necesitarán tu aprobación y solo habrá 2 autorizados. Conserva acceso a este navegador hasta autorizar tu teléfono o la tablet. ¿Activar?'))return;
+  if(!confirm('Se autorizará este navegador. Los demás necesitarán tu aprobación, sin un límite fijo de dispositivos. Conserva acceso a este navegador hasta autorizar tu teléfono o la tablet. ¿Activar?'))return;
   await adminAccessAction(async()=>{const {error}=await db.rpc('pastehot_activate_security');if(error)throw error;});
 }
 async function renameAdminSession(){
@@ -120,7 +134,7 @@ async function inviteAdminStaff(event){
   event.preventDefault();if(!adminSecurityInstalled||!adminAccessState?.enforced)return;
   const email=document.getElementById('staffInviteEmail').value.trim(),name=document.getElementById('staffInviteName').value.trim();
   await adminAccessAction(async()=>{
-    const {data,error}=await db.functions.invoke('pastehot-invite-staff',{body:{email,name,redirectTo:location.origin+'/admin.html',deviceToken:adminDeviceToken()}});
+    const {data,error}=await db.functions.invoke('pastehot-invite-staff',{body:{email,name,redirectTo:location.origin+'/admin.html',deviceToken:adminDeviceToken(),role:document.getElementById('staffInviteRole').value}});
     if(error||data?.error)throw new Error(data?.error||'No se pudo enviar la invitación. Revisa el correo o intenta más tarde.');
     document.getElementById('staffInviteForm').reset();
   });
