@@ -157,9 +157,9 @@ function renderOrderInbox(list){
   document.getElementById('newOrdersCount').textContent=`${list.length} sin revisar`;
   document.getElementById('newOrdersList').innerHTML=list.map(o=>`<div class="alert-order"><div><strong>Pedido ${escapeHtml(o.order_code||String(o.id).slice(0,8))}</strong><p>${o.delivery_type==='delivery'?'Envío a domicilio':'Recoger en tienda'} · ${escapeHtml(formatDate(o.created_at))}</p><p>${o.order_status==='pendiente_confirmacion'?'Pendiente de confirmar':'Nuevo pedido'}</p></div><button class="btn btn-primary" data-inbox-order="${escapeAttr(o.id)}">Ver pedido</button></div>`).join('');
   document.getElementById('newOrdersList').querySelectorAll('[data-inbox-order]').forEach(b=>b.addEventListener('click',()=>openInboxOrder(b.dataset.inboxOrder)));
-  document.getElementById('orderSoundNote').textContent=orderSoundEnabled?'Sonido activo. Se repetirá cada 20 segundos hasta revisar los pedidos.':'Activa el sonido para escuchar los pedidos nuevos.';
+  document.getElementById('orderSoundNote').textContent=orderSoundEnabled?'Sonido activo. La alerta se repite cada 3 segundos hasta pulsar Ver pedido en los pedidos pendientes.':'Activa el sonido para escuchar los pedidos nuevos.';
   if(!list.length){stopOrderChime();clearTimeout(orderSoundDebounce);clearInterval(orderSoundTimer);orderSoundTimer=null;}
-  else if(orderSoundEnabled&&!orderSoundTimer)orderSoundTimer=setInterval(playOrderChime,20000);
+  else if(orderSoundEnabled&&!orderSoundTimer)orderSoundTimer=setInterval(playOrderChime,3000);
 }
 async function openInboxOrder(id){
   if(!orders.some(o=>String(o.id)===String(id)))await loadOrders();
@@ -190,15 +190,15 @@ function playOrderChime(test=false){
   if(!orderSoundEnabled||!adminAccessAllowed||(!test&&!orderInbox?.list().length))return;
   if(!orderAudio||orderAudio.state!=='running'){document.getElementById('adminSoundButton').textContent='Reactivar sonido';return;}
   const base=orderAudio.currentTime;
-  // One distinct two-part signal; never stack voices from consecutive orders.
+  // A bright incoming-call pattern; consecutive orders never stack voices.
   if(base<orderChimeUntil)return;
-  orderChimeUntil=base+2.48;
-  [[0,880],[.38,1174.66],[.76,1396.91],[1.36,880],[1.74,1174.66],[2.12,1396.91]].forEach(([delay,freq])=>{
-    const tone=orderAudio.createOscillator(),gain=orderAudio.createGain();tone.type='triangle';tone.frequency.value=freq;
-    gain.gain.setValueAtTime(0,base+delay);gain.gain.linearRampToValueAtTime(.65,base+delay+.025);
-    gain.gain.setValueAtTime(.65,base+delay+.25);gain.gain.exponentialRampToValueAtTime(.001,base+delay+.34);
+  orderChimeUntil=base+2.26;
+  [[0,960],[.24,1280],[.48,960],[.72,1280],[1.32,960],[1.56,1280],[1.80,960],[2.04,1280]].forEach(([delay,freq])=>{
+    const tone=orderAudio.createOscillator(),gain=orderAudio.createGain();tone.type='square';tone.frequency.value=freq;
+    gain.gain.setValueAtTime(0,base+delay);gain.gain.linearRampToValueAtTime(.85,base+delay+.012);
+    gain.gain.setValueAtTime(.85,base+delay+.14);gain.gain.exponentialRampToValueAtTime(.001,base+delay+.20);
     tone.connect(gain);gain.connect(orderAudio.destination);const voice={tone,gain};orderChimeVoices.add(voice);
-    tone.start(base+delay);tone.stop(base+delay+.36);
+    tone.start(base+delay);tone.stop(base+delay+.22);
     tone.onended=()=>{tone.disconnect();gain.disconnect();orderChimeVoices.delete(voice);};
   });
 }
