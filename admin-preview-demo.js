@@ -86,7 +86,7 @@
       if(name==='pastehot_activate_security'){state.enforced=true;return {data:true,error:null};}
       if(name==='update_order_status_with_inventory'){const o=tables.orders.find(o=>o.id===args.p_order_id);if(o){o.order_status=args.p_new_status;emit('orders',o,'UPDATE');}return {data:o,error:null};}
       return {data:null,error:null};
-    },functions:{async invoke(_name,{body}){state.members.push({user_id:uuid(700+state.counter++),display_name:body.name,email:body.email,role:body.role||'staff',enabled:true});return {data:{ok:true},error:null};}},storage:{from(){return {async list(){return {data:[],error:null}},async remove(){return {data:[],error:null}},async upload(){return {error:{message:'La prueba no sube fotos reales.'}}}}}}};
+    },functions:{async invoke(_name,{body}){state.members.push({user_id:uuid(700+state.counter++),display_name:body.name,email:body.email,role:body.role||'staff',enabled:true});return {data:{ok:true,delivery:'demo'},error:null};}},storage:{from(){return {async list(){return {data:[],error:null}},async remove(){return {data:[],error:null}},async upload(){return {error:{message:'La prueba no sube fotos reales.'}}}}}}};
   window.PasteHotDemo={state,tables,client};window.supabase={createClient:()=>client};
   window.demoNewOrder=()=>{const o=fakeOrder(state.counter++);o.created_at=new Date().toISOString();tables.orders.unshift(o);emit('orders',o);};
   window.demoBurstOrders=()=>{for(let i=0;i<3;i++)window.demoNewOrder();};

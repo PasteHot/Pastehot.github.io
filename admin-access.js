@@ -70,7 +70,7 @@ function renderAdminAccess(){
   const state=adminAccessState||{},enforced=!!state.enforced,installed=adminSecurityInstalled;
   const sessions=state.sessions||[],members=state.members||[];
   const online=sessions.filter(s=>s.status==='approved'&&s.online);
-  document.getElementById('adminPresenceDots').innerHTML=online.map(()=>'<span class="presence-dot" aria-hidden="true"></span>').join('');
+  document.getElementById('adminPresenceDots').innerHTML=online.length?'<span class="presence-dot" aria-hidden="true"></span>':'';
   document.getElementById('adminPresenceText').textContent=installed?`${online.length} conectado${online.length===1?'':'s'}`:'Accesos por preparar';
   document.getElementById('adminPresence').setAttribute('aria-label',installed?`Accesos: ${online.length} navegadores conectados`:'Ver preparación de accesos');
   const note=!installed?'Preview: el control de empleados y dispositivos está preparado para prueba. Aún no se ha activado en la base de datos del negocio.':!enforced?'El control de empleados está instalado. La autorización de navegadores aún no está activa. Actívalo primero en tu teléfono y después autoriza la tablet.':'Protección activa: cada navegador requiere tu aprobación. No hay un límite fijo de dispositivos.';
@@ -80,6 +80,7 @@ function renderAdminAccess(){
   document.getElementById('enableAdminSecurity').classList.toggle('hidden',enforced);
   document.getElementById('staffInviteButton').disabled=!installed||!enforced||adminAccessBusy;
   document.getElementById('staffInviteForm').classList.toggle('hidden',adminRole!=='owner');
+  document.getElementById('staffInviteButton').textContent=window.PasteHotDemo?.enabled?'Simular invitación · no envía correo':'Preparar invitación de acceso';
   document.getElementById('accessSessions').innerHTML=sessions.length?sessions.map(s=>{
     const pending=s.status==='pending',approved=s.status==='approved',current=s.current;
     const owner=adminRole==='owner',canAuthorize=s.member_enabled!==false,revoked=s.status==='revoked';
@@ -108,7 +109,7 @@ function startAdminAccessHeartbeat(){clearInterval(adminAccessTimer);if(adminSec
 async function adminAccessAction(action){
   if(adminAccessBusy||adminRole!=='owner'||!adminAccessAllowed)return;
   adminAccessBusy=true;renderAdminAccess();
-  try{await action();await refreshAdminAccess();showMessage('accessMessage','Cambio guardado.');}catch(error){showMessage('accessMessage',String(error.message||'No se pudo guardar el cambio.'),false);}finally{adminAccessBusy=false;renderAdminAccess();}
+  try{const result=await action();await refreshAdminAccess();showMessage('accessMessage',typeof result==='string'?result:'Cambio guardado.');}catch(error){showMessage('accessMessage',String(error.message||'No se pudo guardar el cambio.'),false);}finally{adminAccessBusy=false;renderAdminAccess();}
 }
 async function changeAdminSession(id,status){
   if(!confirm(status==='revoked'?'¿Revocar este navegador? Dejará de tener acceso a los pedidos.':'¿Autorizar este navegador para usar el administrador?'))return;
@@ -162,6 +163,7 @@ async function inviteAdminStaff(event){
       document.getElementById('staffInvitationResult').classList.remove('hidden');
     }
     document.getElementById('staffInviteForm').reset();
+    return data?.delivery==='demo'?'Prueba completada: persona agregada solo a la demostración. No se creó una cuenta real ni se envió un correo.':data?.delivery==='manual'?'Invitación preparada. No se envió correo: copia el enlace privado que aparece abajo y entrégalo a la persona invitada.':'Invitación enviada al correo indicado. Revisa también la carpeta de spam.';
   });
 }
 function clearStaffInvitation(){const input=document.getElementById('staffInvitationLink');if(input)input.value='';document.getElementById('staffInvitationResult')?.classList.add('hidden');}
