@@ -30,6 +30,10 @@ function hasDeliveryLocation(o){
   return Number.isFinite(Number(lat))&&Number.isFinite(Number(lng))&&Math.abs(Number(lat))<=90&&Math.abs(Number(lng))<=180;
 }
 function ticketDeliveryLabel(value){return value==="delivery"?"Envío a domicilio":value==="pickup"?"Pasar a recoger":String(value||"")}
+function ticketBusinessPhone(value){
+  const digits=normalizePhone(value||"");
+  return digits.length===12&&digits.startsWith("52")?digits.slice(2):digits;
+}
 function ticketPaymentLabel(value){return value==="cash"?"Efectivo":value==="transfer"?"Transferencia":String(value||"")}
 function ticketDate(value){if(!value)return"";return new Intl.DateTimeFormat("es-MX",{dateStyle:"short",timeStyle:"short"}).format(new Date(value))}
 function firstCustomerName(value){
@@ -89,7 +93,7 @@ function rawBtEscPosTicket(o,options={}){
   const items=safeItems(o.items);
   const isDelivery=o.delivery_type==="delivery";
   const customerPhone=normalizePhone(o.customer_phone||"");
-  const businessPhone=normalizePhone(document.getElementById("whatsapp")?.value||"");
+  const businessPhone=ticketBusinessPhone(options.businessPhone??document.getElementById("whatsapp")?.value);
   const firstName=firstCustomerName(o.customer_name);
   const address=o.delivery_address_text||o.address||"Direccion no registrada";
   const reference=o.delivery_reference||"Sin referencia adicional";
@@ -233,7 +237,7 @@ function printTicketOrder(o,options={}){
   const isDelivery=o.delivery_type==="delivery";
   const hasLocation=isDelivery&&hasDeliveryLocation(o);
   const customerPhone=normalizePhone(o.customer_phone||"");
-  const businessPhone=normalizePhone(document.getElementById("whatsapp")?.value||"");
+  const businessPhone=ticketBusinessPhone(options.businessPhone??document.getElementById("whatsapp")?.value);
   const firstName=firstCustomerName(o.customer_name);
   const address=o.delivery_address_text||o.address||"Dirección no registrada";
   const reference=o.delivery_reference||"Sin referencia adicional";
