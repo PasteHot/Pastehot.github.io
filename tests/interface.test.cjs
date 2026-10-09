@@ -31,7 +31,7 @@ const tick=()=>new Promise(r=>setTimeout(r,20));
 
  w.demoBurstOrders();await tick();await tick();assert.equal(w.document.querySelectorAll('.alert-order').length,3);
  w.document.querySelector('[data-inbox-order]').click();await tick();assert(w.document.getElementById('orderModal').classList.contains('show'));assert.equal(w.document.querySelectorAll('.alert-order').length,2);
- w.closeOrderModal();w.demoConnection();await tick();assert(w.document.getElementById('adminLiveStatus').textContent.includes('Reconectando'));
+ w.closeOrderModal();w.demoConnection();await tick();assert.equal(w.document.getElementById('adminLiveStatus'),null);assert(w.document.querySelector('.order-sound-controls #adminSoundButton'));assert.equal(w.document.querySelector('.topbar #adminSoundButton'),null);
  w.demoConnection();await tick();await tick();assert.equal(w.document.querySelectorAll('.alert-order').length,3);
  await w.demoRole('staff');await tick();assert.equal(w.document.querySelectorAll('.tabs .tab:not(.hidden)').length,1);assert(w.document.getElementById('ordersMetrics').classList.contains('hidden'));
  assert(!w.document.getElementById('section-orders').classList.contains('hidden'));
