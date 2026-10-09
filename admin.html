@@ -367,6 +367,7 @@ async function login(){const email=loginEmail.value.trim(),password=loginPasswor
 async function logout(){await db.auth.signOut();location.reload()}
 async function checkSession(){const {data}=await db.auth.getSession();if(data.session){loginScreen.classList.add("hidden");adminScreen.classList.remove("hidden");await initAdmin()}}
 async function initAdmin(){
+  await retryImageCleanup();
   await Promise.all([loadProducts(),loadCategories(),loadDesign(),loadBusinessSettings(),loadOrders(),loadBatchSettings(),loadOperationSettings(),loadDeliveryZones()]);
   startAdminRealtime();
 }
@@ -420,12 +421,31 @@ function storagePathFromPublicUrl(url){
     return decodeURIComponent(String(url).slice(i+marker.length).split("?")[0]);
   }catch{return null}
 }
+const IMAGE_CLEANUP_KEY="pastehot_image_cleanup_v1";
+function pendingImageCleanup(){try{return JSON.parse(localStorage.getItem(IMAGE_CLEANUP_KEY)||"[]").filter(u=>typeof u==="string"&&storagePathFromPublicUrl(u))}catch{return []}}
+function rememberImageCleanup(url,pending){try{const urls=new Set(pendingImageCleanup());if(pending)urls.add(url);else urls.delete(url);localStorage.setItem(IMAGE_CLEANUP_KEY,JSON.stringify([...urls]))}catch(e){console.warn("No se pudo guardar el reintento de limpieza.",e)}}
 async function removeStoredImage(url){
   const path=storagePathFromPublicUrl(url);
-  if(!path)return;
-  const {error}=await db.storage.from("product-images").remove([path]);
-  if(error)console.warn("No se pudo eliminar la imagen anterior de Storage.",error);
+  if(!path)return true;
+  try{
+    // Never remove an image still used by a product or the menu design.
+    const [productRefs,designRefs]=await Promise.all([
+      db.from("products").select("id").eq("image_url",url).limit(1),
+      db.from("settings").select("key").in("key",["cover_image","profile_image","background_image"]).eq("value",url).limit(1)
+    ]);
+    if(productRefs.error||designRefs.error)throw productRefs.error||designRefs.error;
+    if(productRefs.data?.length||designRefs.data?.length){rememberImageCleanup(url,false);return true}
+    const {error}=await db.storage.from("product-images").remove([path]);
+    if(error)throw error;
+    const slash=path.lastIndexOf("/"),folder=slash<0?"":path.slice(0,slash),name=path.slice(slash+1);
+    const check=await db.storage.from("product-images").list(folder,{search:name,limit:100});
+    if(check.error)throw check.error;
+    if((check.data||[]).some(item=>item.name===name))throw new Error("La foto anterior sigue almacenada.");
+    rememberImageCleanup(url,false);
+    return true;
+  }catch(error){rememberImageCleanup(url,true);console.warn("Limpieza de imagen pendiente.",error);return false}
 }
+async function retryImageCleanup(){for(const url of pendingImageCleanup())await removeStoredImage(url)}
 async function deleteProduct(id){
   const p=products.find(x=>String(x.id)===String(id));
   if(!p||!confirm(`¿Borrar "${p.name}"?`))return;
@@ -467,10 +487,10 @@ async function saveProduct(){
     return;
   }
 
-  if(file&&oldImage&&oldImage!==imageUrl)await removeStoredImage(oldImage);
-  showMessage("productMessage","Producto guardado.");
+  const cleaned=!(file&&oldImage&&oldImage!==imageUrl)||await removeStoredImage(oldImage);
+  showMessage("productMessage",cleaned?"Producto guardado. Foto anterior eliminada si ya no estaba en uso.":"Producto guardado. No se pudo eliminar la foto anterior; se reintentará al entrar al administrador.",cleaned);
   await loadProducts();
-  setTimeout(closeProductModal,450);
+  if(cleaned)setTimeout(closeProductModal,450);
 }
 
 async function loadCategories(){const {data}=await db.from("settings").select("value").eq("key","categories").maybeSingle();if(data?.value){try{const p=JSON.parse(data.value);if(Array.isArray(p)&&p.length)categories=p}catch{}}populateCategorySelect();renderCategories()}
