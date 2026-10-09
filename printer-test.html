@@ -19,11 +19,12 @@
 <p>Todos los datos son ficticios. Esta prueba no registra pedidos, ventas ni cambios en la configuración.</p>
 <label for="ticketType">Tipo de ticket</label>
 <select id="ticketType"><option value="pickup">Pasar a recoger · Efectivo</option><option value="delivery">Envío · Transferencia · Con QR</option><option value="missing">Envío · Sin ubicación</option><option value="long">Envío · Dirección y notas largas</option></select>
+<label style="display:flex;align-items:center;gap:8px;font-weight:400"><input id="includeLogo" type="checkbox" checked> Incluir logo en el ticket</label>
 <button id="printButton" type="button">Imprimir ticket de prueba</button>
 <small>En Android abre RawBT. Conecta primero tu Mini Print en RawBT. En computadora abre el diálogo de impresión.</small>
 <button id="browserPrintButton" class="secondary" type="button">Imprimir desde el navegador</button>
 <small>Selecciona papel de 58 mm, escala 100 %, sin márgenes y sin encabezados ni pies del navegador.</small>
-<p class="preview-note">El ticket usa texto para mantener la impresión sencilla. En RawBT los acentos y símbolos se simplifican para evitar caracteres incorrectos.</p>
+<p class="preview-note">El logo se envía en blanco y negro a la impresora. Puedes desmarcar «Incluir logo» para comparar ambos tickets. En RawBT los acentos y símbolos se simplifican para evitar caracteres incorrectos.</p>
 <p class="hint">Comprueba que salgan el folio, productos, total, código de entrega y QR cuando corresponda. Después revisa que el QR abra la ruta correcta.</p>
 <a href="index.html">Ver menú</a> · <a href="admin.html">Ir al administrador</a>
 </section><section class="panel receipt-panel"><h2>Vista del ticket</h2><iframe id="ticketPreview" title="Ticket ficticio de PasteHot" sandbox="allow-same-origin"></iframe></section></div>
@@ -38,9 +39,11 @@ function testOrder(){
   const delivery=type!=='pickup';
   return {id:'test',order_code:'PRUEBA-001',created_at:new Date().toISOString(),customer_name:'Cliente de prueba',customer_phone:'9990000000',delivery_type:delivery?'delivery':'pickup',payment_method:delivery?'transfer':'cash',items:[{quantity:2,name:'Paste de prueba',price:30,subtotal:60},{quantity:1,name:'Bebida de prueba',price:20,subtotal:20}],subtotal:80,delivery_fee:delivery?25:0,total:delivery?105:80,delivery_base_fee:25,delivery_rain_surcharge:0,delivery_address_text:type==='long'?'Dirección ficticia muy larga para comprobar que el texto se distribuya correctamente en varias líneas sin cortarse por el borde del papel térmico de 58 milímetros.':'Dirección ficticia para prueba de impresión',delivery_reference:'Estos datos no corresponden a un pedido real.',delivery_verification_code:'1234',delivery_lat:type==='missing'?null:20.9674,delivery_lng:type==='missing'?null:-89.5926,notes:type==='long'?'PRUEBA — Esta nota larga permite revisar los saltos de línea, acentos y caracteres especiales. No preparar ni entregar este pedido.':'PRUEBA — No preparar ni entregar.'};
 }
-function preview(){printTicketOrder(testOrder(),{forceBrowser:true,print:false,targetWindow:document.getElementById('ticketPreview').contentWindow})}
+function ticketOptions(){return {includeLogo:document.getElementById('includeLogo').checked}}
+function preview(){printTicketOrder(testOrder(),{...ticketOptions(),forceBrowser:true,print:false,targetWindow:document.getElementById('ticketPreview').contentWindow})}
 document.getElementById('ticketType').addEventListener('change',preview);
-document.getElementById('printButton').addEventListener('click',()=>printTicketOrder(testOrder()));
-document.getElementById('browserPrintButton').addEventListener('click',()=>printTicketOrder(testOrder(),{forceBrowser:true}));
+document.getElementById('includeLogo').addEventListener('change',preview);
+document.getElementById('printButton').addEventListener('click',()=>printTicketOrder(testOrder(),ticketOptions()));
+document.getElementById('browserPrintButton').addEventListener('click',()=>printTicketOrder(testOrder(),{...ticketOptions(),forceBrowser:true}));
 preview();
 </script></body></html>
