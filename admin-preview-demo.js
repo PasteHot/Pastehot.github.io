@@ -34,9 +34,28 @@
     }
     return {data:{...storeState(),changed:true},error:null};
   }
+
+  function demoReportRpc(name,a){
+    if(!access().allowed)return {data:null,error:{message:'NO_AUTORIZADO'}};
+    if(name==='pastehot_order_page'){
+      const q=String(a.p_search||'').toLowerCase().replace(/[\s-]/g,'');
+      const rows=tables.orders.filter(o=>(state.role==='owner'||Date.parse(o.created_at)>Date.now()-48*3600000)&&(!a.p_from||o.created_at>=a.p_from)&&(!q||[o.order_code,o.id].some(v=>String(v||'').toLowerCase().replace(/[\s-]/g,'').includes(q)))&&(!a.p_before_time||o.created_at<a.p_before_time||(o.created_at===a.p_before_time&&o.id<a.p_before_id))).sort((x,y)=>y.created_at.localeCompare(x.created_at)||y.id.localeCompare(x.id));return {data:{rows:rows.slice(0,50).map(o=>({...o})),has_more:rows.length>50},error:null};
+    }
+    if(state.role!=='owner')return {data:null,error:{message:'NO_AUTORIZADO'}};
+    const all=tables.orders.filter(o=>!['cancelado','pendiente_confirmacion'].includes(o.order_status)&&o.created_at<a.p_to),selected=all.filter(o=>!a.p_from||o.created_at>=a.p_from);
+    const totals=new Map(),daily=new Map(),customers=new Map(),history=new Map(),isPaste=c=>!/bebida|refresco|agua|café|cafe|jugo/i.test(c||'');
+    tables.products.filter(p=>isPaste(p.category)).forEach(p=>totals.set(p.id,{key:p.id,name:p.name,quantity:0,amount:0}));
+    const digits=v=>String(v||'').replace(/\D/g,'');all.forEach(o=>{const phone=digits(o.customer_phone);if(!history.has(phone)||o.created_at<history.get(phone))history.set(phone,o.created_at);});
+    selected.forEach(o=>{const day=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Merida',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(o.created_at));daily.set(day,(daily.get(day)||0)+Number(o.total||0));
+      for(const i of Array.isArray(o.items)?o.items:[]){const p=tables.products.find(p=>p.id===(i.product_id||i.id)||(!i.product_id&&!i.id&&p.name===i.name));if(!isPaste(p?.category||i.category))continue;const key=p?.id||i.product_id||i.id||i.name;if(!totals.has(key))totals.set(key,{key,name:p?.name||i.name,quantity:0,amount:0});const t=totals.get(key);t.quantity+=Number(i.quantity)||0;t.amount+=Number(i.subtotal??Number(i.quantity)*Number(i.price))||0;}
+      const phone=digits(o.customer_phone);if(!phone)return;if(!customers.has(phone))customers.set(phone,{phone,name:o.customer_name,count:0,total:0,first:o.created_at,last:o.created_at,recurrent:false});const c=customers.get(phone);c.count++;c.total+=Number(o.total||0);if(o.created_at<c.first)c.first=o.created_at;if(o.created_at>c.last){c.last=o.created_at;c.name=o.customer_name;}c.recurrent=a.p_from?history.get(phone)<a.p_from:c.count>1;
+    });
+    const customerRows=[...customers.values()].sort((x,y)=>y.last.localeCompare(x.last)||x.phone.localeCompare(y.phone));
+    return {data:{generated_at:new Date().toISOString(),from:a.p_from||all.map(o=>o.created_at).sort()[0]||null,to:a.p_to,orders:selected.length,total:selected.reduce((n,o)=>n+Number(o.total||0),0),subtotal:selected.reduce((n,o)=>n+Number(o.subtotal||0),0),pastes:[...totals.values()].sort((x,y)=>y.quantity-x.quantity||x.name.localeCompare(y.name)),daily:[...daily].sort((x,y)=>x[0].localeCompare(y[0])).map(([day,amount])=>({day,amount})),customers:a.p_customers?customerRows.slice(a.p_customer_offset||0,(a.p_customer_offset||0)+51):[],customer_count:a.p_customers?customerRows.length:0,recurrent_count:a.p_customers?customerRows.filter(c=>c.recurrent).length:0,customer_total:a.p_customers?customerRows.reduce((n,c)=>n+c.total,0):0},error:null};
+  }
   function from(table){
     let op='select',payload,filters=[],sort=[],range=null,single=false;
-    const q={select(){return q},order(k,o){sort.push([k,o?.ascending!==false]);return q},range(a,b){range=[a,b];return q},eq(k,v){filters.push(r=>String(r[k])===String(v));return q},in(k,v){filters.push(r=>v.includes(r[k]));return q},gte(k,v){filters.push(r=>r[k]>=v);return q},maybeSingle(){single=true;return q},single(){single=true;return q},update(p){op='update';payload=p;return q},insert(p){op='insert';payload=p;return q},delete(){op='delete';return q},then(resolve,reject){
+    const q={select(){return q},limit(n){range=[0,n-1];return q},lt(k,v){filters.push(r=>r[k]<v);return q},or(text){const m=text.match(/^created_at.lt.(.*),and\(created_at.eq.(.*),id.lt.(.*)\)$/);if(m)filters.push(r=>r.created_at<m[1]||(r.created_at===m[2]&&r.id<m[3]));return q},order(k,o){sort.push([k,o?.ascending!==false]);return q},range(a,b){range=[a,b];return q},eq(k,v){filters.push(r=>String(r[k])===String(v));return q},in(k,v){filters.push(r=>v.includes(r[k]));return q},gte(k,v){filters.push(r=>r[k]>=v);return q},maybeSingle(){single=true;return q},single(){single=true;return q},update(p){op='update';payload=p;return q},insert(p){op='insert';payload=p;return q},delete(){op='delete';return q},then(resolve,reject){
       return Promise.resolve().then(()=>{
         if(state.offline)return {data:null,error:{message:'Sin conexión de prueba'}};
         if(state.role!=='owner'&&op!=='select'&&!(state.role==='manager'&&table==='products'&&['insert','update'].includes(op)))return {data:null,error:{message:'NO_AUTORIZADO'}};
@@ -56,6 +75,7 @@
     async rpc(name,args={}){
       if(state.offline)return {data:null,error:{message:'Sin conexión de prueba'}};
       if(['pastehot_store_state','pastehot_store_history','pastehot_set_store_closed'].includes(name))return demoStoreRpc(name,args);
+      if(['pastehot_order_page','pastehot_sales_summary'].includes(name))return demoReportRpc(name,args);
       if(name==='pastehot_admin_state')return {data:access(),error:null};
       if(state.role!=='owner'&&name!=='update_order_status_with_inventory')return {data:null,error:{message:'NO_AUTORIZADO'}};
       if(name==='pastehot_set_session'){const s=state.sessions.find(s=>s.session_id===args.p_session_id);if(s){s.status=args.p_status;s.online=args.p_status==='approved';}return {data:true,error:null};}

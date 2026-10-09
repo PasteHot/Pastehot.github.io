@@ -4,7 +4,7 @@ const tick=()=>new Promise(r=>setTimeout(r,20));
 (async()=>{
  const dom=new JSDOM(fs.readFileSync(root+'/admin.html','utf8'),{url:'https://deploy-preview-99--cheerful-daifuku-76579b.netlify.app/admin.html?demo=1',runScripts:'outside-only',pretendToBeVisual:true});
  const w=dom.window;let alerts=[];w.alert=s=>alerts.push(s);w.confirm=()=>true;
- const files=['receipt.js','admin-orders.js','admin-preview-demo.js','admin-access.js','admin-store-control.js'].map(file=>fs.readFileSync(root+'/'+file,'utf8'));
+ const files=['receipt.js','admin-orders.js','admin-preview-demo.js','admin-access.js','admin-store-control.js','admin-reports.js','admin-image-maintenance.js'].map(file=>fs.readFileSync(root+'/'+file,'utf8'));
  const inline=[...fs.readFileSync(root+'/admin.html','utf8').matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)].find(m=>!m[1].includes('src=')&&m[2].includes('SUPABASE_URL'))[2];w.eval(files.join('\n')+'\n'+inline);
  await tick();await tick();
  assert(!w.document.getElementById('adminScreen').classList.contains('hidden'));

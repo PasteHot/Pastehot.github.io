@@ -34,6 +34,7 @@ const sid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
  insert into storage.objects values('${sid(40)}','product-images','products/existing.webp');`);
  await pg.exec(`create function public.admin_list_delivery_zones() returns jsonb language sql as $$select '[]'::jsonb;$$;create function public.admin_save_delivery_zone(uuid,numeric,boolean,jsonb) returns jsonb language sql as $$select '{}'::jsonb;$$;`);
  await pg.exec(`create function public.create_order_with_inventory(text,text,text,text,text,text,text,jsonb) returns jsonb language sql as $$select '{}'::jsonb;$$;`);
+ await pg.exec(`alter table public.orders add column if not exists order_code text,add column if not exists customer_name text,add column if not exists customer_phone text,add column if not exists items jsonb,add column if not exists total numeric,add column if not exists subtotal numeric;alter table public.products add column if not exists category text;`);
  const migration=fs.readFileSync(__dirname+'/../supabase/migrations/20261009175922_admin_access_sessions.sql','utf8');await pg.exec(migration);
  async function login(uid,session){currentSession=Number(session.slice(-12));await pg.exec('reset role;');await pg.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:uid,session_id:session,role:'authenticated'})]);await pg.exec('set role authenticated;');}
  let currentSession=1;const token=n=>n.toString(16).padStart(64,'0');
@@ -117,7 +118,25 @@ const sid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
  await login(owner,sid(6));assert.equal((await state()).allowed,false); // Password alone on a different browser stays pending.
  await login(owner,sid(7));assert.equal((await state(3)).allowed,true); // Same approved browser survives logout/relogin.
  assert.equal((await state(3)).device_id,d3);
- await pg.exec('reset role;');await pg.exec('set role anon;');await denied('select pastehot_admin_state();');await denied('select pastehot_store_state();');await denied('select pastehot_store_history();');await denied("select pastehot_set_store_closed(true,'Intento anónimo',false);");await denied(`select update_order_status_with_inventory('${sid(20)}','cancelado');`);assert.equal((await pg.query('select * from orders')).rows.length,0);
+
+ await login(owner,sid(1));
+ await pg.exec(`update public.orders set created_at='2025-01-01';update public.products set category='Pastes salados' where id='${sid(30)}';
+ insert into public.products(id,name,category) values('${sid(60)}','Paste sin ventas','Pastes dulces'),('${sid(61)}','Agua','Bebidas');
+ insert into public.orders(id,order_status,created_at,order_code,customer_name,customer_phone,items,total,subtotal) values
+ ('${sid(62)}','entregado','2026-10-09 05:59:00+00','VENTA-001','Prueba','9990000000','[{"product_id":"${sid(30)}","name":"Paste de prueba","quantity":3,"price":25,"subtotal":75},{"product_id":"${sid(61)}","name":"Agua","quantity":1,"price":20,"subtotal":20}]',105,95),
+ ('${sid(63)}','cancelado','2026-10-09 06:01:00+00','VENTA-002','Prueba','9990000000','[{"product_id":"${sid(30)}","quantity":99,"price":25}]',2475,2475),
+ ('${sid(64)}','pendiente_confirmacion','2026-10-09 06:02:00+00','VENTA-003','Prueba','9990000000','[{"product_id":"${sid(30)}","quantity":99,"price":25}]',2475,2475),
+ ('${sid(65)}','entregado','2026-10-09 06:03:00+00','VENTA-004','Prueba','9990000000','[{"product_id":"${sid(30)}","quantity":2,"price":30,"subtotal":60}]',60,60);`);
+ const summary=(await pg.query("select pastehot_sales_summary('2026-10-09 00:00:00+00','2026-10-10 00:00:00+00',true,0) as s")).rows[0].s;
+ assert.equal(summary.orders,2);assert.equal(summary.total,165);assert.equal(summary.pastes.find(p=>p.key===sid(30)).quantity,5);assert.equal(summary.pastes.find(p=>p.key===sid(30)).amount,135);assert.equal(summary.pastes.find(p=>p.key===sid(60)).quantity,0);assert(!summary.pastes.find(p=>p.key===sid(61)));assert.equal(summary.daily.length,2);assert.equal(summary.daily[0].day,'2026-10-08');assert.equal(summary.customer_count,1);assert.equal(summary.customers[0].count,2);
+ await pg.exec(`insert into public.orders(id,order_status,created_at,order_code,items,total,subtotal) select ('00000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,'entregado','2026-10-08 18:00:00+00','PAGINA-'||n,'[]',0,0 from generate_series(100,154)n;`);
+ const page=(await pg.query("select pastehot_order_page('2026-10-08','PAGINA',null,null) as p")).rows[0].p;assert.equal(page.rows.length,50);assert.equal(page.has_more,true);const last=page.rows.at(-1);
+ const next=(await pg.query("select pastehot_order_page('2026-10-08','PAGINA',$1,$2) as p",[last.created_at,last.id])).rows[0].p;assert.equal(next.rows.length,5);assert.equal(next.has_more,false);assert(!next.rows.some(o=>page.rows.some(p=>o.id===p.id)));
+ assert.equal((await pg.query("select pastehot_order_page(null,'VEnTa 001',null,null) as p")).rows[0].p.rows.length,1);
+ await login(owner,sid(6));await denied('select pastehot_sales_summary();');await denied('select pastehot_order_page();');
+ await login(staff,sid(2));await denied('select pastehot_sales_summary();');
+ await login(owner,sid(1));await pg.exec(`select pastehot_set_staff_enabled('${staff}',true);select pastehot_set_session('${d2}','approved');`);await login(staff,sid(2));await state();await denied('select pastehot_sales_summary();');assert.equal((await pg.query("select pastehot_order_page(null,'VENTA',null,null) as p")).rows[0].p.rows.length,4);
+ await pg.exec('reset role;');await pg.exec('set role anon;');await denied('select pastehot_sales_summary();');await denied('select pastehot_order_page();');await denied('select pastehot_admin_state();');await denied('select pastehot_store_state();');await denied('select pastehot_store_history();');await denied("select pastehot_set_store_closed(true,'Intento anónimo',false);");await denied(`select update_order_status_with_inventory('${sid(20)}','cancelado');`);assert.equal((await pg.query('select * from orders')).rows.length,0);
  await pg.exec('reset role;');const exposed=(await pg.query("select p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'pastehot_%' and p.prosecdef")).rows;assert.equal(exposed.length,0);
  await pg.close();console.log('PASS: real PostgreSQL RLS, unlimited approved browsers, owner lockout guard, manager and staff permissions, protected photo cleanup, role-change reapproval, atomic emergency closure, immutable identity/time audit, Merida date filtering, schedule preservation and closed-store order rejection, recent-only history, revoked tokens, disabled staff, auth session deletion, anonymous denial.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

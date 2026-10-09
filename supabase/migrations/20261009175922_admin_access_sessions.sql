@@ -544,5 +544,57 @@ end;$$;
 revoke all on function private.pastehot_reject_closed_store_order() from public,anon,authenticated;
 create trigger pastehot_check_store_before_order before insert on public.orders for each row execute function private.pastehot_reject_closed_store_order();
 
+-- On-demand summaries: no stored reports, no cron, no full-history transfer.
+create index if not exists pastehot_orders_created_id_idx on public.orders(created_at desc,id desc);
+create or replace function public.pastehot_order_page(p_from timestamptz default null,p_search text default '',p_before_time timestamptz default null,p_before_id uuid default null) returns jsonb
+language plpgsql stable security invoker set search_path='' as $$
+declare v_rows jsonb;v_q text:=regexp_replace(lower(coalesce(p_search,'')),'[[:space:]-]','','g');
+begin
+ if not (private.pastehot_owner_allowed() or private.pastehot_staff_allowed()) then raise exception 'NO_AUTORIZADO';end if;
+ if length(v_q)>80 or (p_before_time is not null and p_before_id is null) then raise exception 'BUSQUEDA_INVALIDA';end if;
+ select coalesce(jsonb_agg(to_jsonb(t) order by t.created_at desc,t.id desc),'[]'::jsonb) into v_rows from (
+ select o.* from public.orders o where (p_from is null or o.created_at>=p_from)
+ and (v_q='' or position(v_q in regexp_replace(lower(coalesce(o.order_code,'')),'[[:space:]-]','','g'))>0 or position(v_q in replace(o.id::text,'-',''))>0)
+ and (p_before_time is null or (o.created_at,o.id)<(p_before_time,p_before_id))
+ order by o.created_at desc,o.id desc limit 51)t;
+ return jsonb_build_object('rows',case when jsonb_array_length(v_rows)>50 then v_rows-50 else v_rows end,'has_more',jsonb_array_length(v_rows)>50);
+end $$;
+create function public.pastehot_sales_summary(p_from timestamptz default null,p_to timestamptz default now(),p_customers boolean default false,p_customer_offset integer default 0) returns jsonb
+language plpgsql stable security invoker set search_path='' as $$
+declare v_result jsonb;
+begin
+ if not private.pastehot_owner_allowed() then raise exception 'NO_AUTORIZADO';end if;
+ if p_to is null or (p_from is not null and p_from>=p_to) or p_customer_offset<0 then raise exception 'PERIODO_INVALIDO';end if;
+ with valid as materialized(select * from public.orders where order_status not in ('cancelado','pendiente_confirmacion') and created_at<p_to),
+ selected as materialized(select * from valid where p_from is null or created_at>=p_from),
+ entries as(select coalesce(p.id::text,nullif(i->>'product_id',''),nullif(i->>'id',''),i->>'name','Producto histórico') as key,
+ coalesce(p.name,i->>'name','Producto histórico') as name,coalesce(p.category,i->>'category','') as category,
+ case when i->>'quantity' ~ '^[0-9]+([.][0-9]+)?$' then (i->>'quantity')::numeric else 0 end as quantity,
+ case when i->>'subtotal' ~ '^[0-9]+([.][0-9]+)?$' then (i->>'subtotal')::numeric
+ when i->>'price' ~ '^[0-9]+([.][0-9]+)?$' and i->>'quantity' ~ '^[0-9]+([.][0-9]+)?$' then (i->>'price')::numeric*(i->>'quantity')::numeric else 0 end as amount
+ from selected o cross join lateral jsonb_array_elements(case when jsonb_typeof(o.items)='array' then o.items else '[]'::jsonb end)i
+ left join lateral(select p.* from public.products p where p.id::text=coalesce(nullif(i->>'product_id',''),i->>'id') or (coalesce(nullif(i->>'product_id',''),nullif(i->>'id','')) is null and p.name=i->>'name') order by p.id limit 1)p on true),
+ paste_entries as(select * from entries where category !~* 'bebida|refresco|agua|café|cafe|jugo'),
+ seeds as(select id::text as key,name,0::numeric as quantity,0::numeric as amount from public.products where coalesce(category,'') !~* 'bebida|refresco|agua|café|cafe|jugo'),
+ ranked as(select key,min(name) as name,sum(quantity) as quantity,sum(amount) as amount from (select * from seeds union all select key,name,quantity,amount from paste_entries)t group by key),
+ daily as(select (created_at at time zone 'America/Merida')::date::text as day,sum(total) as amount from selected group by 1),
+ customer_history as(select regexp_replace(customer_phone,'[^0-9]','','g') as phone,min(created_at) as first_ever from valid group by 1),
+ customer_rows as(select regexp_replace(o.customer_phone,'[^0-9]','','g') as phone,(array_agg(o.customer_name order by o.created_at desc,o.id desc))[1] as name,count(*) as count,sum(o.total) as total,min(o.created_at) as first,max(o.created_at) as last,
+ case when p_from is null then count(*)>1 else min(h.first_ever)<p_from end as recurrent
+ from selected o join customer_history h on h.phone=regexp_replace(o.customer_phone,'[^0-9]','','g') where coalesce(h.phone,'')<>'' group by 1),
+ customer_page as(select * from customer_rows order by last desc,phone offset p_customer_offset limit 51)
+ select jsonb_build_object('generated_at',now(),'from',coalesce(p_from,(select min(created_at) from valid)),'to',p_to,
+ 'orders',(select count(*) from selected),'total',coalesce((select sum(total) from selected),0),'subtotal',coalesce((select sum(subtotal) from selected),0),
+ 'pastes',coalesce((select jsonb_agg(to_jsonb(r) order by quantity desc,name,key) from ranked r),'[]'::jsonb),
+ 'daily',coalesce((select jsonb_agg(to_jsonb(d) order by day) from daily d),'[]'::jsonb),
+ 'customers',case when p_customers then coalesce((select jsonb_agg(to_jsonb(c) order by last desc,phone) from customer_page c),'[]'::jsonb) else '[]'::jsonb end,
+ 'customer_count',case when p_customers then (select count(*) from customer_rows) else 0 end,
+ 'recurrent_count',case when p_customers then (select count(*) from customer_rows where recurrent) else 0 end,
+ 'customer_total',case when p_customers then coalesce((select sum(total) from customer_rows),0) else 0 end) into v_result;
+ return v_result;
+end $$;
+revoke all on function public.pastehot_order_page(timestamptz,text,timestamptz,uuid),public.pastehot_sales_summary(timestamptz,timestamptz,boolean,integer) from public,anon;
+grant execute on function public.pastehot_order_page(timestamptz,text,timestamptz,uuid),public.pastehot_sales_summary(timestamptz,timestamptz,boolean,integer) to authenticated;
+
 commit;
 

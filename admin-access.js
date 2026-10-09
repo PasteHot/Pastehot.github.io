@@ -52,6 +52,7 @@ function adminCanOpenTab(name){return adminAccessAllowed&&(adminRole==='owner'||
 function adminRoleName(role){return {owner:'Propietario',manager:'Encargado',staff:'Empleado'}[role]||'Sin permisos';}
 function applyAdminPermissions(){
   const owner=adminRole==='owner';
+  document.querySelectorAll('[data-owner-only]').forEach(el=>el.classList.toggle('hidden',!owner));
   if(window.PasteHotDemo)document.getElementById('demoRoleSelect').value=adminRole;
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('hidden',!adminCanOpenTab(b.getAttribute('onclick')?.match(/showTab\('([^']+)'/)?.[1])));
   document.getElementById('ordersMetrics').classList.toggle('hidden',!owner);
@@ -210,7 +211,7 @@ async function requestAdminWakeLock(){
 }
 function startOrderRecovery(){clearInterval(adminRecoveryTimer);adminRecoveryTimer=setInterval(()=>{if(adminAccessAllowed&&navigator.onLine&&document.visibilityState==='visible'&&!adminRealtimeOnline)loadOrders();},30000);}
 function stopAdminEnhancements(){
-  stopStoreControl();stopOrderChime();
+  stopStoreControl();resetAdminReports();stopOrderChime();
   clearInterval(adminAccessTimer);clearInterval(adminRecoveryTimer);clearInterval(orderSoundTimer);clearTimeout(orderSoundDebounce);
   clearTimeout(adminOrdersTimer);clearTimeout(adminProductsTimer);clearTimeout(adminSettingsTimer);clearTimeout(adminZonesTimer);
   orderSoundEnabled=false;orderSoundTimer=null;
