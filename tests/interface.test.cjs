@@ -12,6 +12,13 @@ const tick=()=>new Promise(r=>setTimeout(r,20));
  assert.equal(w.document.querySelector('.product-group-heading').textContent,'Pastes salados2 productos');
  assert.equal(w.document.querySelectorAll('.presence-dot').length,2);
  assert.equal(w.document.querySelectorAll('.alert-order').length,1);
+ const tones=[],gains=[];
+ w.AudioContext=class{constructor(){this.state='running';this.currentTime=0;this.destination={};}async resume(){}createOscillator(){const tone={type:'',frequency:{value:0},connect(){},disconnect(){},start(time){this.startAt=time;},stop(time){this.stopAt=time;this.stopped=true;}};tones.push(tone);return tone;}createGain(){const events=[];const gain={events,gain:{setValueAtTime(value,time){events.push(['set',value,time]);},linearRampToValueAtTime(value,time){events.push(['ramp',value,time]);},exponentialRampToValueAtTime(value,time){events.push(['decay',value,time]);},cancelScheduledValues(time){events.push(['cancel',time]);}},connect(){},disconnect(){}};gains.push(gain);return gain;}};
+ await w.toggleOrderSound();assert.equal(tones.length,6);assert(tones.every(t=>t.type==='triangle'));assert(gains.every(g=>g.events.some(e=>e[0]==='ramp'&&e[1]>.25&&e[1]<1)));
+ assert(tones.every((t,i)=>i===0||t.startAt>=tones[i-1].stopAt));
+ w.playOrderChime(true);assert.equal(tones.length,6); // Consecutive orders cannot double the amplitude.
+ await w.toggleOrderSound();assert(gains.every(g=>g.events.at(-1)[0]==='set'&&g.events.at(-1)[1]===0));assert(tones.every(t=>t.stopAt===undefined));
+
  w.demoBurstOrders();await tick();await tick();assert.equal(w.document.querySelectorAll('.alert-order').length,4);
  w.document.querySelector('[data-inbox-order]').click();await tick();assert(w.document.getElementById('orderModal').classList.contains('show'));assert.equal(w.document.querySelectorAll('.alert-order').length,3);
  w.closeOrderModal();w.demoConnection();await tick();assert(w.document.getElementById('adminLiveStatus').textContent.includes('Reconectando'));
@@ -40,5 +47,5 @@ const tick=()=>new Promise(r=>setTimeout(r,20));
  // Query flags can never bypass authorization on the public domain.
  const live=new JSDOM('<html></html>',{url:'https://www.pastehot.com/admin.html?demo=1',runScripts:'outside-only'});
  live.window.eval(fs.readFileSync(root+'/admin-preview-demo.js','utf8'));assert.equal(live.window.PasteHotDemo,undefined);live.window.close();
- console.log('PASS: complete admin DOM boot, grouped products, connection dots, consecutive alerts, opening order, offline recovery, owner, manager and staff interfaces, manager product editing, role-change reapproval, no demo WhatsApp, production demo disabled.');
+ console.log('PASS: complete admin DOM boot, grouped products, connection dots, stronger nonoverlapping chime and immediate mute, consecutive alerts, opening order, offline recovery, owner, manager and staff interfaces, manager product editing, role-change reapproval, no demo WhatsApp, production demo disabled.');
 })().catch(e=>{console.error(e);process.exitCode=1;process.exit();});

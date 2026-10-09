@@ -3,6 +3,7 @@ let adminRole=null,adminAccessAllowed=false,adminSession=null,adminAccessState=n
 let adminSecurityInstalled=false,adminRealtimeOnline=false,adminAccessTimer=null,adminRecoveryTimer=null;
 let orderInbox=null,orderAudio=null,orderSoundEnabled=false,orderSoundTimer=null,orderSoundDebounce=null,adminWakeLock=null;
 let adminAccessRefreshPromise=null,adminAccessBusy=false;
+let orderChimeUntil=0;const orderChimeVoices=new Set();
 const PASTEHOT_OWNER_ID='a0c0b64b-7809-4428-ad00-a1484d6ded53';
 function isPasteHotPreview(){return /^(deploy-preview-\d+--cheerful-daifuku-76579b\.netlify\.app|localhost|127\.0\.0\.1)$/.test(location.hostname);}
 function showPreviewDemoEntry(){document.getElementById('previewDemoLink')?.classList.toggle('hidden',!isPasteHotPreview());document.getElementById('previewDemoBar')?.classList.toggle('hidden',!window.PasteHotDemo);}
@@ -157,7 +158,7 @@ function renderOrderInbox(list){
   document.getElementById('newOrdersList').innerHTML=list.map(o=>`<div class="alert-order"><div><strong>Pedido ${escapeHtml(o.order_code||String(o.id).slice(0,8))}</strong><p>${o.delivery_type==='delivery'?'Envío a domicilio':'Recoger en tienda'} · ${escapeHtml(formatDate(o.created_at))}</p><p>${o.order_status==='pendiente_confirmacion'?'Pendiente de confirmar':'Nuevo pedido'}</p></div><button class="btn btn-primary" data-inbox-order="${escapeAttr(o.id)}">Ver pedido</button></div>`).join('');
   document.getElementById('newOrdersList').querySelectorAll('[data-inbox-order]').forEach(b=>b.addEventListener('click',()=>openInboxOrder(b.dataset.inboxOrder)));
   document.getElementById('orderSoundNote').textContent=orderSoundEnabled?'Sonido activo. Se repetirá cada 20 segundos hasta revisar los pedidos.':'Activa el sonido para escuchar los pedidos nuevos.';
-  if(!list.length){clearTimeout(orderSoundDebounce);clearInterval(orderSoundTimer);orderSoundTimer=null;}
+  if(!list.length){stopOrderChime();clearTimeout(orderSoundDebounce);clearInterval(orderSoundTimer);orderSoundTimer=null;}
   else if(orderSoundEnabled&&!orderSoundTimer)orderSoundTimer=setInterval(playOrderChime,20000);
 }
 async function openInboxOrder(id){
@@ -170,24 +171,38 @@ function reviewInboxOrder(id){
   try{localStorage.setItem('pastehot_reviewed_'+adminSession.user.id,JSON.stringify(reviewed));}catch{}
 }
 async function toggleOrderSound(){
-  if(orderSoundEnabled){orderSoundEnabled=false;if(adminWakeLock){adminWakeLock.release().catch(()=>{});adminWakeLock=null;}clearInterval(orderSoundTimer);orderSoundTimer=null;document.getElementById('adminSoundButton').textContent='Activar sonido';renderOrderInbox(orderInbox?.list()||[]);return;}
+  if(orderSoundEnabled){orderSoundEnabled=false;stopOrderChime();if(adminWakeLock){adminWakeLock.release().catch(()=>{});adminWakeLock=null;}clearInterval(orderSoundTimer);orderSoundTimer=null;document.getElementById('adminSoundButton').textContent='Activar sonido';renderOrderInbox(orderInbox?.list()||[]);return;}
   try{
     const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)throw new Error('Este navegador no permite el sonido de alertas.');
     orderAudio=orderAudio||new Audio();await orderAudio.resume();if(orderAudio.state!=='running')throw new Error('No se pudo activar el sonido. Toca de nuevo Activar sonido.');
-    orderSoundEnabled=true;document.getElementById('adminSoundButton').textContent='Sonido activo · silenciar';playOrderChime(true);renderOrderInbox(orderInbox?.list()||[]);await requestAdminWakeLock();
+    orderSoundEnabled=true;document.getElementById('adminSoundButton').textContent='Sonido activo · silenciar';renderOrderInbox(orderInbox?.list()||[]);playOrderChime(true);await requestAdminWakeLock();
   }catch(error){alert(error.message||'No se pudo activar el sonido.');}
+}
+function stopOrderChime(){
+  orderChimeUntil=0;
+  for(const {tone,gain} of orderChimeVoices){
+    try{gain.gain.cancelScheduledValues(orderAudio.currentTime);gain.gain.setValueAtTime(0,orderAudio.currentTime);tone.stop();}catch{}
+    tone.disconnect();gain.disconnect();
+  }
+  orderChimeVoices.clear();
 }
 function playOrderChime(test=false){
   if(!orderSoundEnabled||!adminAccessAllowed||(!test&&!orderInbox?.list().length))return;
   if(!orderAudio||orderAudio.state!=='running'){document.getElementById('adminSoundButton').textContent='Reactivar sonido';return;}
   const base=orderAudio.currentTime;
-  [[0,880],[0.22,1174.66],[0.5,880],[0.72,1174.66]].forEach(([delay,freq])=>{
-    const tone=orderAudio.createOscillator(),gain=orderAudio.createGain();tone.type='sine';tone.frequency.value=freq;
-    gain.gain.setValueAtTime(0,base+delay);gain.gain.linearRampToValueAtTime(.25,base+delay+.025);gain.gain.exponentialRampToValueAtTime(.001,base+delay+.19);
-    tone.connect(gain);gain.connect(orderAudio.destination);tone.start(base+delay);tone.stop(base+delay+.21);
-    tone.onended=()=>{tone.disconnect();gain.disconnect();};
+  // One distinct two-part signal; never stack voices from consecutive orders.
+  if(base<orderChimeUntil)return;
+  orderChimeUntil=base+2.48;
+  [[0,880],[.38,1174.66],[.76,1396.91],[1.36,880],[1.74,1174.66],[2.12,1396.91]].forEach(([delay,freq])=>{
+    const tone=orderAudio.createOscillator(),gain=orderAudio.createGain();tone.type='triangle';tone.frequency.value=freq;
+    gain.gain.setValueAtTime(0,base+delay);gain.gain.linearRampToValueAtTime(.65,base+delay+.025);
+    gain.gain.setValueAtTime(.65,base+delay+.25);gain.gain.exponentialRampToValueAtTime(.001,base+delay+.34);
+    tone.connect(gain);gain.connect(orderAudio.destination);const voice={tone,gain};orderChimeVoices.add(voice);
+    tone.start(base+delay);tone.stop(base+delay+.36);
+    tone.onended=()=>{tone.disconnect();gain.disconnect();orderChimeVoices.delete(voice);};
   });
 }
+
 async function resumeOrderAudio(){if(orderSoundEnabled){try{await orderAudio?.resume();if(orderInbox?.list().length)playOrderChime();await requestAdminWakeLock();}catch{document.getElementById('adminSoundButton').textContent='Reactivar sonido';}}}
 async function requestAdminWakeLock(){
   if(document.visibilityState!=='visible'||!orderSoundEnabled||!navigator.wakeLock||adminWakeLock)return;
@@ -195,6 +210,7 @@ async function requestAdminWakeLock(){
 }
 function startOrderRecovery(){clearInterval(adminRecoveryTimer);adminRecoveryTimer=setInterval(()=>{if(adminAccessAllowed&&navigator.onLine&&document.visibilityState==='visible'&&!adminRealtimeOnline)loadOrders();},30000);}
 function stopAdminEnhancements(){
+  stopOrderChime();
   clearInterval(adminAccessTimer);clearInterval(adminRecoveryTimer);clearInterval(orderSoundTimer);clearTimeout(orderSoundDebounce);
   clearTimeout(adminOrdersTimer);clearTimeout(adminProductsTimer);clearTimeout(adminSettingsTimer);clearTimeout(adminZonesTimer);
   orderSoundEnabled=false;orderSoundTimer=null;
