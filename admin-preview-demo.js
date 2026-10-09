@@ -6,13 +6,34 @@
   const currentUser=()=>({owner,staff,manager}[state.role]);
   const now=Date.now(),uuid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
   const settings={categories:JSON.stringify(['Pastes salados','Pastes dulces','Pastes de temporada','Bebidas']),business_name:'PasteHot',whatsapp:'529902317606',background_color:'#f4f4f4',category_title_font:'Arial',category_title_size:'28',category_title_color:'#171717'};
-  const state={role:'owner',offline:false,enforced:true,counter:4,channels:[],members:[{user_id:staff,display_name:'Empleado de prueba',email:'empleado@example.invalid',role:'staff',enabled:true},{user_id:manager,display_name:'Encargado de prueba',email:'encargado@example.invalid',role:'manager',enabled:true}],sessions:[{session_id:uuid(90),user_id:owner,label:'Mi teléfono',display_name:'Propietario',role:'owner',status:'approved',online:true,current:true},{session_id:uuid(91),user_id:staff,label:'Tablet del negocio',display_name:'Empleado de prueba',role:'staff',status:'approved',online:true,current:false},{session_id:uuid(92),user_id:manager,label:'Computadora del encargado',display_name:'Encargado de prueba',role:'manager',status:'pending',online:false,current:false}]};
+  const state={role:'owner',offline:false,enforced:true,counter:4,storeEvents:[],storeEventCounter:1,channels:[],members:[{user_id:staff,display_name:'Empleado de prueba',email:'empleado@example.invalid',role:'staff',enabled:true},{user_id:manager,display_name:'Encargado de prueba',email:'encargado@example.invalid',role:'manager',enabled:true}],sessions:[{session_id:uuid(90),user_id:owner,label:'Mi teléfono',display_name:'Propietario',role:'owner',status:'approved',online:true,current:true},{session_id:uuid(91),user_id:staff,label:'Tablet del negocio',display_name:'Empleado de prueba',role:'staff',status:'approved',online:true,current:false},{session_id:uuid(92),user_id:manager,label:'Computadora del encargado',display_name:'Encargado de prueba',role:'manager',status:'pending',online:false,current:false}]};
   const tables={products:[['Paste de papa','Pastes salados',25],['Paste de carne','Pastes salados',30],['Paste de piña','Pastes dulces',25],['Paste de calabaza','Pastes de temporada',30],['Agua de jamaica','Bebidas',20]].map(([name,category,price],i)=>({id:uuid(i+1),name,category,price,image_url:'favicon.png',description:'Producto ficticio para probar el administrador.',available:true,track_stock:false,stock:0,low_stock_threshold:3,sort_order:i,created_at:new Date(now).toISOString()})),orders:[],delivery_zones:[],settings:Object.entries(settings).map(([key,value],i)=>({id:uuid(100+i),key,value}))};
   function fakeOrder(n){return {id:uuid(200+n),order_code:'PRUEBA-'+String(n).padStart(3,'0'),customer_name:'Cliente de prueba '+n,customer_phone:'9990000000',delivery_type:'pickup',payment_method:'cash',order_status:'pendiente_confirmacion',created_at:new Date(now+n*1000).toISOString(),items:[{product_id:uuid(1),name:'Paste de papa',quantity:2,price:25,subtotal:50}],subtotal:50,total:50,delivery_fee:0,notes:'Pedido ficticio: no preparar ni cobrar.',inventory_applied:false,inventory_restored:false};}
   tables.orders=[fakeOrder(1),{...fakeOrder(2),order_status:'entregado'},{...fakeOrder(3),order_status:'cancelado'}];
   function emit(table,row,type='INSERT'){if(state.offline)return;for(const c of state.channels)for(const h of c.handlers)if(h.kind==='postgres_changes'&&h.filter.table===table)h.fn({eventType:type,new:row,old:{id:row.id}});}
   function access(){const member=state.members.find(m=>m.user_id===currentUser()),session=state.sessions.find(s=>s.user_id===currentUser());const enabled=state.role==='owner'||member?.enabled;return {allowed:enabled&&session?.status==='approved',role:state.role,status:enabled?session?.status:'disabled',enforced:state.enforced,members:state.role==='owner'?state.members:[],sessions:state.sessions.filter(s=>state.role==='owner'||s.status==='approved').map(s=>({...s,current:s.user_id===currentUser()}))};}
 
+  function storeState(){const closed=tables.settings.find(s=>s.key==='store_manual_closed')?.value==='true';const now=new Date(),parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Merida',weekday:'short',hour:'numeric',hourCycle:'h23'}).formatToParts(now),day=parts.find(p=>p.type==='weekday')?.value,hour=Number(parts.find(p=>p.type==='hour')?.value);const scheduled=day!=='Sun'&&hour>=12&&hour<21;return {manual_closed:closed,scheduled_open:scheduled,open:!closed&&scheduled,history_allowed:['owner','manager'].includes(state.role),last_event_id:state.storeEventCounter-1};}
+  function demoStoreRpc(name,args){
+    if(!access().allowed)return {data:null,error:{message:'NO_AUTORIZADO'}};
+    if(name==='pastehot_store_state')return {data:storeState(),error:null};
+    if(name==='pastehot_store_history'){
+      if(!['owner','manager'].includes(state.role))return {data:null,error:{message:'NO_AUTORIZADO'}};
+      const day=value=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Merida',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value));
+      const rows=state.storeEvents.filter(e=>(!args.p_day||day(e.created_at)===args.p_day)&&(!args.p_only_during_hours||e.during_hours)).slice().reverse(),offset=args.p_offset||0;
+      return {data:{events:rows.slice(offset,offset+50),has_more:rows.length>offset+50},error:null};
+    }
+    const previous=storeState();
+    if(previous.manual_closed!==args.p_expected_closed)return {data:null,error:{message:'ESTADO_CAMBIO: otra persona modificó la tienda. Actualiza antes de continuar.'}};
+    if(previous.manual_closed===args.p_closed)return {data:{...previous,changed:false},error:null};
+    if(!args.p_reason||args.p_reason.trim().length<5||args.p_reason.trim().length>240)return {data:null,error:{message:'MOTIVO_REQUERIDO'}};
+    const nameOfUser=state.role==='owner'?'Propietario':state.members.find(m=>m.user_id===currentUser()).display_name,session=state.sessions.find(s=>s.user_id===currentUser());
+    state.storeEvents.push({id:state.storeEventCounter++,created_at:new Date().toISOString(),closed:args.p_closed,actor_name:nameOfUser,actor_role:state.role,session_label:session?.label||'Mi navegador',reason:args.p_reason.trim(),during_hours:previous.scheduled_open});
+    for(const [key,value] of [['store_manual_closed',String(args.p_closed)],['store_manual_close_reason',state.role==='owner'&&args.p_public_reason!=null?args.p_public_reason:args.p_closed?'Cerrado temporalmente. Gracias por tu comprensión.':'']]){
+      let row=tables.settings.find(s=>s.key===key);if(row)row.value=value;else{row={id:uuid(900+state.storeEventCounter),key,value};tables.settings.push(row);}emit('settings',row,'UPDATE');
+    }
+    return {data:{...storeState(),changed:true},error:null};
+  }
   function from(table){
     let op='select',payload,filters=[],sort=[],range=null,single=false;
     const q={select(){return q},order(k,o){sort.push([k,o?.ascending!==false]);return q},range(a,b){range=[a,b];return q},eq(k,v){filters.push(r=>String(r[k])===String(v));return q},in(k,v){filters.push(r=>v.includes(r[k]));return q},gte(k,v){filters.push(r=>r[k]>=v);return q},maybeSingle(){single=true;return q},single(){single=true;return q},update(p){op='update';payload=p;return q},insert(p){op='insert';payload=p;return q},delete(){op='delete';return q},then(resolve,reject){
@@ -34,6 +55,7 @@
     channel(){const c={handlers:[],on(kind,filter,fn){c.handlers.push({kind,filter,fn});return c},subscribe(fn){c.status=fn;state.channels.push(c);setTimeout(()=>fn(state.offline?'CHANNEL_ERROR':'SUBSCRIBED'),0);return c}};return c},removeChannel(c){state.channels=state.channels.filter(x=>x!==c);return Promise.resolve();},
     async rpc(name,args={}){
       if(state.offline)return {data:null,error:{message:'Sin conexión de prueba'}};
+      if(['pastehot_store_state','pastehot_store_history','pastehot_set_store_closed'].includes(name))return demoStoreRpc(name,args);
       if(name==='pastehot_admin_state')return {data:access(),error:null};
       if(state.role!=='owner'&&name!=='update_order_status_with_inventory')return {data:null,error:{message:'NO_AUTORIZADO'}};
       if(name==='pastehot_set_session'){const s=state.sessions.find(s=>s.session_id===args.p_session_id);if(s){s.status=args.p_status;s.online=args.p_status==='approved';}return {data:true,error:null};}

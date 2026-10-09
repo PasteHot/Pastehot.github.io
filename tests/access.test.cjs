@@ -16,7 +16,7 @@ const sid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
  grant usage on schema auth to authenticated,anon;grant execute on function auth.uid(),auth.jwt() to authenticated,anon;
  create table public.products(id uuid primary key,name text,image_url text,stock integer default 10,updated_at timestamptz);
  create table public.orders(id uuid primary key,order_status text,created_at timestamptz default now(),items jsonb default '[]',inventory_applied boolean default false,inventory_restored boolean default false);
- create table public.categories(id uuid primary key);create table public.customers(id uuid primary key);create table public.order_items(id uuid primary key);create table public.settings(id uuid primary key,key text,value text);create table public.delivery_zones(id uuid primary key,name text,fee numeric,enabled boolean,priority integer,geom extensions.geometry,updated_at timestamptz);
+ create table public.categories(id uuid primary key);create table public.customers(id uuid primary key);create table public.order_items(id uuid primary key);create table public.settings(id uuid primary key default gen_random_uuid(),key text unique,value text,updated_at timestamptz default now());create table public.delivery_zones(id uuid primary key,name text,fee numeric,enabled boolean,priority integer,geom extensions.geometry,updated_at timestamptz);
  create table storage.objects(id uuid primary key,bucket_id text,name text);
  insert into auth.users values('${owner}','owner@example.invalid'),('${staff}','staff@example.invalid'),('${other}','other@example.invalid');
  insert into auth.sessions values('${sid(1)}','${owner}'),('${sid(2)}','${staff}'),('${sid(3)}','${owner}'),('${sid(4)}','${other}');
@@ -51,8 +51,31 @@ const sid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
  assert.equal((await pg.query("update orders set order_status='cancelado' returning id")).rows.length,0);
  await denied(`select update_order_status_with_inventory('${sid(20)}','cancelado');`);await denied(`select update_order_status_with_inventory('${sid(21)}','confirmado');`);
  await pg.exec(`select update_order_status_with_inventory('${sid(20)}','confirmado');select update_order_status_with_inventory('${sid(20)}','preparando');select update_order_status_with_inventory('${sid(20)}','listo');select update_order_status_with_inventory('${sid(20)}','entregado');`);
+ // Employee closure/reopening is atomic and attributed to the authenticated member.
+ await login(owner,sid(1));await pg.query("insert into settings(key,value) values('weekly_schedule',$1)",[JSON.stringify(Object.fromEntries(['sun','mon','tue','wed','thu','fri','sat'].map(d=>[d,{enabled:true,open:'00:00',close:'00:00'}])))]);
+ await login(staff,sid(2));assert.equal((await pg.query('select pastehot_store_state() as s')).rows[0].s.manual_closed,false);
+ await denied("select pastehot_set_store_closed(true,'x',false);");assert.equal((await pg.query('select pastehot_store_state() as s')).rows[0].s.manual_closed,false);
+ let closedResult=(await pg.query("select pastehot_set_store_closed(true,'Fuga de agua en la cocina',false) as s")).rows[0].s;assert.equal(closedResult.changed,true);assert.equal(closedResult.manual_closed,true);
+ await denied('select pastehot_store_history();');await denied('select * from private.pastehot_store_events;');
+ assert.equal((await pg.query("update settings set value='false' where key='store_manual_closed' returning id")).rows.length,0);await denied("insert into settings(key,value) values('weekly_schedule','MAL');");
+ await denied("select pastehot_set_store_closed(false,'Problema resuelto',false);"); // Stale state cannot reopen another person's closure.
+ assert.equal((await pg.query("select pastehot_set_store_closed(true,'Doble clic de cierre',true) as s")).rows[0].s.changed,false);
+ await login(owner,sid(1));let storeLog=(await pg.query('select pastehot_store_history() as s')).rows[0].s;assert.equal(storeLog.events.length,1);assert.equal(storeLog.events[0].actor_name,'Empleado');assert.equal(storeLog.events[0].actor_role,'staff');assert.equal(storeLog.events[0].during_hours,true);
+ await denied('delete from private.pastehot_store_events;');assert.equal((await pg.query("update settings set value='false' where key='store_manual_closed' returning id")).rows.length,0);await denied("insert into orders(id,order_status) values('00000000-0000-4000-8000-000000000999','pendiente_confirmacion');");
+ await login(staff,sid(2));assert.equal((await pg.query("select pastehot_set_store_closed(false,'Fuga reparada, operación segura',true) as s")).rows[0].s.manual_closed,false);
+ await login(owner,sid(1));storeLog=(await pg.query('select pastehot_store_history() as s')).rows[0].s;assert.equal(storeLog.events.length,2);assert.equal(storeLog.events[0].closed,false);assert.equal(storeLog.events[1].closed,true);
+ await denied("update private.pastehot_store_events set actor_name='MAL';");
+ const localDay=(await pg.query("select (now() at time zone 'America/Merida')::date::text as day")).rows[0].day;assert.equal((await pg.query('select pastehot_store_history($1,0,true) as s',[localDay])).rows[0].s.events.length,2);assert.equal((await pg.query("select pastehot_store_history('2000-01-01') as s")).rows[0].s.events.length,0);
+ await pg.query("update settings set value=$1 where key='weekly_schedule'",[JSON.stringify(Object.fromEntries(['sun','mon','tue','wed','thu','fri','sat'].map(d=>[d,{enabled:false,open:'00:00',close:'00:00'}]))) ]);
+ await login(staff,sid(2));await pg.exec("select pastehot_set_store_closed(true,'Prueba fuera del horario laboral',false);select pastehot_set_store_closed(false,'Restablecimiento fuera del horario',true);");
+ assert.equal((await pg.query('select pastehot_store_state() as s')).rows[0].s.open,false); // Reopening does not override schedules.
+ await login(owner,sid(1));storeLog=(await pg.query('select pastehot_store_history() as s')).rows[0].s;assert.equal(storeLog.events.length,4);assert.equal(storeLog.events[0].during_hours,false);assert.equal((await pg.query('select pastehot_store_history(null,0,true) as s')).rows[0].s.events.length,2);
+ // A failing audit insert rolls back the actual closure in the same transaction.
+ await pg.exec('reset role;');await pg.exec("create function private.fixture_fail_audit() returns trigger language plpgsql as $$begin raise exception 'AUDIT_UNAVAILABLE';end;$$;create trigger fixture_fail_audit before insert on private.pastehot_store_events for each row execute function private.fixture_fail_audit();");
+ await login(staff,sid(2));await denied("select pastehot_set_store_closed(true,'Simular falla del registro',false);");assert.equal((await pg.query('select pastehot_store_state() as s')).rows[0].s.manual_closed,false);
+ await pg.exec('reset role;');await pg.exec('drop trigger fixture_fail_audit on private.pastehot_store_events;drop function private.fixture_fail_audit();');
  await login(owner,sid(1));await pg.exec(`select pastehot_set_staff_enabled('${staff}',false);`);
- await login(staff,sid(2));assert.equal((await state()).allowed,false);assert.equal((await pg.query('select * from orders')).rows.length,0);await denied(`select update_order_status_with_inventory('${sid(20)}','cancelado');`);
+ await login(staff,sid(2));assert.equal((await state()).allowed,false);assert.equal((await pg.query('select * from orders')).rows.length,0);await denied("select pastehot_set_store_closed(true,'Intento de cuenta desactivada',false);");await denied(`select update_order_status_with_inventory('${sid(20)}','cancelado');`);
  await login(owner,sid(1));await pg.exec(`select pastehot_set_staff_enabled('${staff}',true);`);
  await login(staff,sid(2));assert.equal((await state()).status,'revoked');assert.equal((await state()).allowed,false);
  await login(owner,sid(1));await pg.exec(`select pastehot_set_session('${d3}','approved');`);
@@ -68,7 +91,7 @@ const sid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
  await pg.exec(`insert into products(id,name) values('${sid(31)}','Producto del encargado');`);
  assert.equal((await pg.query('delete from products returning id')).rows.length,0);
  assert.equal((await pg.query('select * from customers')).rows.length,0);assert.equal((await pg.query('select * from orders')).rows.length,2);
- assert.equal((await pg.query('select * from settings')).rows.length,1);
+ assert.equal((await pg.query("select * from settings where key='categories'")).rows.length,1);assert.equal((await pg.query('select pastehot_store_history() as s')).rows[0].s.events.length,4);await pg.exec("select pastehot_set_store_closed(true,'Cierre del encargado por emergencia',false);select pastehot_set_store_closed(false,'Encargado restablece la operación',true);");
  assert.equal((await pg.query("update settings set value='MAL' returning id")).rows.length,0);
  await denied(`select pastehot_set_session('${d2}','approved');`);await denied(`select pastehot_set_staff_role('${staff}','manager');`);await denied(`select pastehot_add_staff('staff@example.invalid','Otro','staff');`);
  await denied(`select update_order_status_with_inventory('${sid(22)}','cancelado');`);await pg.exec(`select update_order_status_with_inventory('${sid(22)}','confirmado');`);
@@ -94,7 +117,7 @@ const sid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
  await login(owner,sid(6));assert.equal((await state()).allowed,false); // Password alone on a different browser stays pending.
  await login(owner,sid(7));assert.equal((await state(3)).allowed,true); // Same approved browser survives logout/relogin.
  assert.equal((await state(3)).device_id,d3);
- await pg.exec('reset role;');await pg.exec('set role anon;');await denied('select pastehot_admin_state();');await denied(`select update_order_status_with_inventory('${sid(20)}','cancelado');`);assert.equal((await pg.query('select * from orders')).rows.length,0);
+ await pg.exec('reset role;');await pg.exec('set role anon;');await denied('select pastehot_admin_state();');await denied('select pastehot_store_state();');await denied('select pastehot_store_history();');await denied("select pastehot_set_store_closed(true,'Intento anónimo',false);");await denied(`select update_order_status_with_inventory('${sid(20)}','cancelado');`);assert.equal((await pg.query('select * from orders')).rows.length,0);
  await pg.exec('reset role;');const exposed=(await pg.query("select p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'pastehot_%' and p.prosecdef")).rows;assert.equal(exposed.length,0);
- await pg.close();console.log('PASS: real PostgreSQL RLS, unlimited approved browsers, owner lockout guard, manager and staff permissions, protected photo cleanup, role-change reapproval, recent-only history, revoked tokens, disabled staff, auth session deletion, anonymous denial.');
+ await pg.close();console.log('PASS: real PostgreSQL RLS, unlimited approved browsers, owner lockout guard, manager and staff permissions, protected photo cleanup, role-change reapproval, atomic emergency closure, immutable identity/time audit, Merida date filtering, schedule preservation and closed-store order rejection, recent-only history, revoked tokens, disabled staff, auth session deletion, anonymous denial.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

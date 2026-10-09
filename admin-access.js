@@ -48,7 +48,7 @@ function showWaitingAccess(state){
   }
 }
 function adminCanEditProducts(){return adminAccessAllowed&&['owner','manager'].includes(adminRole);}
-function adminCanOpenTab(name){return adminAccessAllowed&&(adminRole==='owner'||name==='orders'||(adminRole==='manager'&&name==='products'));}
+function adminCanOpenTab(name){return adminAccessAllowed&&(adminRole==='owner'||name==='orders'||(adminRole==='manager'&&['products','store-history'].includes(name)));}
 function adminRoleName(role){return {owner:'Propietario',manager:'Encargado',staff:'Empleado'}[role]||'Sin permisos';}
 function applyAdminPermissions(){
   const owner=adminRole==='owner';
@@ -97,7 +97,7 @@ async function refreshAdminAccess(){
     adminAccessState=data;adminAccessAllowed=!!data?.allowed;adminRole=data?.role;
     if(previousRole!==adminRole&&adminAccessAllowed){denyAdminAccess('Tus permisos cambiaron. Vuelve a comprobar el acceso para cargar tu nueva interfaz.');return false;}
     if(!adminAccessAllowed){showWaitingAccess(data);return false;}
-    renderAdminAccess();return true;
+    renderAdminAccess();await loadStoreControl();return true;
   })();
   try{return await adminAccessRefreshPromise}catch{denyAdminAccess('No se pudo verificar el acceso. Revisa la conexión y el almacenamiento del navegador.');return false;}finally{adminAccessRefreshPromise=null;}
 }
@@ -210,7 +210,7 @@ async function requestAdminWakeLock(){
 }
 function startOrderRecovery(){clearInterval(adminRecoveryTimer);adminRecoveryTimer=setInterval(()=>{if(adminAccessAllowed&&navigator.onLine&&document.visibilityState==='visible'&&!adminRealtimeOnline)loadOrders();},30000);}
 function stopAdminEnhancements(){
-  stopOrderChime();
+  stopStoreControl();stopOrderChime();
   clearInterval(adminAccessTimer);clearInterval(adminRecoveryTimer);clearInterval(orderSoundTimer);clearTimeout(orderSoundDebounce);
   clearTimeout(adminOrdersTimer);clearTimeout(adminProductsTimer);clearTimeout(adminSettingsTimer);clearTimeout(adminZonesTimer);
   orderSoundEnabled=false;orderSoundTimer=null;

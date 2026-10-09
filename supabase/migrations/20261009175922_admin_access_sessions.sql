@@ -435,5 +435,114 @@ grant execute on function public.admin_list_delivery_zones(),public.admin_save_d
 -- The public menu uses create_pending_order_with_location_v2. Retire the obsolete endpoint
 -- that could apply inventory without owner confirmation (including access by anonymous callers).
 revoke all on function public.create_order_with_inventory(text,text,text,text,text,text,text,jsonb) from public,anon,authenticated;
+-- Emergency closure uses the same setting as the customer menu. State and audit are one transaction.
+create table private.pastehot_store_events (
+  id bigint generated always as identity primary key,
+  created_at timestamptz not null default clock_timestamp(),
+  closed boolean not null,
+  actor_id uuid not null, actor_name text not null, actor_role text not null,
+  session_label text not null, reason text not null check(length(reason) between 5 and 240),
+  during_hours boolean not null, schedule_snapshot jsonb not null
+);
+create index pastehot_store_events_time on private.pastehot_store_events(created_at desc,id desc);
+alter table private.pastehot_store_events enable row level security;
+revoke all on private.pastehot_store_events from public,anon,authenticated;
+
+create function private.pastehot_store_snapshot() returns jsonb language plpgsql stable security definer set search_path='' as $$
+declare
+ v_settings jsonb;v_week jsonb;v_day text;v_today jsonb;v_time timestamp:=now() at time zone 'America/Merida';
+ v_open text;v_close text;v_minutes integer;v_start integer;v_end integer;v_scheduled boolean:=false;v_closed boolean;
+begin
+ select coalesce(jsonb_object_agg(key,value),'{}'::jsonb) into v_settings from public.settings
+ where key in ('store_manual_closed','weekly_schedule','opening_time','closing_time');
+ v_day:=(array['sun','mon','tue','wed','thu','fri','sat'])[extract(dow from v_time)::integer+1];
+ begin v_week:=(v_settings->>'weekly_schedule')::jsonb;exception when others then v_week:=null;end;
+ if jsonb_typeof(v_week)='object' then v_today:=coalesce(v_week->v_day,'{}');
+ else v_today:=jsonb_build_object('enabled',v_day<>'sun','open',coalesce(v_settings->>'opening_time','12:00'),'close',coalesce(v_settings->>'closing_time','21:00'));end if;
+ v_open:=v_today->>'open';v_close:=v_today->>'close';
+ if coalesce(v_today->>'enabled','false')='true' and v_open ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' and v_close ~ '^([01][0-9]|2[0-3]):[0-5][0-9]$' then
+   v_minutes:=extract(hour from v_time)::integer*60+extract(minute from v_time)::integer;
+   v_start:=split_part(v_open,':',1)::integer*60+split_part(v_open,':',2)::integer;
+   v_end:=split_part(v_close,':',1)::integer*60+split_part(v_close,':',2)::integer;
+   v_scheduled:=case when v_start=v_end then true when v_end>v_start then v_minutes>=v_start and v_minutes<v_end else v_minutes>=v_start or v_minutes<v_end end;
+ end if;
+ v_closed:=coalesce(v_settings->>'store_manual_closed','false')='true';
+ return jsonb_build_object('manual_closed',v_closed,'scheduled_open',v_scheduled,'open',not v_closed and v_scheduled,'schedule',jsonb_build_object('timezone','America/Merida','day',v_day,'hours',v_today));
+end;$$;
+revoke all on function private.pastehot_store_snapshot() from public,anon,authenticated;
+
+create function private.pastehot_store_dispatch(p_action text,p_args jsonb default '{}'::jsonb) returns jsonb language plpgsql security definer set search_path='' as $$
+declare
+ v_state jsonb;v_closed boolean;v_requested boolean;v_expected boolean;v_reason text;v_public text;
+ v_member private.pastehot_members;v_label text;v_day date;v_offset integer;v_only boolean;v_rows jsonb;
+begin
+ -- Serialize closures, order insertion and revocation. Identity/time are never supplied by the caller.
+ if p_action='set' then perform 1 from private.pastehot_access_config where singleton for update;end if;
+ if not (private.pastehot_owner_allowed() or private.pastehot_staff_allowed()) then raise exception 'NO_AUTORIZADO';end if;
+ v_state:=private.pastehot_store_snapshot();
+ if p_action='set' then
+   v_requested:=(p_args->>'closed')::boolean;v_expected:=(p_args->>'expected_closed')::boolean;
+   if v_requested is null or v_expected is null then raise exception 'ESTADO_INVALIDO';end if;
+   v_closed:=(v_state->>'manual_closed')::boolean;
+   if v_expected<>v_closed then raise exception 'ESTADO_CAMBIO: otra persona modificó la tienda. Actualiza antes de continuar.';end if;
+   if v_closed=v_requested then
+     if private.pastehot_owner_allowed() and p_args->>'public_reason' is not null then
+       insert into public.settings(key,value) values('store_manual_close_reason',left(trim(p_args->>'public_reason'),160))
+       on conflict(key) do update set value=excluded.value,updated_at=now();
+     end if;
+     return v_state||jsonb_build_object('changed',false);
+   end if;
+   v_reason:=trim(p_args->>'reason');
+   if v_reason is null or length(v_reason) not between 5 and 240 then raise exception 'MOTIVO_REQUERIDO: escribe entre 5 y 240 caracteres.';end if;
+   select * into v_member from private.pastehot_members where user_id=auth.uid();
+   select label into v_label from private.pastehot_sessions where user_id=auth.uid() and auth_session_id=(auth.jwt()->>'session_id')::uuid;
+   v_public:=case when v_requested then 'Cerrado temporalmente. Gracias por tu comprensión.' else '' end;
+   if v_member.role='owner' and p_args->>'public_reason' is not null then v_public:=left(trim(p_args->>'public_reason'),160);end if;
+   insert into public.settings(key,value) values('store_manual_closed',v_requested::text),('store_manual_close_reason',v_public)
+   on conflict(key) do update set value=excluded.value,updated_at=now();
+   insert into private.pastehot_store_events(closed,actor_id,actor_name,actor_role,session_label,reason,during_hours,schedule_snapshot)
+   values(v_requested,v_member.user_id,v_member.display_name,v_member.role,coalesce(v_label,'Mi navegador'),v_reason,(v_state->>'scheduled_open')::boolean,v_state->'schedule');
+   v_state:=private.pastehot_store_snapshot()||jsonb_build_object('changed',true);
+ elsif p_action='history' then
+   if not (private.pastehot_owner_allowed() or private.pastehot_manager_allowed()) then raise exception 'NO_AUTORIZADO';end if;
+   v_day:=(p_args->>'day')::date;v_offset:=greatest(0,least(coalesce((p_args->>'offset')::integer,0),1000000));v_only:=coalesce((p_args->>'only_during_hours')::boolean,false);
+   select coalesce(jsonb_agg(to_jsonb(e) order by e.created_at desc,e.id desc),'[]') into v_rows from (
+     select id,created_at,closed,actor_name,actor_role,session_label,reason,during_hours from private.pastehot_store_events
+     where (v_day is null or (created_at>=v_day::timestamp at time zone 'America/Merida' and created_at<(v_day+1)::timestamp at time zone 'America/Merida'))
+       and (not v_only or during_hours)
+     order by created_at desc,id desc offset v_offset limit 51
+   ) e;
+   return jsonb_build_object('events',case when jsonb_array_length(v_rows)>50 then v_rows-50 else v_rows end,'has_more',jsonb_array_length(v_rows)>50);
+ elsif p_action<>'state' then raise exception 'ACCION_INVALIDA';end if;
+ return v_state||jsonb_build_object('history_allowed',private.pastehot_owner_allowed() or private.pastehot_manager_allowed(),'last_event_id',(select coalesce(max(id),0) from private.pastehot_store_events));
+end;$$;
+revoke all on function private.pastehot_store_dispatch(text,jsonb) from public,anon;
+grant execute on function private.pastehot_store_dispatch(text,jsonb) to authenticated;
+create function public.pastehot_store_state() returns jsonb language sql security invoker set search_path='' as $$select private.pastehot_store_dispatch('state');$$;
+create function public.pastehot_set_store_closed(p_closed boolean,p_reason text,p_expected_closed boolean,p_public_reason text default null) returns jsonb language sql security invoker set search_path='' as $$select private.pastehot_store_dispatch('set',jsonb_build_object('closed',p_closed,'reason',p_reason,'expected_closed',p_expected_closed,'public_reason',p_public_reason));$$;
+create function public.pastehot_store_history(p_day date default null,p_offset integer default 0,p_only_during_hours boolean default false) returns jsonb language sql security invoker set search_path='' as $$select private.pastehot_store_dispatch('history',jsonb_build_object('day',p_day,'offset',p_offset,'only_during_hours',p_only_during_hours));$$;
+revoke all on function public.pastehot_store_state(),public.pastehot_set_store_closed(boolean,text,boolean,text),public.pastehot_store_history(date,integer,boolean) from public,anon;
+grant execute on function public.pastehot_store_state(),public.pastehot_set_store_closed(boolean,text,boolean,text),public.pastehot_store_history(date,integer,boolean) to authenticated;
+
+-- Even the owner's browser must use the audited RPC for these two settings.
+alter policy "Authenticated users can manage settings" on public.settings
+ using (key not in ('store_manual_closed','store_manual_close_reason') and (select private.pastehot_owner_allowed()))
+ with check (key not in ('store_manual_closed','store_manual_close_reason') and (select private.pastehot_owner_allowed()));
+create policy "Approved team can read manual state" on public.settings for select to authenticated using (
+ key in ('store_manual_closed','store_manual_close_reason') and ((select private.pastehot_owner_allowed()) or (select private.pastehot_staff_allowed()))
+);
+
+-- A customer with an old open menu cannot submit a new pending order after closure commits.
+create function private.pastehot_reject_closed_store_order() returns trigger language plpgsql security definer set search_path='' as $$
+begin
+ perform 1 from private.pastehot_access_config where singleton for share;
+ if new.order_status in ('nuevo','pendiente_confirmacion') and exists(select 1 from public.settings where key='store_manual_closed' and value='true') then
+   raise exception 'TIENDA_CERRADA: la tienda está cerrada temporalmente. Intenta cuando vuelva a abrir.';
+ end if;
+ return new;
+end;$$;
+revoke all on function private.pastehot_reject_closed_store_order() from public,anon,authenticated;
+create trigger pastehot_check_store_before_order before insert on public.orders for each row execute function private.pastehot_reject_closed_store_order();
+
 commit;
 

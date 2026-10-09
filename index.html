@@ -1221,7 +1221,12 @@ async function sendOrder(){
       console.error("No se pudo registrar el pedido:",error);
       const raw=String(error.message||"");
       const marker=raw.indexOf("STOCK_INSUFICIENTE|");
-      if(marker>=0){
+      if(raw.includes("TIENDA_CERRADA")){
+        const msg="La tienda cerró temporalmente antes de registrar tu pedido. Tu carrito se conservará para cuando vuelva a abrir.";
+        settings.store_manual_closed="true";
+        renderStoreState();
+        showOrderMessage(msg,"warn");alert(msg);
+      }else if(marker>=0){
         const parts=raw.slice(marker).split("|");
         const productName=parts[1]||"Ese producto";
         const available=Number(parts[2]);

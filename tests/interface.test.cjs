@@ -4,7 +4,7 @@ const tick=()=>new Promise(r=>setTimeout(r,20));
 (async()=>{
  const dom=new JSDOM(fs.readFileSync(root+'/admin.html','utf8'),{url:'https://deploy-preview-99--cheerful-daifuku-76579b.netlify.app/admin.html?demo=1',runScripts:'outside-only',pretendToBeVisual:true});
  const w=dom.window;let alerts=[];w.alert=s=>alerts.push(s);w.confirm=()=>true;
- const files=['receipt.js','admin-orders.js','admin-preview-demo.js','admin-access.js'].map(file=>fs.readFileSync(root+'/'+file,'utf8'));
+ const files=['receipt.js','admin-orders.js','admin-preview-demo.js','admin-access.js','admin-store-control.js'].map(file=>fs.readFileSync(root+'/'+file,'utf8'));
  const inline=[...fs.readFileSync(root+'/admin.html','utf8').matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)].find(m=>!m[1].includes('src=')&&m[2].includes('SUPABASE_URL'))[2];w.eval(files.join('\n')+'\n'+inline);
  await tick();await tick();
  assert(!w.document.getElementById('adminScreen').classList.contains('hidden'));
@@ -28,13 +28,20 @@ const tick=()=>new Promise(r=>setTimeout(r,20));
  w.demoConnection();await tick();await tick();assert.equal(w.document.querySelectorAll('.alert-order').length,3);
  await w.demoRole('staff');await tick();assert.equal(w.document.querySelectorAll('.tabs .tab:not(.hidden)').length,1);assert(w.document.getElementById('ordersMetrics').classList.contains('hidden'));
  assert(!w.document.getElementById('section-orders').classList.contains('hidden'));
+ assert(!w.document.getElementById('storeEmergencyButton').disabled);w.openEmergencyStoreModal();assert(w.document.getElementById('storeChangeModal').classList.contains('show'));assert(w.document.querySelector('.store-audit-warning').textContent.includes('registrada'));
+ w.document.getElementById('storeChangeReason').value='Fuga de agua en cocina';await w.submitEmergencyStoreChange({preventDefault(){}});assert(w.PasteHotDemo.state.storeEvents[0].closed);assert.equal(w.PasteHotDemo.state.storeEvents[0].actor_role,'staff');assert(w.document.getElementById('storeEmergencyStatus').textContent.includes('cerrada manualmente'));
+ w.showTab('store-history');assert(w.document.getElementById('section-orders').classList.contains('active'));
+ assert.equal((await w.PasteHotDemo.client.rpc('pastehot_store_history')).error.message,'NO_AUTORIZADO');
+ w.openEmergencyStoreModal();w.document.getElementById('storeChangeReason').value='Reparación terminada';await w.submitEmergencyStoreChange({preventDefault(){}});assert.equal(w.PasteHotDemo.state.storeEvents.length,2);assert(!w.PasteHotDemo.state.storeEvents[1].closed);
+
  await w.updateOrderStatus(w.PasteHotDemo.tables.orders[0].id,'confirmado');await tick();assert.equal(alerts.filter(s=>s.includes('WhatsApp')).length,0);
  await w.demoRole('owner');await tick();assert.equal(w.document.querySelectorAll('.product-group').length,4);
  const managerSession=w.PasteHotDemo.state.sessions.find(s=>s.role==='manager');
  const authorize=[...w.document.querySelectorAll('#accessSessions button')].find(b=>b.textContent==='Autorizar');assert(authorize&&!authorize.disabled);await w.changeAdminSession(managerSession.session_id,'approved');await tick();await tick();
  assert.equal(managerSession.status,'approved');assert.equal(w.document.querySelectorAll('.presence-dot').length,3);
- await w.demoRole('manager');await tick();assert.equal(w.document.querySelectorAll('.tabs .tab:not(.hidden)').length,2);
+ await w.demoRole('manager');await tick();assert.equal(w.document.querySelectorAll('.tabs .tab:not(.hidden)').length,3);
  assert(w.document.getElementById('categoryAdminCard').classList.contains('hidden'));assert(w.document.getElementById('ordersMetrics').classList.contains('hidden'));
+ w.showTab('store-history');await tick();assert(w.document.getElementById('storeHistoryRows').textContent.includes('Fuga de agua'));assert(w.document.getElementById('storeHistoryRows').textContent.includes('Empleado de prueba'));
  w.showTab('products');assert(w.document.getElementById('section-products').classList.contains('active'));assert.equal(w.document.querySelectorAll('[onclick^="deleteProduct"]').length,0);
  w.showTab('access');assert(w.document.getElementById('section-products').classList.contains('active'));
  w.editProduct(w.PasteHotDemo.tables.products[0].id);assert(w.document.getElementById('productModal').classList.contains('show'));w.document.getElementById('productPrice').value='29';await w.saveProduct();assert.equal(w.PasteHotDemo.tables.products[0].price,29);w.closeProductModal();
@@ -50,5 +57,5 @@ const tick=()=>new Promise(r=>setTimeout(r,20));
  // Query flags can never bypass authorization on the public domain.
  const live=new JSDOM('<html></html>',{url:'https://www.pastehot.com/admin.html?demo=1',runScripts:'outside-only'});
  live.window.eval(fs.readFileSync(root+'/admin-preview-demo.js','utf8'));assert.equal(live.window.PasteHotDemo,undefined);live.window.close();
- console.log('PASS: complete admin DOM boot, grouped products, connection dots, distinct loud ringtone repeated every 3 seconds, nonoverlapping voices, stop on last review and immediate mute, consecutive alerts, opening order, offline recovery, owner, manager and staff interfaces, manager product editing, role-change reapproval, no demo WhatsApp, production demo disabled.');
+ console.log('PASS: complete admin DOM boot, grouped products, connection dots, distinct loud ringtone repeated every 3 seconds, nonoverlapping voices, stop on last review and immediate mute, consecutive alerts, opening order, offline recovery, owner, manager and staff interfaces, manager product editing, role-change reapproval, employee emergency controls, manager history and employee history denial, no demo WhatsApp, production demo disabled.');
 })().catch(e=>{console.error(e);process.exitCode=1;process.exit();});
