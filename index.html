@@ -669,10 +669,12 @@ async function revalidateCurrentDeliveryLocation(){
 }
 
 async function reloadPublicSettings(){
+  const previousCategories=JSON.stringify(configuredCategories());
   const {data,error}=await db.from("settings").select("key,value");
   if(error){console.warn("No se pudo actualizar la configuración.",error);return false}
   settings={};(data||[]).forEach(r=>settings[r.key]=r.value);
   applyDesign();
+  if(JSON.stringify(configuredCategories())!==previousCategories)renderMenu();
   updatePaymentOptions();
   updateDeliverySubtitle();
   updateRainSurchargeUI();
