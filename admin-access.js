@@ -80,7 +80,7 @@ function renderAdminAccess(){
   document.getElementById('enableAdminSecurity').classList.toggle('hidden',enforced);
   document.getElementById('staffInviteButton').disabled=!installed||!enforced||adminAccessBusy;
   document.getElementById('staffInviteForm').classList.toggle('hidden',adminRole!=='owner');
-  document.getElementById('staffInviteButton').textContent=window.PasteHotDemo?.enabled?'Simular invitación · no envía correo':'Preparar invitación de acceso';
+  document.getElementById('staffInviteButton').textContent=window.PasteHotDemo?'Simular invitación · no envía correo':'Preparar invitación de acceso';
   document.getElementById('accessSessions').innerHTML=sessions.length?sessions.map(s=>{
     const pending=s.status==='pending',approved=s.status==='approved',current=s.current;
     const owner=adminRole==='owner',canAuthorize=s.member_enabled!==false,revoked=s.status==='revoked';

@@ -10,7 +10,7 @@ const tick=()=>new Promise(r=>setTimeout(r,20));
  assert(!w.document.getElementById('adminScreen').classList.contains('hidden'));
  assert.equal(w.document.querySelectorAll('.product-group').length,4);
  assert.equal(w.document.querySelector('.product-group-heading').textContent,'Pastes salados2 productos');
- assert.equal(w.document.querySelectorAll('.presence-dot').length,1);
+ assert.equal(w.document.querySelectorAll('.presence-dot').length,1);assert(w.document.getElementById('staffInviteButton').textContent.includes('no envía correo'));
  assert.equal(w.document.querySelectorAll('.alert-order').length,1);
  w.prompt=()=> 'Tablet de atención';
  const tablet=w.PasteHotDemo.state.sessions.find(s=>s.role==='staff');
