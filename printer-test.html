@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Prueba de impresora · PasteHot</title>
+<link rel="icon" href="favicon.png">
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="receipt.js?v=phone10"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#faf7f1;color:#25231f;font:16px/1.5 system-ui,sans-serif}main{max-width:960px;margin:auto;padding:24px}header{display:flex;align-items:center;gap:12px;margin-bottom:24px}header img{width:48px;height:48px;border-radius:12px}h1{font-size:26px;margin:0}h2{font-size:19px;margin:0 0 12px}p{margin:8px 0 20px}.badge{font-size:13px;color:#7b501c;background:#fff0d5;border-radius:20px;padding:4px 12px}.layout{display:grid;grid-template-columns:1fr 280px;gap:24px}.panel{background:white;border:1px solid #e6dfd4;border-radius:16px;padding:24px}label{display:block;font-weight:600;margin:16px 0 6px}select{width:100%;padding:12px;font:inherit;border:1px solid #cfc6b7;border-radius:8px}button{width:100%;padding:13px 16px;border:0;border-radius:8px;background:#a74721;color:white;font:600 16px system-ui;cursor:pointer;margin-top:14px}button.secondary{background:#eee9e1;color:#25231f}a{color:#934221}small{display:block;color:#686057;margin-top:12px}iframe{display:block;width:240px;max-width:100%;height:820px;border:0;background:white;margin:auto}.receipt-panel{text-align:center;padding:18px}.hint{font-size:14px;color:#686057}.preview-note{padding:12px;background:#fff7e7;border-radius:8px;font-size:14px}@media(max-width:650px){main{padding:16px}.layout{grid-template-columns:1fr}.panel{padding:20px}.receipt-panel{max-width:320px;width:100%;margin:auto}}
+</style>
+</head>
+<body><main>
+<header><img src="favicon.png" alt="Logo PasteHot"><div><h1>PasteHot<sup style="font-size:12px">®</sup></h1><span class="badge">Prueba de impresora · Logo v5</span></div></header>
+<div class="layout"><section class="panel">
+<h2>Revisa tu ticket de 58 mm</h2>
+<p>Todos los datos son ficticios. Esta prueba no registra pedidos, ventas ni cambios en la configuración.</p>
+<label for="ticketType">Tipo de ticket</label>
+<select id="ticketType"><option value="pickup">Pasar a recoger · Efectivo</option><option value="delivery">Envío · Transferencia · Con QR</option><option value="missing">Envío · Sin ubicación</option><option value="long">Envío · Dirección y notas largas</option></select>
+<label style="display:flex;align-items:center;gap:8px;font-weight:400"><input id="includeLogo" type="checkbox" checked> Incluir logo en el ticket</label>
+<button id="printButton" type="button">Imprimir ticket de prueba</button>
+<small>En Android abre RawBT. Conecta primero tu Mini Print en RawBT. En computadora abre el diálogo de impresión.</small>
+<button id="browserPrintButton" class="secondary" type="button">Imprimir desde el navegador</button>
+<small>Selecciona papel de 58 mm, escala 100 %, sin márgenes y sin encabezados ni pies del navegador.</small>
+<p class="preview-note">El logo se envía en blanco y negro a la impresora. Puedes desmarcar «Incluir logo» para comparar ambos tickets. En RawBT los acentos y símbolos se simplifican para evitar caracteres incorrectos.</p>
+<p class="hint">Comprueba que salgan el folio, productos, total, código de entrega y QR cuando corresponda. Después revisa que el QR abra la ruta correcta.</p>
+<a href="index.html">Ver menú</a> · <a href="admin.html">Ir al administrador</a>
+</section><section class="panel receipt-panel"><h2>Vista del ticket</h2><iframe id="ticketPreview" title="Ticket ficticio de PasteHot" sandbox="allow-same-origin"></iframe></section></div>
+</main>
+<script>
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function formatMoney(v){return '$'+Number(v||0).toFixed(2)}
+function normalizePhone(v){return String(v??'').replace(/\D/g,'')}
+function safeItems(v){try{const x=typeof v==='string'?JSON.parse(v):v;return Array.isArray(x)?x:[]}catch{return[]}}
+function testOrder(){
+  const type=document.getElementById('ticketType').value;
+  const delivery=type!=='pickup';
+  return {id:'test',order_code:'PRUEBA-001',created_at:new Date().toISOString(),customer_name:'Cliente de prueba',customer_phone:'9990000000',delivery_type:delivery?'delivery':'pickup',payment_method:delivery?'transfer':'cash',items:[{quantity:2,name:'Paste de prueba',price:30,subtotal:60},{quantity:1,name:'Bebida de prueba',price:20,subtotal:20}],subtotal:80,delivery_fee:delivery?25:0,total:delivery?105:80,delivery_base_fee:25,delivery_rain_surcharge:0,delivery_address_text:type==='long'?'Dirección ficticia muy larga para comprobar que el texto se distribuya correctamente en varias líneas sin cortarse por el borde del papel térmico de 58 milímetros.':'Dirección ficticia para prueba de impresión',delivery_reference:'Estos datos no corresponden a un pedido real.',delivery_verification_code:'1234',delivery_lat:type==='missing'?null:20.9674,delivery_lng:type==='missing'?null:-89.5926,notes:type==='long'?'PRUEBA — Esta nota larga permite revisar los saltos de línea, acentos y caracteres especiales. No preparar ni entregar este pedido.':'PRUEBA — No preparar ni entregar.'};
+}
+function ticketOptions(){return {includeLogo:document.getElementById('includeLogo').checked,businessPhone:'529990000001'}}
+function preview(){printTicketOrder(testOrder(),{...ticketOptions(),forceBrowser:true,print:false,targetWindow:document.getElementById('ticketPreview').contentWindow})}
+document.getElementById('ticketType').addEventListener('change',preview);
+document.getElementById('includeLogo').addEventListener('change',preview);
+document.getElementById('printButton').addEventListener('click',()=>printTicketOrder(testOrder(),ticketOptions()));
+document.getElementById('browserPrintButton').addEventListener('click',()=>printTicketOrder(testOrder(),{...ticketOptions(),forceBrowser:true}));
+preview();
+</script></body></html>

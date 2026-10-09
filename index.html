@@ -191,6 +191,7 @@ button:disabled{cursor:not-allowed}
 .brand-footer-site{display:inline-block;margin-top:8px;color:#fff;text-decoration:none;font-size:11px;font-weight:900;letter-spacing:.04em}
 .brand-footer-site:hover{text-decoration:underline}
 @media(max-width:650px){.brand-footer{width:94%;margin-top:8px;padding-bottom:72px}.brand-footer-card{padding:19px 16px;border-radius:17px}.brand-footer-brand{font-size:17px}.brand-footer-official{font-size:14px}.brand-footer-legal{font-size:10px}}
+.brand-footer-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 16px;max-width:720px;margin:18px auto 0;padding-top:15px;border-top:1px solid rgba(255,255,255,.15)}.brand-footer-links a{color:rgba(255,255,255,.8);font-size:12px;text-decoration:underline;text-underline-offset:3px;padding:5px 0;align-self:center;overflow-wrap:anywhere}.brand-footer-links a:hover{color:#fff}.brand-footer-links a:focus-visible{outline:2px solid #ffb347;outline-offset:5px;border-radius:3px}
 </style>
 </head>
 <body>
@@ -250,6 +251,7 @@ button:disabled{cursor:not-allowed}
     <p class="brand-footer-legal">Precios, productos, horarios, promociones y tiempos de entrega sujetos a disponibilidad y cambios sin previo aviso.</p>
     <a class="brand-footer-site" href="https://www.pastehot.com" aria-label="Sitio oficial de PasteHot">www.pastehot.com</a>
     <p class="brand-footer-copyright">© <span id="footerYear"></span> PasteHot<span class="registered-mark registered-mark-small">®</span> es una marca registrada. Todos los derechos reservados.</p>
+    <nav class="brand-footer-links" aria-label="Políticas e información de PasteHot"><a href="privacidad.html">Política de privacidad</a><a href="terminos.html">Términos y condiciones</a><a href="servicio.html">Términos del servicio</a><a href="reembolsos.html">Política de reembolsos</a><a href="envios.html">Política de envío</a><a href="contacto.html">Información de contacto</a></nav>
   </div>
 </footer>
 <button class="cart-button" id="cartButton" type="button" aria-label="Abrir carrito">
@@ -315,6 +317,7 @@ button:disabled{cursor:not-allowed}
       <div id="transferPanel" class="transfer-panel"></div>
       <textarea id="orderNotes" placeholder="Notas del pedido (opcional)"></textarea>
       <div id="orderStatusMessage" class="order-status-message"></div>
+      <p style="font-size:12px;line-height:1.5;color:var(--muted)">Usamos tus datos para atender tu pedido y coordinar la entrega. Consulta la <a href="privacidad.html">política de privacidad</a> y los <a href="terminos.html">términos y condiciones</a>.</p>
       <button class="whatsapp-button" id="whatsappButton" type="button">📲 Enviar pedido por WhatsApp</button>
     </div>
   </div>
@@ -666,10 +669,12 @@ async function revalidateCurrentDeliveryLocation(){
 }
 
 async function reloadPublicSettings(){
+  const previousCategories=JSON.stringify(configuredCategories());
   const {data,error}=await db.from("settings").select("key,value");
   if(error){console.warn("No se pudo actualizar la configuración.",error);return false}
   settings={};(data||[]).forEach(r=>settings[r.key]=r.value);
   applyDesign();
+  if(JSON.stringify(configuredCategories())!==previousCategories)renderMenu();
   updatePaymentOptions();
   updateDeliverySubtitle();
   updateRainSurchargeUI();
@@ -1319,3 +1324,4 @@ init();
 </script>
 </body>
 </html>
+

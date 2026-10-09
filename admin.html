@@ -7,6 +7,7 @@
 <title>Administrador</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="receipt.js?v=phone10"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -61,15 +62,18 @@
 .delivery-admin-box{margin-top:16px;padding:15px;border:1px solid #dfe3e7;border-radius:14px;background:#f8f9fa}.delivery-admin-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.delivery-admin-actions a{text-decoration:none}.delivery-qr{width:180px;min-height:180px;margin:12px auto 0;display:flex;align-items:center;justify-content:center;background:#fff;border:1px solid #ddd;border-radius:12px;padding:10px}.pending-badge{display:inline-block;padding:5px 8px;border-radius:999px;background:#fff1cc;color:#765800;font-size:11px;font-weight:900}.inventory-box{margin-top:15px;padding:15px;border:1px solid #e3e5e8;border-radius:13px;background:#f8f9fa}.inventory-box .grid{margin-top:10px}.inventory-note{margin-top:8px;font-size:12px;color:var(--muted);line-height:1.45}.stock-line{font-weight:800}.stock-line.off{color:#777}.stock-line.ok{color:#087632}.stock-line.low{color:#a15c00}.stock-line.zero{color:#b20d14}
 @media(max-width:1000px){.design-layout,.analytics-grid{grid-template-columns:1fr}.grid-4,.metric-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:700px){.topbar{height:62px;padding:0 14px}.tabs{top:62px;padding:8px}.content{padding:16px 11px}.section-title{align-items:flex-start;flex-direction:column}.grid-2,.grid-3,.grid-4,.control-grid,.metric-grid{grid-template-columns:1fr}.product-admin-card{grid-template-columns:72px 1fr}.product-admin-image{width:72px;height:72px}.product-admin-actions{grid-column:1/-1;justify-content:flex-start}.chart-row{grid-template-columns:100px 1fr auto}.section-title h2{font-size:24px}}
+.category-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #eee}.category-row strong{overflow-wrap:anywhere}.category-actions{display:flex;align-items:center;gap:8px}.category-drag{width:48px;height:48px;padding:0;font-size:27px;line-height:1;background:#eef0f2;color:#222;border:1px solid #dde1e5;border-radius:10px;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}.category-drag:active{cursor:grabbing}.category-drag:disabled{opacity:.3;cursor:default}.category-drag:focus-visible{outline:3px solid #d71920;outline-offset:2px}.category-row.dragging{background:#fff0f0;border:2px dashed #d71920;border-radius:12px;opacity:.45}.category-drag-ghost{position:fixed;z-index:900;pointer-events:none;background:#fff;border:2px solid #d71920;border-radius:12px;padding:12px;box-shadow:0 12px 32px rgba(0,0,0,.2);margin:0;opacity:.97}
+@media(max-width:420px){.category-actions{gap:5px}.category-actions .btn-small{padding:8px 7px;font-size:12px}.category-row{gap:7px}}
+.order-search{display:flex;align-items:center;gap:10px;max-width:520px}.order-search span{font-size:21px}.order-search input{min-width:0}.order-filter select{max-width:100%}
 </style>
 </head>
 <body>
 <div id="loginScreen" class="login-screen"><div class="login-card"><h1>Administrador</h1><p>Gestión del menú, diseño, ventas y clientes.</p><div class="form-group"><label>Correo</label><input id="loginEmail" type="email" autocomplete="username"></div><div class="form-group"><label>Contraseña</label><input id="loginPassword" type="password" autocomplete="current-password"></div><button class="btn btn-primary" style="width:100%" onclick="login()">Entrar</button><div id="loginMessage"></div></div></div>
 <div id="adminScreen" class="hidden">
 <header class="topbar"><div class="topbar-title">PasteHot · Administrador</div><div class="topbar-actions"><span id="adminLiveStatus" class="live-sync-pill">● Conectando actualización automática</span><button class="btn btn-light" onclick="logout()">Salir</button></div></header>
-<nav class="tabs"><button class="tab active" onclick="showTab('products',this)">Productos</button><button class="tab" onclick="showTab('design',this)">Diseño</button><button class="tab" onclick="showTab('business',this)">Negocio</button><button class="tab" onclick="showTab('delivery-zones',this)">Zonas de entrega</button><button class="tab" onclick="showTab('operation',this)">Operación</button><button class="tab" onclick="showTab('batch',this)">Hornada</button><button class="tab" onclick="showTab('orders',this)">Pedidos</button><button class="tab" onclick="showTab('customers',this)">Clientes</button></nav>
+<nav class="tabs"><button class="tab active" onclick="showTab('products',this)">Productos</button><button class="tab" onclick="showTab('design',this)">Diseño</button><button class="tab" onclick="showTab('business',this)">Negocio</button><button class="tab" onclick="showTab('delivery-zones',this)">Zonas de entrega</button><button class="tab" onclick="showTab('operation',this)">Operación</button><button class="tab" onclick="showTab('batch',this)">Hornada</button><button class="tab" onclick="showTab('orders',this)">Pedidos</button><button class="tab" onclick="showTab('customers',this)">Clientes</button><button class="tab" onclick="showTab('paste-sales',this)">Ventas de pastes</button></nav>
 <main class="content">
-<section id="section-products" class="section active"><div class="section-title"><div><h2>Productos</h2><p>Precios, fotografías, categorías y disponibilidad.</p></div><button class="btn btn-primary" onclick="openProductModal()">+ Nuevo producto</button></div><div class="card"><div id="productsList"></div></div><div class="card"><div class="section-title" style="margin-bottom:12px"><div><h3 style="margin:0">Categorías</h3><p>El orden se refleja en el menú público.</p></div><button class="btn btn-dark" onclick="newCategory()">+ Nueva categoría</button></div><div id="categoriesList"></div></div></section>
+<section id="section-products" class="section active"><div class="section-title"><div><h2>Productos</h2><p>Precios, fotografías, categorías y disponibilidad.</p></div><button class="btn btn-primary" onclick="openProductModal()">+ Nuevo producto</button></div><div class="card"><div id="productsList"></div></div><div class="card"><div class="section-title" style="margin-bottom:12px"><div><h3 style="margin:0">Categorías</h3><p>Mantén presionado el botón ⠿ y desliza la categoría a su nueva posición. Al soltar, se guarda con sus productos.</p></div><button class="btn btn-dark" onclick="newCategory()">+ Nueva categoría</button></div><div id="categoriesList"></div><div id="categoriesMessage" role="status" aria-live="polite"></div></div></section>
 
 <section id="section-design" class="section"><div class="design-intro"><h2>Diseño del menú</h2><p>Portada, perfil, fondo y títulos de categorías se administran por separado. Los cambios de tipografía se aplican automáticamente a todas las categorías actuales y futuras.</p></div><div class="design-layout"><div class="editor-panel"><div class="design-tabs"><button id="tabCover" class="design-tab active" onclick="selectDesignPanel('cover')">Portada</button><button id="tabProfile" class="design-tab" onclick="selectDesignPanel('profile')">Perfil</button><button id="tabBackground" class="design-tab" onclick="selectDesignPanel('background')">Fondo</button><button id="tabCategory" class="design-tab" onclick="selectDesignPanel('category')">Títulos</button></div>
 <div id="panelCover" class="design-panel active"><h3>Portada</h3><div class="image-stage"><img id="coverEditorImage" class="hidden"><div id="coverEmpty" class="stage-empty">Selecciona una portada</div></div>
@@ -335,9 +339,10 @@
   </div>
 </section>
 
-<section id="section-orders" class="section"><div class="section-title"><div><h2>Pedidos y ventas</h2><p>Resumen calculado a partir de los pedidos registrados.</p></div><div class="order-filter" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn btn-dark" onclick="printLatestOrder()">⚡ Imprimir último pedido</button><select id="ordersPeriod" onchange="renderOrderAnalytics()"><option value="7">Últimos 7 días</option><option value="30" selected>Últimos 30 días</option><option value="all">Todo</option></select><button class="btn btn-light" onclick="loadOrders()">Actualizar</button></div></div><div id="ordersMetrics" class="metric-grid"></div><div class="analytics-grid"><div class="card"><h3>Productos más vendidos</h3><div id="productSalesChart"></div></div><div class="card"><h3>Ventas por día</h3><div id="dailySalesChart"></div></div></div><div class="card table-wrap"><table><thead><tr><th>Fecha</th><th>Pedido</th><th>Cliente</th><th>Tipo</th><th>Total</th><th>Pago</th><th>Estado</th><th></th></tr></thead><tbody id="ordersTable"></tbody></table></div></section>
+<section id="section-orders" class="section"><div class="section-title"><div><h2>Pedidos y ventas</h2><p>Resumen calculado a partir de los pedidos registrados.</p></div><div class="order-filter" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><a class="btn btn-light" href="printer-test.html" target="_blank" rel="noopener">Probar impresora</a><button class="btn btn-dark" onclick="printLatestOrder()">⚡ Imprimir último pedido</button><select id="ordersPeriod" aria-label="Periodo de pedidos" onchange="renderOrderAnalytics();renderOrdersTable()"><option value="7">Últimos 7 días</option><option value="30" selected>Últimos 30 días</option><option value="all">Todo</option></select><button class="btn btn-light" onclick="loadOrders()">Actualizar</button></div></div><div id="ordersMetrics" class="metric-grid"></div><div class="analytics-grid"><div class="card"><h3>Productos más vendidos</h3><div id="productSalesChart"></div></div><div class="card"><h3>Ventas por día</h3><div id="dailySalesChart"></div></div></div><div id="ordersLoadMessage" role="status"></div><div class="card"><label class="order-search" for="orderSearch"><span aria-hidden="true">🔍</span><input type="search" id="orderSearch" placeholder="Buscar número de pedido o folio" oninput="renderOrdersTable()" autocomplete="off"></label><p class="media-note">La búsqueda por folio revisa todo el historial, sin limitarse al periodo seleccionado.</p><p id="ordersSearchCount" class="media-note" aria-live="polite"></p><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Pedido</th><th>Cliente</th><th>Tipo</th><th>Total</th><th>Pago</th><th>Estado</th><th></th></tr></thead><tbody id="ordersTable"></tbody></table></div></div></section>
 
-<section id="section-customers" class="section"><div class="section-title"><div><h2>Clientes</h2><p>Clientes únicos calculados por número telefónico.</p></div><button class="btn btn-light" onclick="loadOrders()">Actualizar</button></div><div id="customersMetrics" class="metric-grid"></div><div class="card table-wrap"><table><thead><tr><th>Cliente</th><th>Teléfono</th><th>Pedidos</th><th>Gastado</th><th>Primera compra</th><th>Última compra</th><th>Tipo</th></tr></thead><tbody id="customersTable"></tbody></table></div></section>
+<section id="section-paste-sales" class="section"><div class="section-title"><div><h2>Ventas de pastes</h2><p>Unidades compradas, del paste más vendido al menos vendido. Excluye pedidos cancelados y pendientes de confirmación.</p></div><div class="order-filter"><select id="pasteSalesPeriod" aria-label="Periodo de ventas de pastes" onchange="renderPasteSales()"><option value="7">Semana · últimos 7 días</option><option value="30" selected>Mes · últimos 30 días</option><option value="all">Todo el historial</option></select><button class="btn btn-light" onclick="loadOrders()">Actualizar</button></div></div><div id="pasteSalesMetrics" class="metric-grid"></div><div class="card table-wrap"><table><thead><tr><th>Posición</th><th>Paste</th><th>Unidades compradas</th></tr></thead><tbody id="pasteSalesTable"></tbody></table></div></section>
+<section id="section-customers" class="section"><div class="section-title"><div><h2>Clientes</h2><p>Compras del periodo por cliente, identificado por su número telefónico.</p></div><div class="order-filter"><select id="customersPeriod" aria-label="Periodo de clientes" onchange="renderCustomers()"><option value="7">Semana · últimos 7 días</option><option value="30" selected>Mes · últimos 30 días</option><option value="all">Todo el historial</option></select><button class="btn btn-light" onclick="loadOrders()">Actualizar</button></div></div><div id="customersMetrics" class="metric-grid"></div><div class="card table-wrap"><table><thead><tr><th>Cliente</th><th>Teléfono</th><th>Pedidos</th><th>Gastado</th><th>Primera compra del periodo</th><th>Última compra del periodo</th><th>Tipo</th></tr></thead><tbody id="customersTable"></tbody></table></div></section>
 </main></div>
 
 <div id="productModal" class="modal"><div class="modal-card"><div class="modal-head"><h3 id="productModalTitle">Nuevo producto</h3><button class="close" onclick="closeProductModal()">×</button></div><input type="hidden" id="productId"><div class="form-group"><label>Nombre</label><input id="productName"></div><div class="form-group"><label>Descripción</label><textarea id="productDescription"></textarea></div><div class="grid grid-2"><div class="form-group"><label>Precio</label><input id="productPrice" type="number" min="0" step="0.01"></div><div class="form-group"><label>Categoría</label><select id="productCategory"></select></div></div><div class="form-group"><label>Foto</label><input id="productImageFile" type="file" accept="image/jpeg,image/png,image/webp" onchange="previewProductImage(event)"><div class="media-note"><strong>Ideal:</strong> 1000 × 1000 px, formato WebP/JPG y ≤ 300 KB. La imagen se mostrará cuadrada.</div><img id="productImagePreview" class="current-image hidden"></div><div class="form-group"><label>Disponibilidad manual</label><select id="productAvailable"><option value="true">Disponible</option><option value="false">Agotado</option></select></div><div class="inventory-box"><strong>Inventario por producto</strong><div class="inventory-note">Actívalo únicamente en los productos cuyo número de piezas quieras controlar. Si está desactivado, el menú funcionará como hasta ahora.</div><div class="form-group" style="margin-top:12px"><label>Controlar inventario</label><select id="productTrackStock" onchange="syncInventoryFields()"><option value="false">No</option><option value="true">Sí</option></select></div><div class="grid grid-2"><div class="form-group"><label>Disponibles</label><input id="productStock" type="number" min="0" step="1" value="0"></div><div class="form-group"><label>Avisar cuando queden</label><input id="productLowStockThreshold" type="number" min="0" step="1" value="3"></div></div><div id="inventoryFieldNote" class="inventory-note"></div></div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="btn btn-light" onclick="closeProductModal()">Cancelar</button><button class="btn btn-primary" onclick="saveProduct()">Guardar producto</button></div><div id="productMessage"></div></div></div>
@@ -366,10 +371,11 @@ async function login(){const email=loginEmail.value.trim(),password=loginPasswor
 async function logout(){await db.auth.signOut();location.reload()}
 async function checkSession(){const {data}=await db.auth.getSession();if(data.session){loginScreen.classList.add("hidden");adminScreen.classList.remove("hidden");await initAdmin()}}
 async function initAdmin(){
+  await retryImageCleanup();
   await Promise.all([loadProducts(),loadCategories(),loadDesign(),loadBusinessSettings(),loadOrders(),loadBatchSettings(),loadOperationSettings(),loadDeliveryZones()]);
   startAdminRealtime();
 }
-function showTab(name,button){document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));document.getElementById("section-"+name).classList.add("active");button?.classList.add("active");if(name==="orders"||name==="customers")loadOrders();if(name==="design")loadDesign();if(name==="batch")loadBatchSettings();if(name==="operation")loadOperationSettings();if(name==="delivery-zones"){loadDeliveryZones();setTimeout(()=>deliveryZonesMap?.invalidateSize(),80)}}
+function showTab(name,button){document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));document.getElementById("section-"+name).classList.add("active");button?.classList.add("active");if(name==="orders"||name==="customers"||name==="paste-sales")loadOrders();if(name==="design")loadDesign();if(name==="batch")loadBatchSettings();if(name==="operation")loadOperationSettings();if(name==="delivery-zones"){loadDeliveryZones();setTimeout(()=>deliveryZonesMap?.invalidateSize(),80)}}
 
 function setAdminLiveStatus(text,state=""){
   const el=document.getElementById("adminLiveStatus");
@@ -379,7 +385,7 @@ function setAdminLiveStatus(text,state=""){
 }
 function scheduleAdminSettingsReload(){
   clearTimeout(adminSettingsTimer);
-  adminSettingsTimer=setTimeout(()=>Promise.all([loadBusinessSettings(),loadDesign(),loadBatchSettings(),loadOperationSettings()]),250);
+  adminSettingsTimer=setTimeout(()=>Promise.all([loadCategories(),loadBusinessSettings(),loadDesign(),loadBatchSettings(),loadOperationSettings()]),250);
 }
 function startAdminRealtime(){
   if(adminRealtimeChannel)db.removeChannel(adminRealtimeChannel);
@@ -403,12 +409,12 @@ function startAdminRealtime(){
 async function refreshAdminAfterWake(){
   const {data}=await db.auth.getSession();
   if(!data?.session)return;
-  await Promise.all([loadProducts(),loadOrders(),loadBusinessSettings(),loadDesign(),loadBatchSettings(),loadOperationSettings(),loadDeliveryZones()]);
+  await Promise.all([loadProducts(),loadCategories(),loadOrders(),loadBusinessSettings(),loadDesign(),loadBatchSettings(),loadOperationSettings(),loadDeliveryZones()]);
 }
 window.addEventListener("online",refreshAdminAfterWake);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")refreshAdminAfterWake()});
 
-async function loadProducts(){const {data,error}=await db.from("products").select("*").order("sort_order",{ascending:true}).order("created_at",{ascending:true});if(error){productsList.innerHTML='<div class="message error">No se pudieron cargar los productos.</div>';return}products=data||[];renderProducts()}
+async function loadProducts(){const {data,error}=await db.from("products").select("*").order("sort_order",{ascending:true}).order("created_at",{ascending:true});if(error){productsList.innerHTML='<div class="message error">No se pudieron cargar los productos.</div>';return}products=data||[];renderProducts();renderPasteSales()}
 function renderProducts(){if(!products.length){productsList.innerHTML='<p style="color:#777">No hay productos.</p>';return}productsList.innerHTML=products.map(p=>{const tracked=!!p.track_stock,stock=Math.max(0,Number(p.stock)||0),threshold=Math.max(0,Number(p.low_stock_threshold)||0);const stockClass=!tracked?"off":stock===0?"zero":stock<=threshold?"low":"ok";const stockText=!tracked?"Inventario: no controlado":stock===0?"Inventario: AGOTADO":stock<=threshold?`Inventario: ${stock} · pocas unidades`:`Inventario: ${stock} disponibles`;return `<div class="product-admin-card"><img class="product-admin-image" src="${escapeAttr(p.image_url||"")}" alt=""><div class="product-admin-info"><h3>${escapeHtml(p.name)}</h3><p>${escapeHtml(p.category||"")}</p><p>${formatMoney(p.price)}</p><p class="stock-line ${stockClass}">${escapeHtml(stockText)}</p></div><div class="product-admin-actions"><button class="status-toggle ${p.available?"status-on":"status-off"}" onclick="toggleProduct('${p.id}',${!p.available})">${p.available?"● Disponible":"● Agotado"}</button><button class="btn btn-light btn-small" onclick="editProduct('${p.id}')">Editar</button><button class="btn btn-danger btn-small" onclick="deleteProduct('${p.id}')">Borrar</button></div></div>`}).join("")}
 async function toggleProduct(id,value){const {error}=await db.from("products").update({available:value,updated_at:new Date().toISOString()}).eq("id",id);if(error){alert("No se pudo actualizar.");return}const p=products.find(x=>String(x.id)===String(id));if(p)p.available=value;renderProducts()}
 function storagePathFromPublicUrl(url){
@@ -419,12 +425,31 @@ function storagePathFromPublicUrl(url){
     return decodeURIComponent(String(url).slice(i+marker.length).split("?")[0]);
   }catch{return null}
 }
+const IMAGE_CLEANUP_KEY="pastehot_image_cleanup_v1";
+function pendingImageCleanup(){try{return JSON.parse(localStorage.getItem(IMAGE_CLEANUP_KEY)||"[]").filter(u=>typeof u==="string"&&storagePathFromPublicUrl(u))}catch{return []}}
+function rememberImageCleanup(url,pending){try{const urls=new Set(pendingImageCleanup());if(pending)urls.add(url);else urls.delete(url);localStorage.setItem(IMAGE_CLEANUP_KEY,JSON.stringify([...urls]))}catch(e){console.warn("No se pudo guardar el reintento de limpieza.",e)}}
 async function removeStoredImage(url){
   const path=storagePathFromPublicUrl(url);
-  if(!path)return;
-  const {error}=await db.storage.from("product-images").remove([path]);
-  if(error)console.warn("No se pudo eliminar la imagen anterior de Storage.",error);
+  if(!path)return true;
+  try{
+    // Never remove an image still used by a product or the menu design.
+    const [productRefs,designRefs]=await Promise.all([
+      db.from("products").select("id").eq("image_url",url).limit(1),
+      db.from("settings").select("key").in("key",["cover_image","profile_image","background_image"]).eq("value",url).limit(1)
+    ]);
+    if(productRefs.error||designRefs.error)throw productRefs.error||designRefs.error;
+    if(productRefs.data?.length||designRefs.data?.length){rememberImageCleanup(url,false);return true}
+    const {error}=await db.storage.from("product-images").remove([path]);
+    if(error)throw error;
+    const slash=path.lastIndexOf("/"),folder=slash<0?"":path.slice(0,slash),name=path.slice(slash+1);
+    const check=await db.storage.from("product-images").list(folder,{search:name,limit:100});
+    if(check.error)throw check.error;
+    if((check.data||[]).some(item=>item.name===name))throw new Error("La foto anterior sigue almacenada.");
+    rememberImageCleanup(url,false);
+    return true;
+  }catch(error){rememberImageCleanup(url,true);console.warn("Limpieza de imagen pendiente.",error);return false}
 }
+async function retryImageCleanup(){for(const url of pendingImageCleanup())await removeStoredImage(url)}
 async function deleteProduct(id){
   const p=products.find(x=>String(x.id)===String(id));
   if(!p||!confirm(`¿Borrar "${p.name}"?`))return;
@@ -466,17 +491,81 @@ async function saveProduct(){
     return;
   }
 
-  if(file&&oldImage&&oldImage!==imageUrl)await removeStoredImage(oldImage);
-  showMessage("productMessage","Producto guardado.");
+  const cleaned=!(file&&oldImage&&oldImage!==imageUrl)||await removeStoredImage(oldImage);
+  showMessage("productMessage",cleaned?"Producto guardado. Foto anterior eliminada si ya no estaba en uso.":"Producto guardado. No se pudo eliminar la foto anterior; se reintentará al entrar al administrador.",cleaned);
   await loadProducts();
-  setTimeout(closeProductModal,450);
+  if(cleaned)setTimeout(closeProductModal,450);
 }
 
-async function loadCategories(){const {data}=await db.from("settings").select("value").eq("key","categories").maybeSingle();if(data?.value){try{const p=JSON.parse(data.value);if(Array.isArray(p)&&p.length)categories=p}catch{}}populateCategorySelect();renderCategories()}
-function renderCategories(){categoriesList.innerHTML=categories.map((c,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid #eee"><strong>${i+1}. ${escapeHtml(c)}</strong><button class="btn btn-danger btn-small" onclick="deleteCategory(${i})">Eliminar</button></div>`).join("")}
-async function saveCategories(){await saveSetting("categories",JSON.stringify(categories));populateCategorySelect();renderCategories()}
-async function newCategory(){const v=prompt("Nombre de la nueva categoría:")?.trim();if(!v)return;if(categories.some(c=>c.toLowerCase()===v.toLowerCase())){alert("Esa categoría ya existe.");return}categories.push(v);await saveCategories()}
-async function deleteCategory(i){const name=categories[i];if(products.some(p=>p.category===name)){alert("No puedes eliminar esta categoría mientras tenga productos asignados.");return}if(categories.length<=1||!confirm(`¿Eliminar la categoría "${name}"?`))return;categories.splice(i,1);await saveCategories()}
+async function loadCategories(){if(categoryOrderSaving||categoryDragState)return;const {data}=await db.from("settings").select("value").eq("key","categories").maybeSingle();if(data?.value){try{const p=JSON.parse(data.value);if(Array.isArray(p)&&p.length)categories=p}catch{}}populateCategorySelect();renderCategories()}
+let categoryOrderSaving=false,categoryDragState=null;
+function renderCategories(){categoriesList.innerHTML=categories.map((c,i)=>`<div class="category-row" data-category-index="${i}"><strong>${i+1}. ${escapeHtml(c)}</strong><div class="category-actions"><button type="button" class="category-drag" aria-label="Mover ${escapeAttr(c)}" title="Mantén presionado y desliza para mover" onpointerdown="startCategoryDrag(event,${i})" onkeydown="categoryDragKeyboard(event,${i})" ${categoryOrderSaving?"disabled":""}>⠿</button><button class="btn btn-danger btn-small" onclick="deleteCategory(${i})" ${categoryOrderSaving?"disabled":""}>Eliminar</button></div></div>`).join("")}
+function startCategoryDrag(event,index){
+  if(categoryOrderSaving||categoryDragState||event.button!==0)return;
+  event.preventDefault();
+  const surface=categoriesList,handle=event.currentTarget,row=handle.closest(".category-row"),rect=row.getBoundingClientRect();
+  const state={handle,row,pointerId:event.pointerId,original:[...categories],y:event.clientY,offset:event.clientY-rect.top,active:false,timer:null,frame:null,ghost:null};
+  categoryDragState=state;
+  // Capture on the stable list: moving the row must not cancel the touch.
+  surface.setPointerCapture(event.pointerId);
+  const move=e=>{if(e.pointerId===state.pointerId){e.preventDefault();state.y=e.clientY}};
+  const finish=async e=>{
+    if(e.pointerId!==state.pointerId||categoryDragState!==state)return;
+    clearTimeout(state.timer);cancelAnimationFrame(state.frame);
+    surface.removeEventListener("pointermove",move);surface.removeEventListener("pointerup",finish);surface.removeEventListener("pointercancel",cancel);surface.removeEventListener("lostpointercapture",cancel);
+    const next=[...categoriesList.querySelectorAll(".category-row")].map(r=>state.original[Number(r.dataset.categoryIndex)]);
+    state.ghost?.remove();row.classList.remove("dragging");categoryDragState=null;
+    if(surface.hasPointerCapture(state.pointerId))surface.releasePointerCapture(state.pointerId);
+    if(state.active&&e.type!=="pointercancel"&&JSON.stringify(next)!==JSON.stringify(state.original)){
+      await applyCategoryOrder(next);
+      const position=categories.indexOf(state.original[index]);categoriesList.querySelectorAll(".category-drag")[position]?.focus();
+    }else renderCategories();
+  };
+  const cancel=e=>{if(e.type==="lostpointercapture"&&e.target!==surface)return;return finish({pointerId:e.pointerId,type:"pointercancel"})};
+  const tick=()=>{
+    if(categoryDragState!==state)return;
+    if(state.y<85)window.scrollBy(0,-12);else if(state.y>window.innerHeight-70)window.scrollBy(0,12);
+    state.ghost.style.top=(state.y-state.offset)+"px";
+    const siblings=[...categoriesList.querySelectorAll(".category-row")].filter(r=>r!==row);
+    const before=siblings.find(r=>{const box=r.getBoundingClientRect();return state.y<box.top+box.height/2});
+    if(before){if(row.nextElementSibling!==before)categoriesList.insertBefore(row,before)}else if(categoriesList.lastElementChild!==row)categoriesList.appendChild(row);
+    state.frame=requestAnimationFrame(tick);
+  };
+  surface.addEventListener("pointermove",move);surface.addEventListener("pointerup",finish);surface.addEventListener("pointercancel",cancel);surface.addEventListener("lostpointercapture",cancel);
+  state.timer=setTimeout(()=>{
+    if(categoryDragState!==state)return;
+    state.active=true;state.ghost=row.cloneNode(true);state.ghost.classList.add("category-drag-ghost");state.ghost.setAttribute("aria-hidden","true");state.ghost.style.width=rect.width+"px";state.ghost.style.left=rect.left+"px";document.body.appendChild(state.ghost);row.classList.add("dragging");showMessage("categoriesMessage","Desliza la categoría y suelta para guardar.");state.frame=requestAnimationFrame(tick);
+  },180);
+}
+async function categoryDragKeyboard(event,index){
+  if(!["ArrowUp","ArrowDown"].includes(event.key)||categoryDragState)return;
+  event.preventDefault();await moveCategory(index,event.key==="ArrowUp"?-1:1);
+}
+async function applyCategoryOrder(next){
+  if(categoryOrderSaving)return false;
+  const previous=[...categories];
+  categoryOrderSaving=true;categories=[...next];renderCategories();
+  showMessage("categoriesMessage","Guardando orden…");
+  try{
+    await saveSetting("categories",JSON.stringify(categories));
+    populateCategorySelect();
+    showMessage("categoriesMessage","Orden guardado. El menú mostrará las categorías con sus productos en esta posición.");
+    return true;
+  }catch(error){
+    categories=previous;populateCategorySelect();
+    showMessage("categoriesMessage","No se pudo guardar el orden. Se conservó la posición anterior; vuelve a intentarlo.",false);
+    return false;
+  }finally{categoryOrderSaving=false;renderCategories()}
+}
+async function moveCategory(index,direction){
+  if(categoryOrderSaving||categoryDragState||!Number.isInteger(index)||![-1,1].includes(direction))return;
+  const target=index+direction;
+  if(index<0||index>=categories.length||target<0||target>=categories.length)return;
+  const next=[...categories];[next[index],next[target]]=[next[target],next[index]];
+  if(await applyCategoryOrder(next))document.querySelectorAll(".category-row")[target]?.querySelector(".category-drag")?.focus();
+}
+async function newCategory(){if(categoryOrderSaving||categoryDragState)return;const v=prompt("Nombre de la nueva categoría:")?.trim();if(!v)return;if(categories.some(c=>c.toLowerCase()===v.toLowerCase())){alert("Esa categoría ya existe.");return}await applyCategoryOrder([...categories,v])}
+async function deleteCategory(i){if(categoryOrderSaving||categoryDragState)return;const name=categories[i];if(products.some(p=>p.category===name)){alert("No puedes eliminar esta categoría mientras tenga productos asignados.");return}if(categories.length<=1||!confirm(`¿Eliminar la categoría "${name}"?`))return;await applyCategoryOrder(categories.filter((_,index)=>index!==i))}
 
 function selectDesignPanel(name){document.querySelectorAll(".design-panel").forEach(p=>p.classList.remove("active"));document.querySelectorAll(".design-tab").forEach(p=>p.classList.remove("active"));document.getElementById("panel"+name[0].toUpperCase()+name.slice(1)).classList.add("active");document.getElementById("tab"+name[0].toUpperCase()+name.slice(1)).classList.add("active")}
 async function loadDesign(){const keys=["cover_image","cover_x","cover_y","cover_scale","profile_image","profile_x","profile_y","profile_scale","background_type","background_color","background_image","background_overlay","category_title_font","category_title_size","category_title_color"];const {data,error}=await db.from("settings").select("key,value").in("key",keys);if(error)return;const s={};(data||[]).forEach(r=>s[r.key]=r.value);design.cover={url:s.cover_image||"",x:Number(s.cover_x)||0,y:Number(s.cover_y)||0,scale:Number(s.cover_scale)||1};design.profile={url:s.profile_image||"",x:Number(s.profile_x)||0,y:Number(s.profile_y)||0,scale:Number(s.profile_scale)||1};design.background={type:s.background_type||"color",color:s.background_color||"#f4f4f4",url:s.background_image||"",overlay:Number(s.background_overlay)||0};design.category={font:s.category_title_font||"Arial",size:Number(s.category_title_size)||28,color:s.category_title_color||"#171717"};syncDesignControls();updateDesignPreview()}
@@ -1098,9 +1187,28 @@ function allowedOrderStatuses(o){
   if(o.order_status==="cancelado")return ["cancelado","confirmado"];
   return ["nuevo","confirmado","preparando","listo","entregado","cancelado"];
 }
-async function loadOrders(){const {data,error}=await db.from("orders").select("*").order("created_at",{ascending:false}).limit(1000);if(error){orders=[];ordersTable.innerHTML='<tr><td colspan="8">No se pudieron cargar los pedidos. Revisa la tabla y las políticas RLS.</td></tr>';renderOrderAnalytics();renderCustomers();return}orders=data||[];renderOrdersTable();renderOrderAnalytics();renderCustomers()}
-function filteredOrders(){const p=ordersPeriod.value;if(p==="all")return orders;const cutoff=Date.now()-Number(p)*86400000;return orders.filter(o=>new Date(o.created_at).getTime()>=cutoff)}
-function renderOrdersTable(){if(!orders.length){ordersTable.innerHTML='<tr><td colspan="8">No hay pedidos registrados.</td></tr>';return}ordersTable.innerHTML=orders.slice(0,250).map(o=>{const pending=o.order_status==="pendiente_confirmacion";return `<tr><td>${formatDate(o.created_at)}</td><td>${escapeHtml(o.order_code||String(o.id||"").slice(0,8))}</td><td>${escapeHtml(o.customer_name||"")}${pending?'<div class="pending-badge">Pendiente de confirmar</div>':""}</td><td>${escapeHtml(o.delivery_type||"")}</td><td>${formatMoney(o.total)}</td><td>${escapeHtml(o.payment_method||"")}</td><td><select style="min-width:150px" onchange="updateOrderStatus('${o.id}',this.value)">${allowedOrderStatuses(o).map(s=>`<option value="${s}" ${o.order_status===s?"selected":""}>${s.replaceAll("_"," ")}</option>`).join("")}</select></td><td><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><button class="btn btn-dark" onclick="printOrderTicket('${o.id}')">🖨 Imprimir</button><button class="btn btn-light btn-small" onclick="openOrderModal('${o.id}')">Detalles</button>${pending? `<button class="btn btn-success btn-small" onclick="updateOrderStatus('${o.id}','confirmado')">✓ Confirmar</button>`:""}</div></td></tr>`}).join("")}
+let ordersLoadingPromise=null;
+async function loadOrders(){
+  if(ordersLoadingPromise)return ordersLoadingPromise;
+  ordersLoadingPromise=(async()=>{
+    try{
+      const all=[],pageSize=1000;
+      for(let offset=0;;offset+=pageSize){
+        const {data,error}=await db.from("orders").select("*").order("created_at",{ascending:false}).order("id",{ascending:false}).range(offset,offset+pageSize-1);
+        if(error)throw error;
+        all.push(...(data||[]));if((data||[]).length<pageSize)break;
+      }
+      orders=all;document.getElementById("ordersLoadMessage").textContent="";
+      renderOrdersTable();renderOrderAnalytics();renderCustomers();renderPasteSales();
+    }catch(error){showMessage("ordersLoadMessage","No se pudo actualizar el historial. Vuelve a intentar con Actualizar.",false)}
+  })();
+  try{await ordersLoadingPromise}finally{ordersLoadingPromise=null}
+}
+function ordersInPeriod(period,list=orders){if(period==="all")return list;const cutoff=Date.now()-Number(period)*86400000;return list.filter(o=>new Date(o.created_at).getTime()>=cutoff)}
+function validSalesOrders(period="all"){return ordersInPeriod(period).filter(o=>!["cancelado","pendiente_confirmacion"].includes(o.order_status))}
+function filteredOrders(){return ordersInPeriod(ordersPeriod.value)}
+function orderSearchResults(){const q=String(document.getElementById("orderSearch")?.value||"").trim().toLowerCase().replace(/[\s-]/g,"");if(!q)return filteredOrders();return orders.filter(o=>[o.order_code,o.id,String(o.id||"").slice(0,8)].some(v=>String(v||"").toLowerCase().replace(/[\s-]/g,"").includes(q)))}
+function renderOrdersTable(){const list=orderSearchResults();document.getElementById("ordersSearchCount").textContent=`${list.length} pedido${list.length===1?"":"s"} encontrado${list.length===1?"":"s"}`;if(!list.length){ordersTable.innerHTML='<tr><td colspan="8">No hay pedidos que coincidan con la búsqueda o el periodo.</td></tr>';return}ordersTable.innerHTML=list.map(o=>{const pending=o.order_status==="pendiente_confirmacion";return `<tr><td>${formatDate(o.created_at)}</td><td>${escapeHtml(o.order_code||String(o.id||"").slice(0,8))}</td><td>${escapeHtml(o.customer_name||"")}${pending?'<div class="pending-badge">Pendiente de confirmar</div>':""}</td><td>${escapeHtml(o.delivery_type||"")}</td><td>${formatMoney(o.total)}</td><td>${escapeHtml(o.payment_method||"")}</td><td><select style="min-width:150px" onchange="updateOrderStatus('${o.id}',this.value)">${allowedOrderStatuses(o).map(s=>`<option value="${s}" ${o.order_status===s?"selected":""}>${s.replaceAll("_"," ")}</option>`).join("")}</select></td><td><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><button class="btn btn-dark" onclick="printOrderTicket('${o.id}')">🖨 Imprimir</button><button class="btn btn-light btn-small" onclick="openOrderModal('${o.id}')">Detalles</button>${pending? `<button class="btn btn-success btn-small" onclick="updateOrderStatus('${o.id}','confirmado')">✓ Confirmar</button>`:""}</div></td></tr>`}).join("")}
 function confirmationWhatsAppUrl(order){
   const phone=normalizePhone(order?.customer_phone||"");
   if(!phone)return "";
@@ -1145,6 +1253,7 @@ async function updateOrderStatus(id,status){
   renderOrdersTable();
   renderOrderAnalytics();
   renderCustomers();
+  renderPasteSales();
   await loadProducts();
 
   if(shouldOpenConfirmation){
@@ -1164,317 +1273,44 @@ async function updateOrderStatus(id,status){
 function renderOrderAnalytics(){const list=filteredOrders(),valid=list.filter(o=>!["cancelado","pendiente_confirmacion"].includes(o.order_status)),revenue=valid.reduce((a,o)=>a+Number(o.total||0),0),avg=valid.length?revenue/valid.length:0;const productMap={},dayMap={};valid.forEach(o=>{safeItems(o.items).forEach(i=>{const key=i.name||"Producto";productMap[key]=(productMap[key]||0)+Number(i.quantity||0)});const day=new Date(o.created_at).toISOString().slice(0,10);dayMap[day]=(dayMap[day]||0)+Number(o.total||0)});const productsRank=Object.entries(productMap).sort((a,b)=>b[1]-a[1]),daysRank=Object.entries(dayMap).sort((a,b)=>b[1]-a[1]);const best=daysRank[0],worst=[...daysRank].sort((a,b)=>a[1]-b[1])[0];ordersMetrics.innerHTML=metric("Pedidos",valid.length)+metric("Ventas",formatMoney(revenue))+metric("Ticket promedio",formatMoney(avg))+metric("Mejor día",best?`${best[0]} · ${formatMoney(best[1])}`:"—");renderBarChart(productSalesChart,productsRank.slice(0,8),v=>`${v} u.`);const chronological=Object.entries(dayMap).sort((a,b)=>a[0].localeCompare(b[0])).slice(-14);renderBarChart(dailySalesChart,chronological,v=>formatMoney(v));if(worst&&chronological.length)dailySalesChart.insertAdjacentHTML("beforeend",`<p style="color:var(--muted);font-size:13px">Menor venta entre días con pedidos: <strong>${escapeHtml(worst[0])}</strong> · ${formatMoney(worst[1])}</p>`)}
 function metric(label,value){return `<div class="metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`}
 function renderBarChart(container,rows,formatter){if(!rows.length){container.innerHTML='<p style="color:#777">Sin datos todavía.</p>';return}const max=Math.max(...rows.map(r=>Number(r[1])||0),1);container.innerHTML=rows.map(([label,value])=>`<div class="chart-row"><div class="chart-label" title="${escapeAttr(label)}">${escapeHtml(label)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(3,(Number(value)/max)*100)}%"></div></div><strong>${escapeHtml(formatter(value))}</strong></div>`).join("")}
-function deriveCustomers(){const map={};orders.filter(o=>!["cancelado","pendiente_confirmacion"].includes(o.order_status)).forEach(o=>{const phone=normalizePhone(o.customer_phone);if(!phone)return;if(!map[phone])map[phone]={name:o.customer_name||"",phone,count:0,total:0,first:o.created_at,last:o.created_at};const c=map[phone];c.count++;c.total+=Number(o.total||0);if(new Date(o.created_at)<new Date(c.first))c.first=o.created_at;if(new Date(o.created_at)>new Date(c.last)){c.last=o.created_at;c.name=o.customer_name||c.name}});return Object.values(map).sort((a,b)=>new Date(b.last)-new Date(a.last))}
-function renderCustomers(){const list=deriveCustomers(),rec=list.filter(c=>c.count>1),newc=list.filter(c=>c.count===1),value=list.reduce((a,c)=>a+c.total,0);customersMetrics.innerHTML=metric("Clientes únicos",list.length)+metric("Nuevos",newc.length)+metric("Recurrentes",rec.length)+metric("Venta acumulada",formatMoney(value));if(!list.length){customersTable.innerHTML='<tr><td colspan="7">No hay clientes todavía.</td></tr>';return}customersTable.innerHTML=list.map(c=>`<tr><td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.phone)}</td><td>${c.count}</td><td>${formatMoney(c.total)}</td><td>${dateOnly(c.first)}</td><td>${dateOnly(c.last)}</td><td><span class="badge ${c.count>1?"recurrent":"new"}">${c.count>1?"Recurrente":"Nuevo"}</span></td></tr>`).join("")}
-function ticketDeliveryLabel(value){return value==="delivery"?"Envío a domicilio":value==="pickup"?"Pasar a recoger":String(value||"")}
-function ticketPaymentLabel(value){return value==="cash"?"Efectivo":value==="transfer"?"Transferencia":String(value||"")}
-function ticketDate(value){if(!value)return"";return new Intl.DateTimeFormat("es-MX",{dateStyle:"short",timeStyle:"short"}).format(new Date(value))}
-function firstCustomerName(value){
-  const clean=String(value||"").trim();
-  return clean?clean.split(/\s+/)[0]:"Cliente";
+function pasteSalesRanking(period){
+  const byId=new Map(products.map(p=>[String(p.id),p])),byName=new Map(products.map(p=>[p.name,p])),totals=new Map();
+  const isPaste=p=>!/bebida|refresco|agua|café|cafe|jugo/i.test(String(p?.category||""));
+  products.filter(isPaste).forEach(p=>totals.set(String(p.id),{name:p.name,quantity:0}));
+  validSalesOrders(period).forEach(o=>safeItems(o.items).forEach(item=>{
+    const product=byId.get(String(item.product_id||item.id||""))||byName.get(item.name);
+    if(!isPaste(product||item))return;
+    const key=product?String(product.id):String(item.product_id||item.id||item.name||"Producto histórico");
+    if(!totals.has(key))totals.set(key,{name:item.name||product?.name||"Paste histórico",quantity:0});
+    const quantity=Number(item.quantity);if(Number.isFinite(quantity)&&quantity>0)totals.get(key).quantity+=quantity;
+  }));
+  return [...totals.values()].sort((a,b)=>b.quantity-a.quantity||a.name.localeCompare(b.name,"es"));
 }
-function rawBtSafeText(value){
-  return String(value??"").replace(/\r/g,"").trim();
+function renderPasteSales(){
+  const ranking=pasteSalesRanking(pasteSalesPeriod.value),total=ranking.reduce((n,p)=>n+p.quantity,0),best=ranking.find(p=>p.quantity>0);
+  pasteSalesMetrics.innerHTML=metric("Pastes vendidos",total)+metric("Más vendido",best?.name||"Sin ventas")+metric("Unidades del más vendido",best?.quantity||0);
+  pasteSalesTable.innerHTML=ranking.length?ranking.map((p,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(p.name)}</td><td><strong>${p.quantity}</strong></td></tr>`).join(""):'<tr><td colspan="3">No hay pastes registrados.</td></tr>';
 }
-function rawBtMoney(value){
-  return "$"+Number(value||0).toFixed(2);
-}
-function escPosSafeText(value){
-  return String(value??"")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g,"")
-    .replace(/[^\x20-\x7E]/g," ")
-    .replace(/\s+/g," ")
-    .trim();
-}
-function escPosWrap(value,width=32){
-  const text=escPosSafeText(value);
-  if(!text)return [""];
-  const words=text.split(" ");
-  const lines=[];
-  let line="";
-  words.forEach(word=>{
-    if(word.length>width){
-      if(line){lines.push(line);line=""}
-      for(let i=0;i<word.length;i+=width)lines.push(word.slice(i,i+width));
-      return;
-    }
-    if(!line){line=word}
-    else if((line+" "+word).length<=width){line+=" "+word}
-    else{lines.push(line);line=word}
+function deriveCustomers(period=customersPeriod.value){
+  const history=new Map(),map=new Map(),all=validSalesOrders("all");
+  all.forEach(o=>{const phone=normalizePhone(o.customer_phone);if(!phone)return;const old=history.get(phone);if(!old||new Date(o.created_at)<new Date(old.first))history.set(phone,{first:o.created_at});});
+  validSalesOrders(period).forEach(o=>{
+    const phone=normalizePhone(o.customer_phone);if(!phone)return;
+    if(!map.has(phone))map.set(phone,{name:o.customer_name||"",phone,count:0,total:0,first:o.created_at,last:o.created_at,firstEver:history.get(phone)?.first||o.created_at});
+    const c=map.get(phone);c.count++;c.total+=Number(o.total||0);
+    if(new Date(o.created_at)<new Date(c.first))c.first=o.created_at;
+    if(new Date(o.created_at)>new Date(c.last)){c.last=o.created_at;c.name=o.customer_name||c.name}
   });
-  if(line)lines.push(line);
-  return lines;
+  const cutoff=Date.now()-Number(period)*86400000;
+  return [...map.values()].map(c=>({...c,recurrent:period==="all"?c.count>1:new Date(c.firstEver).getTime()<cutoff})).sort((a,b)=>new Date(b.last)-new Date(a.last));
 }
-function escPosPair(left,right,width=32){
-  const l=escPosSafeText(left);
-  const r=escPosSafeText(right);
-  const spaces=Math.max(1,width-l.length-r.length);
-  if(l.length+r.length+1<=width)return l+" ".repeat(spaces)+r;
-  const keep=Math.max(1,width-r.length-1);
-  return l.slice(0,keep)+" "+r;
-}
-function rawBtBytesToBase64(bytes){
-  let binary="";
-  const chunk=0x8000;
-  for(let i=0;i<bytes.length;i+=chunk){
-    binary+=String.fromCharCode.apply(null,bytes.subarray(i,i+chunk));
-  }
-  return btoa(binary);
-}
-function rawBtEscPosTicket(o){
-  const items=safeItems(o.items);
-  const isDelivery=o.delivery_type==="delivery";
-  const customerPhone=normalizePhone(o.customer_phone||"");
-  const businessPhone=normalizePhone(document.getElementById("whatsapp")?.value||"");
-  const firstName=firstCustomerName(o.customer_name);
-  const address=o.delivery_address_text||o.address||"Direccion no registrada";
-  const reference=o.delivery_reference||"Sin referencia adicional";
-  const verificationCode=o.delivery_verification_code||"----";
-  const rain=Number(o.delivery_rain_surcharge)||0;
-  const code=o.order_code||String(o.id||"").slice(0,8);
-  const bytes=[];
-  const push=(...values)=>values.forEach(v=>bytes.push(v&255));
-  const write=value=>{
-    const s=escPosSafeText(value);
-    for(let i=0;i<s.length;i++)bytes.push(s.charCodeAt(i)&127);
-  };
-  const line=value=>{write(value);push(10)};
-  const blank=()=>push(10);
-  const align=value=>push(27,97,value);
-  const bold=on=>push(27,69,on?1:0);
-  const size=(w=1,h=1)=>push(29,33,((Math.max(1,Math.min(8,w))-1)<<4)|(Math.max(1,Math.min(8,h))-1));
-  const rule=()=>line("--------------------------------");
-  const wrapped=(value,width=32)=>escPosWrap(value,width).forEach(line);
-  const pair=(left,right)=>line(escPosPair(left,right,32));
-  const qr=value=>{
-    const data=escPosSafeText(value);
-    if(!data)return;
-    const dataBytes=[];
-    for(let i=0;i<data.length;i++)dataBytes.push(data.charCodeAt(i)&127);
-    const storeLength=dataBytes.length+3;
-    align(1);
-    push(29,40,107,4,0,49,65,50,0);
-    push(29,40,107,3,0,49,67,5);
-    push(29,40,107,3,0,49,69,48);
-    push(29,40,107,storeLength&255,(storeLength>>8)&255,49,80,48,...dataBytes);
-    push(29,40,107,3,0,49,81,48);
-    blank();
-    align(0);
-  };
-
-  // ESC/POS: inicializa una impresora térmica estándar de 58 mm.
-  push(27,64);
-  align(1);
-  bold(true);
-  size(2,2);
-  line("PasteHot");
-  size(1,1);
-  line("TICKET DE COMPRA");
-  bold(false);
-  line("FOLIO "+code);
-  line(ticketDate(o.created_at));
-  align(0);
-  rule();
-
-  pair("Cliente",firstName);
-  pair("Telefono",customerPhone||"Sin telefono");
-  pair("Modalidad",ticketDeliveryLabel(o.delivery_type));
-  pair("Pago",ticketPaymentLabel(o.payment_method));
-  rule();
-
-  if(items.length){
-    items.forEach(i=>{
-      wrapped((i.quantity||0)+" x "+(i.name||"Producto"),32);
-      pair("",rawBtMoney(i.subtotal));
-    });
-  }else{
-    line("Sin productos registrados.");
-  }
-
-  rule();
-  pair("Subtotal",rawBtMoney(o.subtotal));
-  if(isDelivery&&rain>0){
-    pair("Envio base",rawBtMoney(o.delivery_base_fee));
-    pair("Lluvia",rawBtMoney(rain));
-  }
-  pair("Envio",rawBtMoney(o.delivery_fee));
-  bold(true);
-  size(1,2);
-  pair("TOTAL",rawBtMoney(o.total));
-  size(1,1);
-  bold(false);
-
-  if(o.notes){
-    rule();
-    bold(true);line("NOTAS");bold(false);
-    wrapped(o.notes,32);
-  }
-
-  if(isDelivery){
-    rule();
-    align(1);bold(true);line("DATOS DE ENTREGA");bold(false);
-    line("CODIGO DE ENTREGA");
-    size(2,2);line(verificationCode);size(1,1);
-    line("Pedir codigo antes de entregar");
-    align(0);
-    if(o.delivery_zone_name)pair("Zona",o.delivery_zone_name);
-    bold(true);line("DIRECCION");bold(false);
-    wrapped(address,32);
-    bold(true);line("REFERENCIA");bold(false);
-    wrapped(reference,32);
-    pair("Cliente",customerPhone||"Sin telefono");
-    pair("PasteHot",businessPhone||"Sin telefono");
-    if(o.delivery_provider)pair("Reparto",o.delivery_provider);
-    if(Number.isFinite(Number(o.delivery_lat))&&Number.isFinite(Number(o.delivery_lng))){
-      rule();
-      align(1);
-      line("UBICACION EN GOOGLE MAPS");
-      qr(mapsDirectionsUrl(o.delivery_lat,o.delivery_lng));
-      line("Escanea para abrir la ruta");
-      align(0);
-    }
-  }
-
-  rule();
-  align(1);
-  line("Gracias por tu compra");
-  blank();
-  blank();
-blank();
-  bold(true);line("www.pastehot.com");bold(false);
-  blank();
-  wrapped("(c) 2026 PasteHot es una marca registrada. Todos los derechos reservados.",32);
-  blank();blank();blank();blank();
-  align(0);
-  return new Uint8Array(bytes);
-}
+function renderCustomers(){const list=deriveCustomers(),rec=list.filter(c=>c.recurrent),newc=list.filter(c=>!c.recurrent),value=list.reduce((a,c)=>a+c.total,0);customersMetrics.innerHTML=metric("Clientes del periodo",list.length)+metric("Nuevos",newc.length)+metric("Recurrentes",rec.length)+metric("Venta del periodo",formatMoney(value));if(!list.length){customersTable.innerHTML='<tr><td colspan="7">No hay clientes con compras en este periodo.</td></tr>';return}customersTable.innerHTML=list.map(c=>`<tr><td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.phone)}</td><td>${c.count}</td><td>${formatMoney(c.total)}</td><td>${dateOnly(c.first)}</td><td>${dateOnly(c.last)}</td><td><span class="badge ${c.recurrent?"recurrent":"new"}">${c.recurrent?"Recurrente":"Nuevo"}</span></td></tr>`).join("")}
 function printLatestOrder(){if(!orders.length){alert("No hay pedidos para imprimir.");return}return printOrderTicket(orders[0].id)}
 function printOrderTicket(id){
   const o=orders.find(x=>String(x.id)===String(id));
   if(!o){alert("No se encontró el pedido.");return}
-
-  const isAndroid=/Android/i.test(navigator.userAgent||"");
-  if(isAndroid){
-    // Mini Print + RawBT: enviamos ESC/POS de 58 mm directamente.
-    // RawBT recibe los bytes en base64 y los entrega a la impresora configurada.
-    const ticketBytes=rawBtEscPosTicket(o);
-    const rawBtPayload=rawBtBytesToBase64(ticketBytes);
-    // RawBT documenta el esquema rawbt:base64,<datos> para enviar bytes RAW.
-    // No codificar el Base64 con encodeURIComponent: rompe +, / y =.
-    window.location.href="rawbt:base64,"+rawBtPayload;
-    return;
-  }
-
-  const items=safeItems(o.items);
-  const itemRows=items.map(i=>`<div class="item"><div class="item-name"><strong>${escapeHtml(i.quantity)} × ${escapeHtml(i.name||"Producto")}</strong>${Number(i.price)>=0?`<small>${escapeHtml(i.quantity)} × ${formatMoney(i.price)}</small>`:""}</div><strong class="item-total">${formatMoney(i.subtotal)}</strong></div>`).join("");
-  const notes=o.notes?`<div class="notes"><strong>NOTAS</strong><div>${escapeHtml(o.notes)}</div></div>`:"";
-  const isDelivery=o.delivery_type==="delivery";
-  const hasLocation=isDelivery&&Number.isFinite(Number(o.delivery_lat))&&Number.isFinite(Number(o.delivery_lng));
-  const customerPhone=normalizePhone(o.customer_phone||"");
-  const businessPhone=normalizePhone(document.getElementById("whatsapp")?.value||"");
-  const firstName=firstCustomerName(o.customer_name);
-  const address=o.delivery_address_text||o.address||"Dirección no registrada";
-  const reference=o.delivery_reference||"Sin referencia adicional";
-  const verificationCode=o.delivery_verification_code||"----";
-  const rain=Number(o.delivery_rain_surcharge)||0;
-  const popup=window.open("","_blank","width=420,height=900");
-  if(!popup){alert("El navegador bloqueó la ventana del ticket. Permite ventanas emergentes para imprimir.");return}
-
-  popup.document.open();
-  popup.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Preparando ticket…</title></head><body style="font-family:Arial,sans-serif;padding:20px"><strong>Preparando ticket de 58 mm…</strong></body></html>');
-  popup.document.close();
-
-  const writeTicket=qrSrc=>{
-    const deliveryBlock=isDelivery?`
-      <div class="rule"></div>
-      <div class="delivery-title">DATOS DE ENTREGA</div>
-      <div class="verify">
-        <div class="verify-label">Código de entrega</div>
-        <div class="verify-code">${escapeHtml(verificationCode)}</div>
-        <div class="verify-note">El repartidor debe pedir este código antes de entregar.</div>
-      </div>
-      ${o.delivery_zone_name?`<div class="data-row"><span>Zona</span><strong>${escapeHtml(o.delivery_zone_name)}</strong></div>`:""}
-      <div class="data-block"><div class="label">Dirección</div><div class="value">${escapeHtml(address)}</div></div>
-      <div class="data-block"><div class="label">Referencia</div><div class="value">${escapeHtml(reference)}</div></div>
-      ${qrSrc?`<img class="qr" src="${qrSrc}" alt="QR Google Maps"><div class="qr-note">Escanea para abrir la ubicación en Google Maps.</div>`:""}
-      <div class="data-block"><div class="label">Teléfono del cliente</div><div class="value">${escapeHtml(customerPhone||"Sin teléfono")}</div></div>
-      <div class="data-block"><div class="label">Contacto PasteHot</div><div class="value">${escapeHtml(businessPhone||"Sin teléfono configurado")}</div></div>
-      ${o.delivery_provider?`<div class="data-row"><span>Reparto</span><strong>${escapeHtml(o.delivery_provider)}</strong></div>`:""}
-    `:"";
-
-    popup.document.open();
-    popup.document.write(`<!DOCTYPE html><html lang="es-MX"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ticket ${escapeHtml(o.order_code||"")}</title><style>
-      @page{size:58mm auto;margin:0}
-      *{box-sizing:border-box}
-      html,body{margin:0;padding:0;width:58mm;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif}
-      body{font-size:9px;line-height:1.28}
-      .ticket{width:58mm;padding:2.5mm 2mm 4mm;margin:0 auto}
-      .brand{text-align:center;font-size:14px;font-weight:900;line-height:1.05;margin-top:.2mm}
-      .registered{font-size:5px;vertical-align:super;line-height:0;margin-left:.4px}
-      .subtitle{text-align:center;font-size:9px;font-weight:900;margin-top:.7mm;letter-spacing:.4px}
-      .order-code{text-align:center;font-size:11.5px;font-weight:900;line-height:1.12;margin:1.8mm 0 .7mm;overflow-wrap:anywhere}
-      .date{text-align:center;font-size:8px;margin-bottom:1.8mm}
-      .rule{border-top:1px dashed #000;margin:2mm 0}
-      .label{font-size:7px;font-weight:800;text-transform:uppercase;letter-spacing:.2px;margin-bottom:.4mm}
-      .value{font-size:9.5px;font-weight:800;overflow-wrap:anywhere}
-      .meta{display:grid;grid-template-columns:1fr 1fr;gap:1.6mm 2.4mm}
-      .meta-line{grid-column:1/-1;display:flex;justify-content:space-between;align-items:baseline;gap:2mm;padding-top:1.2mm;border-top:1px dotted #aaa}
-      .meta-line .label{margin:0}.meta-line .value{text-align:right}
-      .item{display:grid;grid-template-columns:1fr auto;gap:1.5mm;align-items:start;padding:1.2mm 0;border-bottom:1px dotted #999}
-      .item-name{min-width:0;overflow-wrap:anywhere}.item-name small{display:block;font-size:7.5px;font-weight:400;margin-top:.4mm}.item-total{white-space:nowrap;font-size:9px}
-      .totals{display:grid;gap:1mm}.total-row{display:flex;justify-content:space-between;gap:1.5mm}.grand{font-size:13px;font-weight:900;border-top:1.5px solid #000;padding-top:1.6mm;margin-top:.8mm}
-      .notes{margin-top:2mm;padding:1.5mm;border:1px solid #000;overflow-wrap:anywhere}.notes strong{display:block;font-size:7px;margin-bottom:.7mm}
-      .delivery-title{text-align:center;font-size:9px;font-weight:900;letter-spacing:.5px;margin-bottom:1.5mm}
-      .verify{border:2px solid #000;border-radius:1.5mm;padding:2mm;text-align:center;margin:1.6mm 0}
-      .verify-label{font-size:7px;font-weight:900;text-transform:uppercase}.verify-code{font-size:21px;font-weight:950;letter-spacing:1.5px;margin:.6mm 0}.verify-note{font-size:7px;line-height:1.3}
-      .data-block{margin:1.6mm 0}.data-row{display:flex;justify-content:space-between;gap:2mm;padding:1.2mm 0;border-bottom:1px dotted #aaa;font-size:8.5px}.data-row strong{text-align:right;overflow-wrap:anywhere}
-      .qr{display:block;width:31mm;height:31mm;object-fit:contain;margin:2mm auto .8mm}.qr-note{text-align:center;font-size:7.5px;font-weight:800;margin-bottom:1.5mm}
-      .footer{text-align:center;font-size:6.8px;line-height:1.3;margin-top:2mm}.website{font-size:9px;font-weight:900;margin:1.5mm 0}.legal{margin-top:1.5mm}.copyright{font-size:6.2px;margin-top:1.5mm}
-      @media print{html,body{width:58mm}.ticket{page-break-after:auto}}
-    </style></head><body><main class="ticket">
-      <div class="brand">PasteHot<span class="registered">®</span></div>
-      <div class="subtitle">TICKET DE COMPRA</div>
-      <div class="order-code">FOLIO ${escapeHtml(o.order_code||String(o.id||"").slice(0,8))}</div>
-      <div class="date">${escapeHtml(ticketDate(o.created_at))}</div>
-      <div class="rule"></div>
-      <div class="meta">
-        <div><div class="label">Cliente</div><div class="value">${escapeHtml(firstName)}</div></div>
-        <div><div class="label">Teléfono</div><div class="value">${escapeHtml(customerPhone||"Sin teléfono")}</div></div>
-        <div class="meta-line"><div class="label">Modalidad</div><div class="value">${escapeHtml(ticketDeliveryLabel(o.delivery_type))}</div></div>
-        <div class="meta-line"><div class="label">Pago</div><div class="value">${escapeHtml(ticketPaymentLabel(o.payment_method))}</div></div>
-      </div>
-      <div class="rule"></div>
-      <div>${itemRows||'<div style="text-align:center">Sin productos registrados.</div>'}</div>
-      <div class="rule"></div>
-      <div class="totals">
-        <div class="total-row"><span>Subtotal</span><strong>${formatMoney(o.subtotal)}</strong></div>
-        ${isDelivery&&rain>0?`<div class="total-row"><span>Tarifa base de envío</span><strong>${formatMoney(o.delivery_base_fee)}</strong></div><div class="total-row"><span>Recargo por lluvia</span><strong>${formatMoney(rain)}</strong></div>`:""}
-        <div class="total-row"><span>Envío</span><strong>${formatMoney(o.delivery_fee)}</strong></div>
-        <div class="total-row grand"><span>TOTAL</span><span>${formatMoney(o.total)}</span></div>
-      </div>
-      ${notes}
-      ${deliveryBlock}
-      <div class="rule"></div>
-      <div class="footer"><div class="thanks">Gracias por tu compra</div><div class="website">www.pastehot.com</div><div class="copyright">© 2026 PasteHot<span class="registered">®</span> es una marca registrada. Todos los derechos reservados.</div></div>
-    </main><script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250));window.addEventListener('afterprint',()=>window.close());<\/script></body></html>`);
-    popup.document.close();
-  };
-
-  if(!hasLocation){writeTicket("");return}
-  const host=document.createElement("div");
-  host.style.position="fixed";host.style.left="-9999px";
-  document.body.appendChild(host);
-  new QRCode(host,{text:mapsDirectionsUrl(o.delivery_lat,o.delivery_lng),width:200,height:200});
-  setTimeout(()=>{
-    const qrSrc=host.querySelector("img")?.src||host.querySelector("canvas")?.toDataURL("image/png")||"";
-    host.remove();
-    writeTicket(qrSrc);
-  },80);
+  return printTicketOrder(o);
 }
-
-function mapsPointUrl(lat,lng){return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`}
-function mapsDirectionsUrl(lat,lng){return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${lat},${lng}`)}&travelmode=driving`}
 function updateDeliveryProviderUI(){
   const provider=document.getElementById("deliveryProviderInput")?.value||"";
   const trackingWrap=document.getElementById("trackingFieldWrap");
@@ -1516,7 +1352,7 @@ function openOrderModal(id){
   const o=orders.find(x=>String(x.id)===String(id));if(!o)return;
   orderModalTitle.textContent="Pedido "+(o.order_code||"");
   const items=safeItems(o.items);
-  const hasLocation=o.delivery_type==="delivery"&&Number.isFinite(Number(o.delivery_lat))&&Number.isFinite(Number(o.delivery_lng));
+  const hasLocation=o.delivery_type==="delivery"&&hasDeliveryLocation(o);
   const mapUrl=hasLocation?mapsPointUrl(o.delivery_lat,o.delivery_lng):"";
   let deliveryBox="";
   if(o.delivery_type==="delivery"){
@@ -1596,3 +1432,4 @@ checkSession();
 </script>
 </body>
 </html>
+
