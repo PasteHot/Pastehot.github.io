@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PasteHot · Revisión de pantallas</title>
+<style>body{font-family:Arial,sans-serif;margin:0;background:#e9ebef;color:#171717}header{padding:16px;background:#fff}h1{font-size:20px;margin:0 0 8px}p{margin:8px 0}button,a{display:inline-block;margin:4px;padding:12px;border:1px solid #bbb;border-radius:8px;background:#fff;color:#171717;font-weight:bold}button[aria-pressed=true]{background:#171717;color:#fff}.stage{overflow:auto;padding:16px}iframe{display:block;margin:auto;border:1px solid #bbb;background:white;height:1100px;max-width:none}small{display:block;margin:8px}</style>
+<header><h1>Revisión del administrador</h1><p>Datos ficticios. Elige un tamaño para comprobar que los controles quedan separados.</p><button data-width="390" aria-pressed="false">Celular · 390 px</button><button data-width="768" aria-pressed="true">Tablet vertical · 768 px</button><button data-width="1366" aria-pressed="false">Laptop · 1366 px</button><a href="admin.html?demo=1">Abrir preview a pantalla completa</a></header>
+<div class="stage"><iframe id="adminFrame" width="768" title="Administrador de prueba"></iframe></div>
+<script>
+if(!location.hostname.startsWith('deploy-preview-'))location.replace('admin.html');
+else{document.querySelector('iframe').src='admin.html?demo=1';document.querySelectorAll('[data-width]').forEach(button=>button.addEventListener('click',()=>{document.querySelector('iframe').width=button.dataset.width;document.querySelectorAll('[data-width]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));}));}
+</script></html>
