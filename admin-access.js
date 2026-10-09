@@ -34,6 +34,8 @@ async function setupAdminAccess(session){
 }
 function denyAdminAccess(message){
   adminAccessAllowed=false;stopAdminEnhancements();
+  document.querySelectorAll('.modal.show').forEach(el=>el.classList.remove('show'));
+  document.getElementById('orderDetail').textContent='';
   document.getElementById('adminScreen').classList.add('hidden');document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('loginMessage').innerHTML=`<div class="message error" role="alert">${escapeHtml(message)}</div><button class="btn btn-light" onclick="checkSession()">Volver a comprobar</button><button class="btn btn-light" onclick="logout()">Cerrar sesión</button>`;
 }
@@ -182,6 +184,7 @@ function stopAdminEnhancements(){
   clearInterval(adminAccessTimer);clearInterval(adminRecoveryTimer);clearInterval(orderSoundTimer);clearTimeout(orderSoundDebounce);
   clearTimeout(adminOrdersTimer);clearTimeout(adminProductsTimer);clearTimeout(adminSettingsTimer);clearTimeout(adminZonesTimer);
   orderSoundEnabled=false;orderSoundTimer=null;
+  const soundButton=document.getElementById('adminSoundButton');if(soundButton)soundButton.textContent='Activar sonido';
   if(adminRealtimeChannel){db.removeChannel(adminRealtimeChannel);adminRealtimeChannel=null;}
   if(adminWakeLock){adminWakeLock.release().catch(()=>{});adminWakeLock=null;}
   document.getElementById('newOrdersInbox')?.classList.add('hidden');

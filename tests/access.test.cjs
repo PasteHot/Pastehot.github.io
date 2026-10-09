@@ -33,6 +33,7 @@ const sid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
  insert into products(id,name) values('${sid(30)}','Paste de prueba');
  insert into storage.objects values('${sid(40)}','product-images');`);
  await pg.exec(`create function public.admin_list_delivery_zones() returns jsonb language sql as $$select '[]'::jsonb;$$;create function public.admin_save_delivery_zone(uuid,numeric,boolean,jsonb) returns jsonb language sql as $$select '{}'::jsonb;$$;`);
+ await pg.exec(`create function public.create_order_with_inventory(text,text,text,text,text,text,text,jsonb) returns jsonb language sql as $$select '{}'::jsonb;$$;`);
  const migration=fs.readFileSync(__dirname+'/../supabase/migrations/20261009175922_admin_access_sessions.sql','utf8');await pg.exec(migration);
  async function login(uid,session){currentSession=Number(session.slice(-12));await pg.exec('reset role;');await pg.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:uid,session_id:session,role:'authenticated'})]);await pg.exec('set role authenticated;');}
  let currentSession=1;const token=n=>n.toString(16).padStart(64,'0');
@@ -44,7 +45,7 @@ const sid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
  await login(other,sid(4));assert.equal((await state()).allowed,false);
  await login(owner,sid(3));const d3=(await state()).device_id;assert.equal((await state()).allowed,false);await denied(`select pastehot_set_session('${d2}','approved');`);
  await login(owner,sid(1));await pg.exec(`select pastehot_set_session('${d2}','approved');`);await denied(`select pastehot_set_session('${d3}','approved');`);await denied(`select pastehot_set_session('${d1}','revoked');`);
- await login(staff,sid(2));assert.equal((await state()).allowed,true);await denied('select admin_list_delivery_zones();');await denied(`select admin_save_delivery_zone('${sid(50)}',1,true,null);`);assert.equal((await pg.query('select * from orders')).rows.length,1);
+ await login(staff,sid(2));assert.equal((await state()).allowed,true);await denied("select create_order_with_inventory('','','','','','','','[]');");await denied('select admin_list_delivery_zones();');await denied(`select admin_save_delivery_zone('${sid(50)}',1,true,null);`);assert.equal((await pg.query('select * from orders')).rows.length,1);
  assert.equal((await pg.query("update products set name='MAL' returning id")).rows.length,0);assert.equal((await pg.query('delete from products returning id')).rows.length,0);
  assert.equal((await pg.query('delete from storage.objects returning id')).rows.length,0);assert.equal((await pg.query('select * from customers')).rows.length,0);
  assert.equal((await pg.query("update orders set order_status='cancelado' returning id")).rows.length,0);

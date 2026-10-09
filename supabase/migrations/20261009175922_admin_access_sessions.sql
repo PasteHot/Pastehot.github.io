@@ -407,5 +407,8 @@ revoke all on function public.admin_list_delivery_zones(),public.admin_save_deli
 grant execute on function public.admin_list_delivery_zones(),public.admin_save_delivery_zone(uuid,numeric,boolean,jsonb) to authenticated;
 
 
+-- The public menu uses create_pending_order_with_location_v2. Retire the obsolete endpoint
+-- that could apply inventory without owner confirmation (including access by anonymous callers).
+revoke all on function public.create_order_with_inventory(text,text,text,text,text,text,text,jsonb) from public,anon,authenticated;
 commit;
 

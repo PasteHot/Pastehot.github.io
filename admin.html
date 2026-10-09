@@ -1355,6 +1355,7 @@ function deriveCustomers(period=customersPeriod.value){
 function renderCustomers(){const list=deriveCustomers(),rec=list.filter(c=>c.recurrent),newc=list.filter(c=>!c.recurrent),value=list.reduce((a,c)=>a+c.total,0);customersMetrics.innerHTML=metric("Clientes del periodo",list.length)+metric("Nuevos",newc.length)+metric("Recurrentes",rec.length)+metric("Venta del periodo",formatMoney(value));if(!list.length){customersTable.innerHTML='<tr><td colspan="7">No hay clientes con compras en este periodo.</td></tr>';return}customersTable.innerHTML=list.map(c=>`<tr><td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.phone)}</td><td>${c.count}</td><td>${formatMoney(c.total)}</td><td>${dateOnly(c.first)}</td><td>${dateOnly(c.last)}</td><td><span class="badge ${c.recurrent?"recurrent":"new"}">${c.recurrent?"Recurrente":"Nuevo"}</span></td></tr>`).join("")}
 function printLatestOrder(){if(!orders.length){alert("No hay pedidos para imprimir.");return}return printOrderTicket(orders[0].id)}
 function printOrderTicket(id){
+  if(!adminAccessAllowed)return;
   const o=orders.find(x=>String(x.id)===String(id));
   if(!o){alert("No se encontró el pedido.");return}
   return printTicketOrder(o);
@@ -1397,6 +1398,7 @@ function renderDeliveryQr(o){
   new QRCode(box,{text:mapsDirectionsUrl(o.delivery_lat,o.delivery_lng),width:160,height:160});
 }
 function openOrderModal(id){
+  if(!adminAccessAllowed)return;
   const o=orders.find(x=>String(x.id)===String(id));if(!o)return;
   reviewInboxOrder(id);
   orderModalTitle.textContent="Pedido "+(o.order_code||"");

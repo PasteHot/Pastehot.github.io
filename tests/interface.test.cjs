@@ -21,6 +21,7 @@ const tick=()=>new Promise(r=>setTimeout(r,20));
  await w.updateOrderStatus(w.PasteHotDemo.tables.orders[0].id,'confirmado');await tick();assert.equal(alerts.filter(s=>s.includes('WhatsApp')).length,0);
  await w.demoRole();await tick();assert.equal(w.document.querySelectorAll('.product-group').length,4);
  assert.equal(w.PasteHotDemo.state.role,'owner');
+ w.openOrderModal(w.PasteHotDemo.tables.orders[0].id);assert(w.document.getElementById('orderModal').classList.contains('show'));w.denyAdminAccess('Revocado');assert(!w.document.getElementById('orderModal').classList.contains('show'));assert.equal(w.document.getElementById('orderDetail').textContent,'');assert.equal(w.document.getElementById('adminSoundButton').textContent,'Activar sonido');
  w.stopAdminEnhancements();dom.window.close();
  // Query flags can never bypass authorization on the public domain.
  const live=new JSDOM('<html></html>',{url:'https://www.pastehot.com/admin.html?demo=1',runScripts:'outside-only'});
