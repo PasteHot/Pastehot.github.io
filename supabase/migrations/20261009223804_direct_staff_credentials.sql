@@ -1,6 +1,23 @@
 -- Prepared for preview only; apply only with publication authorization.
 begin;
 alter table private.pastehot_access_config add column direct_access boolean not null default false;
+-- Preserve the original owner as a protected root account, allowing one delegated owner.
+alter table private.pastehot_members add column primary_owner boolean not null default false;
+update private.pastehot_members set primary_owner=true where role='owner';
+drop index private.pastehot_one_owner;
+create unique index pastehot_one_primary_owner on private.pastehot_members(primary_owner) where primary_owner;
+create unique index pastehot_one_delegated_owner on private.pastehot_members(role) where role='owner' and not primary_owner;
+alter table private.pastehot_members add constraint pastehot_primary_owner_active check(not primary_owner or (role='owner' and enabled));
+create function private.pastehot_protect_primary_owner() returns trigger
+language plpgsql set search_path='' as $$
+begin
+ if old.primary_owner or new.primary_owner is distinct from old.primary_owner then raise exception 'CUENTA_PRINCIPAL_PROTEGIDA';end if;
+ return new;
+end;$$;
+revoke all on function private.pastehot_protect_primary_owner() from public,anon,authenticated;
+create trigger pastehot_protect_primary_owner before update on private.pastehot_members
+for each row execute function private.pastehot_protect_primary_owner();
+
 create or replace function private.pastehot_owner_allowed() returns boolean language sql stable security definer set search_path='' as $$
  select exists(select 1 from private.pastehot_members m cross join private.pastehot_access_config c
  join auth.sessions a on a.id=(auth.jwt()->>'session_id')::uuid
@@ -56,6 +73,7 @@ begin
    end if;
  elsif p_action in ('set_session','set_staff','set_role','add_staff','rename_session','remove_session') then
    if not private.pastehot_owner_allowed() then raise exception 'NO_AUTORIZADO';end if;
+   if p_action in ('rename_session','remove_session','set_session') and not v_member.primary_owner and exists(select 1 from private.pastehot_sessions s join private.pastehot_members m on m.user_id=s.user_id where s.session_id=(p_args->>'session_id')::uuid and m.primary_owner) then raise exception 'CUENTA_PRINCIPAL_PROTEGIDA';end if;
    if p_action='rename_session' then
      v_target:=(p_args->>'session_id')::uuid;v_label:=trim(p_args->>'label');
      if v_label is null or length(v_label) not between 1 and 60 then raise exception 'NOMBRE_INVALIDO';end if;
@@ -74,20 +92,20 @@ begin
      update private.pastehot_sessions set status=v_status,visible=false where session_id=v_target;
    elsif p_action='set_staff' then
      v_target:=(p_args->>'user_id')::uuid;
-     if not exists(select 1 from private.pastehot_members where user_id=v_target and role in ('manager','staff')) then raise exception 'EMPLEADO_NO_ENCONTRADO';end if;
+     if not exists(select 1 from private.pastehot_members where user_id=v_target and role in ('owner','manager','staff') and not primary_owner and user_id<>v_uid) then raise exception 'CUENTA_NO_MODIFICABLE';end if;
      update private.pastehot_members set enabled=(p_args->>'enabled')::boolean where user_id=v_target;
      update private.pastehot_sessions set status='revoked',visible=false where user_id=v_target;
    elsif p_action='set_role' then
      v_target:=(p_args->>'user_id')::uuid;v_role:=p_args->>'role';
-     if v_role is null or v_role not in ('manager','staff') then raise exception 'ROL_INVALIDO';end if;
-     if not exists(select 1 from private.pastehot_members where user_id=v_target and role in ('manager','staff')) then raise exception 'EMPLEADO_NO_ENCONTRADO';end if;
-     -- New permissions require an explicit fresh browser approval, including promotions.
+     if v_role is null or v_role not in ('owner','manager','staff') then raise exception 'ROL_INVALIDO';end if;
+     if not exists(select 1 from private.pastehot_members where user_id=v_target and role in ('owner','manager','staff') and not primary_owner and user_id<>v_uid) then raise exception 'CUENTA_NO_MODIFICABLE';end if;
+     -- Membership is authoritative; direct mode applies changes on every request.
      update private.pastehot_members set role=v_role where user_id=v_target and role<>v_role;
      if found then update private.pastehot_sessions set status='revoked',visible=false where user_id=v_target;end if;
    else
      if not v_enforced then raise exception 'ACTIVA_LA_PROTECCION_PRIMERO';end if;
      v_role:=coalesce(p_args->>'role','staff');
-     if v_role not in ('manager','staff') then raise exception 'ROL_INVALIDO';end if;
+     if v_role not in ('owner','manager','staff') then raise exception 'ROL_INVALIDO';end if;
      v_email:=lower(trim(p_args->>'email'));v_label:=trim(p_args->>'name');
      if v_label is null or length(v_label) not between 1 and 80 then raise exception 'NOMBRE_INVALIDO';end if;
      select id into v_target from auth.users where lower(email)=v_email;
@@ -100,23 +118,23 @@ begin
  v_allowed:=private.pastehot_owner_allowed() or private.pastehot_staff_allowed();
  if v_allowed then
    select coalesce(jsonb_agg(jsonb_build_object('session_id',s.session_id,'user_id',s.user_id,'label',s.label,'status',s.status,
-     'role',m.role,'member_enabled',m.enabled,'display_name',m.display_name,'current',s.auth_session_id=v_sid,
+     'role',m.role,'primary_owner',m.primary_owner,'member_enabled',m.enabled,'display_name',m.display_name,'current',s.auth_session_id=v_sid,
      'online',s.auth_session_id is not null and s.visible and s.last_seen>now()-interval '60 seconds' and s.status='approved') order by s.created_at),'[]'::jsonb)
    into v_sessions from private.pastehot_sessions s join private.pastehot_members m on m.user_id=s.user_id
    where v_member.role='owner' or (m.enabled and s.status='approved');
    if v_member.role='owner' then
-     select coalesce(jsonb_agg(jsonb_build_object('user_id',m.user_id,'role',m.role,'display_name',m.display_name,'enabled',m.enabled,'email',u.email) order by m.display_name),'[]'::jsonb)
+     select coalesce(jsonb_agg(jsonb_build_object('user_id',m.user_id,'role',m.role,'primary_owner',m.primary_owner,'current',m.user_id=v_uid,'display_name',m.display_name,'enabled',m.enabled,'email',u.email) order by m.display_name),'[]'::jsonb)
      into v_members from private.pastehot_members m join auth.users u on u.id=m.user_id;
    end if;
  end if;
- return jsonb_build_object('direct_access',(select direct_access from private.pastehot_access_config where singleton),'allowed',v_allowed,'role',v_member.role,'status',v_current.status,'enforced',v_enforced,'device_id',v_current.session_id,'device_label',v_current.label,'sessions',v_sessions,'members',v_members);
+ return jsonb_build_object('primary_owner',v_member.primary_owner,'direct_access',(select direct_access from private.pastehot_access_config where singleton),'allowed',v_allowed,'role',v_member.role,'status',v_current.status,'enforced',v_enforced,'device_id',v_current.session_id,'device_label',v_current.label,'sessions',v_sessions,'members',v_members);
 end;$$;
 -- Auth hard deletion cascades membership. Erase only this account's associated records.
 -- The trigger runs in the same transaction as deletion: failure rolls everything back.
 create function private.pastehot_erase_staff_records() returns trigger
 language plpgsql security definer set search_path='' as $$
 begin
- if old.role='owner' then raise exception 'NO_BORRES_LA_CUENTA_DEL_PROPIETARIO';end if;
+ if old.primary_owner then raise exception 'NO_BORRES_LA_CUENTA_DEL_PROPIETARIO';end if;
  delete from private.pastehot_store_events where actor_id=old.user_id;
  delete from private.pastehot_sessions where user_id=old.user_id;
  delete from auth.sessions where user_id=old.user_id;
