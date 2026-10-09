@@ -40,7 +40,7 @@ function denyAdminAccess(message){
   document.getElementById('loginMessage').innerHTML=`<div class="message error" role="alert">${escapeHtml(message)}</div><button class="btn btn-light" onclick="checkSession()">Volver a comprobar</button><button class="btn btn-light" onclick="logout()">Cerrar sesión</button>`;
 }
 function showWaitingAccess(state){
-  denyAdminAccess(state?.status==='disabled'?'Tu acceso ha sido desactivado. Consulta con la propietaria.':state?.status==='revoked'?'Este navegador fue revocado. La propietaria debe autorizarlo de nuevo.':'Este navegador necesita autorización de la propietaria. Abre Accesos desde un navegador ya autorizado.');
+  denyAdminAccess(state?.status==='disabled'?'Tu acceso ha sido desactivado. Consulta con el propietario.':state?.status==='revoked'?'Este navegador fue revocado. El propietario debe autorizarlo de nuevo.':'Este navegador necesita autorización del propietario. Abre Accesos desde un navegador ya autorizado.');
   if(state?.status==='pending'){
     document.getElementById('loginMessage').insertAdjacentHTML('beforeend','<p class="media-note">La solicitud ya aparece en Accesos. Esta pantalla comprobará la autorización automáticamente.</p>');
     clearInterval(adminAccessTimer);adminAccessTimer=setInterval(()=>checkSession(),15000);
@@ -57,7 +57,7 @@ function applyAdminPermissions(){
   document.querySelector('#section-orders .section-title p').textContent=owner?'Resumen calculado a partir de los pedidos registrados.':'Revisa, imprime y prepara los pedidos. Los datos son solo para atender al cliente.';
   if(!owner)showTab('orders');
 }
-function openAdminAccess(){if(adminRole==='owner')showTab('access');else alert('Acceso de empleado. La propietaria administra los dispositivos autorizados.');}
+function openAdminAccess(){if(adminRole==='owner')showTab('access');else alert('Acceso de empleado. El propietario administra los dispositivos autorizados.');}
 function renderAdminAccess(){
   const state=adminAccessState||{},enforced=!!state.enforced,installed=adminSecurityInstalled;
   const sessions=state.sessions||[],members=state.members||[];
@@ -74,7 +74,7 @@ function renderAdminAccess(){
   document.getElementById('staffInviteForm').classList.toggle('hidden',adminRole!=='owner');
   document.getElementById('accessSessions').innerHTML=sessions.length?sessions.map(s=>{
     const pending=s.status==='pending',approved=s.status==='approved',current=s.current;
-    return `<div class="access-row"><div><strong>${escapeHtml(s.label||'Navegador sin nombre')}${current?' · este navegador':''}</strong><small>${escapeHtml(s.display_name||'')} · ${s.role==='owner'?'Propietaria':'Empleado'}</small><span class="state-tag ${escapeAttr(s.status)}">${approved?'Autorizado':pending?'Esperando autorización':'Revocado'}</span> <span class="${s.online?'access-online':'access-offline'}">${s.online?'Conectado':'Sin actividad reciente'}</span></div><div class="access-row-actions">${!current&&adminRole==='owner'?(approved?`<button class="btn btn-danger" onclick="changeAdminSession('${s.session_id}','revoked')">Revocar acceso</button>`:`<button class="btn btn-dark" ${sessions.filter(x=>x.status==='approved').length>=2?'disabled':''} onclick="changeAdminSession('${s.session_id}','approved')">Autorizar</button>`):''}</div></div>`;
+    return `<div class="access-row"><div><strong>${escapeHtml(s.label||'Navegador sin nombre')}${current?' · este navegador':''}</strong><small>${escapeHtml(s.display_name||'')} · ${s.role==='owner'?'Propietario':'Empleado'}</small><span class="state-tag ${escapeAttr(s.status)}">${approved?'Autorizado':pending?'Esperando autorización':'Revocado'}</span> <span class="${s.online?'access-online':'access-offline'}">${s.online?'Conectado':'Sin actividad reciente'}</span></div><div class="access-row-actions">${!current&&adminRole==='owner'?(approved?`<button class="btn btn-danger" onclick="changeAdminSession('${s.session_id}','revoked')">Revocar acceso</button>`:`<button class="btn btn-dark" ${sessions.filter(x=>x.status==='approved').length>=2?'disabled':''} onclick="changeAdminSession('${s.session_id}','approved')">Autorizar</button>`):''}</div></div>`;
   }).join(''):'<p class="media-note">Las sesiones aparecerán aquí cuando se active el control de accesos.</p>';
   document.getElementById('accessMembers').innerHTML=members.filter(m=>m.role==='staff').map(m=>`<div class="access-row"><div><strong>${escapeHtml(m.display_name)}</strong><small>${escapeHtml(m.email||'')}</small><span class="state-tag">${m.enabled?'Acceso habilitado':'Acceso desactivado'}</span></div><button class="btn ${m.enabled?'btn-danger':'btn-dark'}" onclick="changeAdminMember('${m.user_id}',${!m.enabled})">${m.enabled?'Desactivar empleado':'Habilitar empleado'}</button></div>`).join('')||'<p class="media-note">No hay empleados registrados.</p>';
   const banner=document.getElementById('adminAccessBanner');

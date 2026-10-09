@@ -17,7 +17,7 @@ Deno.serve(async(req:Request)=>{
     if(authError||!auth.user)return reply(401,{error:'Sesión no válida.'});
     const body=await req.json();
     const {data:state,error:stateError}=await caller.rpc('pastehot_admin_state',{p_visible:true,p_device_token:String(body.deviceToken||'')});
-    if(stateError||state?.role!=='owner'||!state.allowed||!state.enforced)return reply(403,{error:'Se requiere una sesión autorizada de la propietaria.'});
+    if(stateError||state?.role!=='owner'||!state.allowed||!state.enforced)return reply(403,{error:'Se requiere una sesión autorizada del propietario.'});
     const email=String(body.email||'').trim().toLowerCase(),name=String(body.name||'').trim();
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254||!name||name.length>80)return reply(400,{error:'Revisa el nombre y el correo.'});
     const redirect=String(body.redirectTo||'');

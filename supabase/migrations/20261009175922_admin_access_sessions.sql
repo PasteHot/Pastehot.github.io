@@ -12,7 +12,7 @@ create table private.pastehot_members (
   display_name text not null check(length(display_name) between 1 and 80)
 );
 create unique index pastehot_one_owner on private.pastehot_members(role) where role='owner';
-insert into private.pastehot_members values('a0c0b64b-7809-4428-ad00-a1484d6ded53','owner',true,'Propietaria');
+insert into private.pastehot_members values('a0c0b64b-7809-4428-ad00-a1484d6ded53','owner',true,'Propietario');
 create table private.pastehot_sessions (
   session_id uuid primary key default gen_random_uuid(),
   auth_session_id uuid unique references auth.sessions(id) on delete set null,
