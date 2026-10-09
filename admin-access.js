@@ -20,7 +20,7 @@ async function setupAdminAccess(session){
   const {data:userData,error:userError}=await db.auth.getUser();
   if(userError||!userData?.user){denyAdminAccess('No se pudo comprobar tu acceso. Vuelve a entrar.');return false;}
   adminSession={...session,user:userData.user};
-  const {data,error}=await db.rpc('pastehot_admin_state',{p_label:savedSessionLabel(),p_visible:document.visibilityState==='visible',p_device_token:adminDeviceToken()});
+  const {data,error}=await db.rpc('pastehot_admin_state',{p_label:null,p_visible:document.visibilityState==='visible',p_device_token:adminDeviceToken()});
   if(error){
     if(missingAccessBackend(error)&&userData.user.id===PASTEHOT_OWNER_ID){
       adminSecurityInstalled=false;adminRole='owner';adminAccessAllowed=true;
@@ -82,9 +82,10 @@ function renderAdminAccess(){
   document.getElementById('staffInviteForm').classList.toggle('hidden',adminRole!=='owner');
   document.getElementById('accessSessions').innerHTML=sessions.length?sessions.map(s=>{
     const pending=s.status==='pending',approved=s.status==='approved',current=s.current;
-    return `<div class="access-row"><div><strong>${escapeHtml(s.label||'Navegador sin nombre')}${current?' · este navegador':''}</strong><small>${escapeHtml(s.display_name||'')} · ${adminRoleName(s.role)}</small><span class="state-tag ${escapeAttr(s.status)}">${approved?'Autorizado':pending?'Esperando autorización':'Revocado'}</span> <span class="${s.online?'access-online':'access-offline'}">${s.online?'Conectado':'Sin actividad reciente'}</span></div><div class="access-row-actions">${!current&&adminRole==='owner'?(approved?`<button class="btn btn-danger" onclick="changeAdminSession('${s.session_id}','revoked')">Revocar acceso</button>`:`<button class="btn btn-dark" onclick="changeAdminSession('${s.session_id}','approved')">Autorizar</button>`):''}</div></div>`;
+    const owner=adminRole==='owner',canAuthorize=s.member_enabled!==false,revoked=s.status==='revoked';
+    return `<div class="access-row"><div><strong>${escapeHtml(s.label||'Navegador sin nombre')}${current?' · este navegador':''}</strong><small>${escapeHtml(s.display_name||'')} · ${adminRoleName(s.role)}</small><span class="state-tag ${escapeAttr(s.status)}">${approved?'Autorizado':pending?'Esperando autorización':'Revocado'}</span> <span class="${s.online?'access-online':'access-offline'}">${s.online?'Conectado':'Sin actividad reciente'}</span>${s.member_enabled===false?'<small>Cuenta desactivada</small>':''}</div><div class="access-row-actions">${owner?`<button class="btn btn-light" onclick="renameAdminSession('${s.session_id}')">Renombrar</button>${['staff','manager'].includes(s.role)?`<button class="btn btn-light" onclick="openAccountPermissions('${s.user_id}')">Cambiar permisos</button>`:'<small>Cuenta del propietario</small>'}${!current?(approved?`<button class="btn btn-danger" onclick="changeAdminSession('${s.session_id}','revoked')">Revocar acceso</button>`:canAuthorize?`<button class="btn btn-dark" onclick="changeAdminSession('${s.session_id}','approved')">Autorizar</button>`:''):''}${!current&&revoked?`<button class="btn btn-danger" onclick="removeAdminSession('${s.session_id}')">Eliminar de la lista</button>`:''}`:''}</div></div>`;
   }).join(''):'<p class="media-note">Las sesiones aparecerán aquí cuando se active el control de accesos.</p>';
-  document.getElementById('accessMembers').innerHTML=members.filter(m=>['staff','manager'].includes(m.role)).map(m=>`<div class="access-row"><div><strong>${escapeHtml(m.display_name)}</strong><small>${escapeHtml(m.email||'')} · ${adminRoleName(m.role)}</small><span class="state-tag">${m.enabled?'Acceso habilitado':'Acceso desactivado'}</span></div><div class="access-row-actions"><label>Permisos<select aria-label="Permisos de ${escapeAttr(m.display_name)}" ${adminAccessBusy?'disabled':''} onchange="changeAdminMemberRole('${m.user_id}',this.value)"><option value="staff" ${m.role==='staff'?'selected':''}>Empleado</option><option value="manager" ${m.role==='manager'?'selected':''}>Encargado</option></select></label><button class="btn ${m.enabled?'btn-danger':'btn-dark'}" onclick="changeAdminMember('${m.user_id}',${!m.enabled})">${m.enabled?'Desactivar acceso':'Habilitar acceso'}</button></div></div>`).join('')||'<p class="media-note">No hay empleados o encargados registrados.</p>';
+  document.getElementById('accessMembers').innerHTML=members.filter(m=>['staff','manager'].includes(m.role)).map(m=>`<div class="access-row"><div><strong>${escapeHtml(m.display_name)}</strong><small>${escapeHtml(m.email||'')} · ${adminRoleName(m.role)}</small><span class="state-tag">${m.enabled?'Acceso habilitado':'Acceso desactivado'}</span></div><div class="access-row-actions"><label>Permisos<select id="account-role-${m.user_id}" aria-label="Permisos de ${escapeAttr(m.display_name)}" ${adminAccessBusy?'disabled':''} onchange="changeAdminMemberRole('${m.user_id}',this.value)"><option value="staff" ${m.role==='staff'?'selected':''}>Empleado</option><option value="manager" ${m.role==='manager'?'selected':''}>Encargado</option></select></label><button class="btn ${m.enabled?'btn-danger':'btn-dark'}" onclick="changeAdminMember('${m.user_id}',${!m.enabled})">${m.enabled?'Desactivar acceso':'Habilitar acceso'}</button></div></div>`).join('')||'<p class="media-note">No hay empleados o encargados registrados.</p>';
   const banner=document.getElementById('adminAccessBanner');
   banner.classList.toggle('hidden',installed||adminRole!=='owner');
   banner.textContent=!installed?'Preview de mejoras: las alertas y categorías pueden probarse aquí. Los nuevos permisos de empleados aún no están activados en el negocio.':'';
@@ -93,7 +94,7 @@ async function refreshAdminAccess(){
   if(!adminSecurityInstalled)return adminAccessAllowed;
   if(adminAccessRefreshPromise)return adminAccessRefreshPromise;
   adminAccessRefreshPromise=(async()=>{
-    const {data,error}=await db.rpc('pastehot_admin_state',{p_label:savedSessionLabel(),p_visible:document.visibilityState==='visible',p_device_token:adminDeviceToken()});
+    const {data,error}=await db.rpc('pastehot_admin_state',{p_label:null,p_visible:document.visibilityState==='visible',p_device_token:adminDeviceToken()});
     if(error){denyAdminAccess('No se pudo verificar tu autorización. Se pausó el administrador hasta recuperar la conexión.');return false;}
     const previousRole=adminRole;
     adminAccessState=data;adminAccessAllowed=!!data?.allowed;adminRole=data?.role;
@@ -128,10 +129,24 @@ async function activateAdminProtection(){
   if(!confirm('Se autorizará este navegador. Los demás necesitarán tu aprobación, sin un límite fijo de dispositivos. Conserva acceso a este navegador hasta autorizar tu teléfono o la tablet. ¿Activar?'))return;
   await adminAccessAction(async()=>{const {error}=await db.rpc('pastehot_activate_security');if(error)throw error;});
 }
-async function renameAdminSession(){
-  if(!adminSecurityInstalled)return;const label=prompt('Nombre para identificar este navegador:',savedSessionLabel())?.trim();if(!label)return;
+async function renameAdminSession(id){
+  if(!adminSecurityInstalled||adminRole!=='owner'||!adminAccessAllowed)return;
+  const session=id?adminAccessState?.sessions?.find(s=>s.session_id===id):adminAccessState?.sessions?.find(s=>s.current);
+  if(!session)return;const label=prompt('Nombre para identificar este dispositivo:',session.label||savedSessionLabel())?.trim();if(!label)return;
   if(label.length>60){alert('Usa un nombre de máximo 60 caracteres.');return;}
-  await adminAccessAction(async()=>{const {error}=await db.rpc('pastehot_admin_state',{p_label:label,p_visible:true,p_device_token:adminDeviceToken()});if(error)throw error;try{localStorage.setItem('pastehot_session_label',label);}catch{}});
+  await adminAccessAction(async()=>{const {error}=await db.rpc('pastehot_rename_session',{p_session_id:session.session_id,p_label:label});if(error)throw new Error(error.code==='PGRST202'?'Esta mejora está en preview y requiere activación antes de usarse con datos reales.':error.message);if(session.current)try{localStorage.setItem('pastehot_session_label',label);}catch{}});
+}
+async function removeAdminSession(id){
+  if(adminRole!=='owner'||!adminAccessAllowed)return;const session=adminAccessState?.sessions?.find(s=>s.session_id===id);
+  if(!session||session.current||session.status!=='revoked')return;
+  if(!confirm(`¿Eliminar «${session.label}» de la lista? Su cuenta y el historial de tienda se conservan. Si vuelve a iniciar sesión, deberá solicitar autorización otra vez.`))return;
+  await adminAccessAction(async()=>{const {error}=await db.rpc('pastehot_remove_session',{p_session_id:id});if(error)throw new Error(error.code==='PGRST202'?'Esta mejora está en preview y requiere activación antes de usarse con datos reales.':error.message);});
+}
+function openAccountPermissions(id){
+  if(adminRole!=='owner'||!adminAccessAllowed)return;const member=adminAccessState?.members?.find(m=>m.user_id===id);
+  if(!member||!['manager','staff'].includes(member.role))return;
+  const select=document.getElementById('account-role-'+id);select?.scrollIntoView({behavior:'smooth',block:'center'});select?.focus();
+  showMessage('accessMessage',`Los permisos de ${member.display_name} se aplican a todos los dispositivos de su cuenta. Selecciona Empleado o Encargado.`);
 }
 async function inviteAdminStaff(event){
   event.preventDefault();if(!adminSecurityInstalled||!adminAccessState?.enforced)return;

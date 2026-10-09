@@ -36,6 +36,7 @@ const sid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
  await pg.exec(`create function public.create_order_with_inventory(text,text,text,text,text,text,text,jsonb) returns jsonb language sql as $$select '{}'::jsonb;$$;`);
  await pg.exec(`alter table public.orders add column if not exists order_code text,add column if not exists customer_name text,add column if not exists customer_phone text,add column if not exists items jsonb,add column if not exists total numeric,add column if not exists subtotal numeric;alter table public.products add column if not exists category text;`);
  const migration=fs.readFileSync(__dirname+'/../supabase/migrations/20261009175922_admin_access_sessions.sql','utf8');await pg.exec(migration);
+ await pg.exec(fs.readFileSync(__dirname+'/../supabase/migrations/20261009212843_admin_session_management.sql','utf8'));
  async function login(uid,session){currentSession=Number(session.slice(-12));await pg.exec('reset role;');await pg.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:uid,session_id:session,role:'authenticated'})]);await pg.exec('set role authenticated;');}
  let currentSession=1;const token=n=>n.toString(16).padStart(64,'0');
  async function state(device=currentSession){return (await pg.query("select public.pastehot_admin_state('Prueba',true,$1) as s",[token(device)])).rows[0].s;}
@@ -138,5 +139,27 @@ const sid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
  await login(owner,sid(1));await pg.exec(`select pastehot_set_staff_enabled('${staff}',true);select pastehot_set_session('${d2}','approved');`);await login(staff,sid(2));await state();await denied('select pastehot_sales_summary();');assert.equal((await pg.query("select pastehot_order_page(null,'VENTA',null,null) as p")).rows[0].p.rows.length,4);
  await pg.exec('reset role;');await pg.exec('set role anon;');await denied('select pastehot_sales_summary();');await denied('select pastehot_order_page();');await denied('select pastehot_admin_state();');await denied('select pastehot_store_state();');await denied('select pastehot_store_history();');await denied("select pastehot_set_store_closed(true,'Intento anónimo',false);");await denied(`select update_order_status_with_inventory('${sid(20)}','cancelado');`);assert.equal((await pg.query('select * from orders')).rows.length,0);
  await pg.exec('reset role;');const exposed=(await pg.query("select p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'pastehot_%' and p.prosecdef")).rows;assert.equal(exposed.length,0);
+ // Device management must preserve authorization and immutable store history.
+ await login(owner,sid(1));
+ await pg.query('select pastehot_rename_session($1,$2)',[d1,'Mi celular']);
+ await pg.query('select pastehot_rename_session($1,$2)',[d3,'Tablet renombrada']);
+ await login(owner,sid(7));
+ const renamed=(await pg.query("select pastehot_admin_state('Nombre antiguo',true,$1) as s",[token(3)])).rows[0].s;
+ assert.equal(renamed.device_label,'Tablet renombrada');
+ await login(owner,sid(1));
+ await denied(`select pastehot_remove_session('${d1}');`);
+ await pg.query('select pastehot_set_session($1,$2)',[d3,'approved']);
+ await denied(`select pastehot_remove_session('${d3}');`);
+ await denied(`select pastehot_rename_session('${d3}','   ');`);
+ await denied(`select pastehot_rename_session('${d3}',repeat('x',61));`);
+ const historyCount=(await pg.query('select pastehot_store_history() as h')).rows[0].h.events.length;
+ await pg.query('select pastehot_set_session($1,$2)',[d3,'revoked']);
+ await pg.query('select pastehot_remove_session($1)',[d3]);
+ assert(!(await state()).sessions.some(s=>s.session_id===d3));
+ assert.equal((await pg.query('select pastehot_store_history() as h')).rows[0].h.events.length,historyCount);
+ await login(owner,sid(7));const returning=await state(3);assert.equal(returning.status,'pending');assert.equal(returning.allowed,false);assert.notEqual(returning.device_id,d3);
+ await denied(`select pastehot_rename_session('${d1}','Intento sin aprobación');`);
+ await login(staff,sid(2));await denied(`select pastehot_rename_session('${d1}','Intento de empleado');`);await denied(`select pastehot_remove_session('${d1}');`);
+ await pg.exec('reset role;set role anon;');await denied(`select pastehot_rename_session('${d1}','Intento anónimo');`);await denied(`select pastehot_remove_session('${d1}');`);
  await pg.close();console.log('PASS: real PostgreSQL RLS, unlimited approved browsers, owner lockout guard, manager and staff permissions, protected photo cleanup, role-change reapproval, atomic emergency closure, immutable identity/time audit, Merida date filtering, schedule preservation and closed-store order rejection, recent-only history, revoked tokens, disabled staff, auth session deletion, anonymous denial.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
