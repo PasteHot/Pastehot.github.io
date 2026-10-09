@@ -18,6 +18,18 @@ Deno.serve(async(req:Request)=>{
     const {data:state,error:stateError}=await caller.rpc('pastehot_admin_state',{p_visible:true,p_device_token:String(body.deviceToken||'')});
     if(stateError||!state?.allowed||state.role!=='owner')return reply(403,{error:'Solo el propietario puede crear cuentas.'});
     if(!state.direct_access)return reply(409,{error:'Esta mejora aún no está activada para cuentas reales.'});
+    if(body.action==='delete'){
+      const id=String(body.userId||'');
+      const target=state.members?.find((m:{user_id:string,role:string})=>m.user_id===id);
+      if(id===auth.user.id||!target||!['staff','manager'].includes(target.role))return reply(403,{error:'Solo se pueden borrar cuentas de empleados o encargados.'});
+      const {error:blockError}=await caller.rpc('pastehot_set_staff_enabled',{p_user_id:id,p_enabled:false});
+      if(blockError)return reply(409,{error:'No se pudo bloquear la cuenta; no se ha borrado.'});
+      const service=createClient(url,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false,autoRefreshToken:false}});
+      const {error:deleteError}=await service.auth.admin.deleteUser(id,false);
+      if(deleteError)return reply(409,{error:'La cuenta quedó desactivada, pero el borrado no terminó. Puedes volver a pulsar Borrar cuenta.'});
+      return reply(200,{ok:true});
+    }
+    if(body.action&&body.action!=='create')return reply(400,{error:'Acción no válida.'});
     const username=String(body.username||'').trim().toLowerCase(),name=String(body.name||'').trim(),role=String(body.role||'');
     const password=typeof body.password==='string'?body.password:'';
     if(!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(username)||!name||name.length>80)return reply(400,{error:'Usa un usuario de 3 a 32 caracteres: letras sin acentos, números, punto, guion o guion bajo.'});

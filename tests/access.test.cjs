@@ -10,7 +10,7 @@ const sid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
  create function extensions.st_geomfromgeojson(text) returns extensions.geometry language sql as $$select $1::jsonb;$$;
  create function extensions.st_geometrytype(extensions.geometry) returns text language sql as $$select 'ST_Polygon';$$;
  create function extensions.st_isvalid(extensions.geometry) returns boolean language sql as $$select true;$$;
- create table auth.users(id uuid primary key,email text);create table auth.sessions(id uuid primary key,user_id uuid references auth.users(id));
+ create table auth.users(id uuid primary key,email text);create table auth.sessions(id uuid primary key,user_id uuid references auth.users(id) on delete cascade);
  create function auth.jwt() returns jsonb language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb;$$;
  create function auth.uid() returns uuid language sql stable as $$select (auth.jwt()->>'sub')::uuid;$$;
  grant usage on schema auth to authenticated,anon;grant execute on function auth.uid(),auth.jwt() to authenticated,anon;
@@ -175,5 +175,20 @@ const sid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
  await login(staff,sid(402));assert.equal((await state(402)).role,'manager');assert.equal((await state(402)).allowed,true);assert((await pg.query("update products set name='Nuevo precio encargado' returning id")).rows.length>0);await denied('select pastehot_sales_summary();');
  await pg.exec('reset role;');await pg.exec(`delete from auth.sessions where id='${sid(402)}';`);
  await login(staff,sid(402));await denied('select pastehot_admin_state();');assert.equal((await pg.query('select * from orders')).rows.length,0);
+ // Hard account deletion removes linked identity and audit, preserving business data.
+ await pg.exec('reset role;');
+ const ordersBefore=(await pg.query('select count(*)::int as n from public.orders')).rows[0].n;
+ const othersBefore=(await pg.query('select count(*)::int as n from private.pastehot_store_events where actor_id<>$1',[staff])).rows[0].n;
+ assert((await pg.query('select count(*)::int as n from private.pastehot_store_events where actor_id=$1',[staff])).rows[0].n>0);
+ await assert.rejects(pg.query('delete from auth.users where id=$1',[owner]));
+ assert.equal((await pg.query('select count(*)::int as n from private.pastehot_members where user_id=$1',[owner])).rows[0].n,1);
+ await pg.query('delete from auth.users where id=$1',[staff]);
+ for(const table of ['auth.users','auth.sessions','private.pastehot_members','private.pastehot_sessions']){
+   const key=table==='auth.users'?'id':'user_id';assert.equal((await pg.query(`select count(*)::int as n from ${table} where ${key}=$1`,[staff])).rows[0].n,0);
+ }
+ assert.equal((await pg.query('select count(*)::int as n from private.pastehot_store_events where actor_id=$1',[staff])).rows[0].n,0);
+ assert.equal((await pg.query('select count(*)::int as n from private.pastehot_store_events where actor_id<>$1',[staff])).rows[0].n,othersBefore);
+ assert.equal((await pg.query('select count(*)::int as n from public.orders')).rows[0].n,ordersBefore);
+ await login(staff,sid(2));await denied('select pastehot_admin_state();');assert.equal((await pg.query('select * from orders')).rows.length,0);
  await pg.close();console.log('PASS: real PostgreSQL RLS, unlimited approved browsers, owner lockout guard, manager and staff permissions, protected photo cleanup, role-change reapproval, atomic emergency closure, immutable identity/time audit, Merida date filtering, schedule preservation and closed-store order rejection, recent-only history, revoked tokens, disabled staff, auth session deletion, anonymous denial.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

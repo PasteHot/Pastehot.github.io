@@ -111,5 +111,19 @@ begin
  end if;
  return jsonb_build_object('direct_access',(select direct_access from private.pastehot_access_config where singleton),'allowed',v_allowed,'role',v_member.role,'status',v_current.status,'enforced',v_enforced,'device_id',v_current.session_id,'device_label',v_current.label,'sessions',v_sessions,'members',v_members);
 end;$$;
+-- Auth hard deletion cascades membership. Erase only this account's associated records.
+-- The trigger runs in the same transaction as deletion: failure rolls everything back.
+create function private.pastehot_erase_staff_records() returns trigger
+language plpgsql security definer set search_path='' as $$
+begin
+ if old.role='owner' then raise exception 'NO_BORRES_LA_CUENTA_DEL_PROPIETARIO';end if;
+ delete from private.pastehot_store_events where actor_id=old.user_id;
+ delete from private.pastehot_sessions where user_id=old.user_id;
+ delete from auth.sessions where user_id=old.user_id;
+ return old;
+end;$$;
+revoke all on function private.pastehot_erase_staff_records() from public,anon,authenticated;
+create trigger pastehot_erase_staff_records before delete on private.pastehot_members
+for each row execute function private.pastehot_erase_staff_records();
 update private.pastehot_access_config set direct_access=true,enforced=true where singleton;
 commit;
