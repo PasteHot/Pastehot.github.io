@@ -501,24 +501,25 @@ function renderCategories(){categoriesList.innerHTML=categories.map((c,i)=>`<div
 function startCategoryDrag(event,index){
   if(categoryOrderSaving||categoryDragState||event.button!==0)return;
   event.preventDefault();
-  const handle=event.currentTarget,row=handle.closest(".category-row"),rect=row.getBoundingClientRect();
+  const surface=categoriesList,handle=event.currentTarget,row=handle.closest(".category-row"),rect=row.getBoundingClientRect();
   const state={handle,row,pointerId:event.pointerId,original:[...categories],y:event.clientY,offset:event.clientY-rect.top,active:false,timer:null,frame:null,ghost:null};
   categoryDragState=state;
-  handle.setPointerCapture(event.pointerId);
+  // Capture on the stable list: moving the row must not cancel the touch.
+  surface.setPointerCapture(event.pointerId);
   const move=e=>{if(e.pointerId===state.pointerId){e.preventDefault();state.y=e.clientY}};
   const finish=async e=>{
-    if(e.pointerId!==state.pointerId)return;
+    if(e.pointerId!==state.pointerId||categoryDragState!==state)return;
     clearTimeout(state.timer);cancelAnimationFrame(state.frame);
-    handle.removeEventListener("pointermove",move);handle.removeEventListener("pointerup",finish);handle.removeEventListener("pointercancel",cancel);handle.removeEventListener("lostpointercapture",cancel);
+    surface.removeEventListener("pointermove",move);surface.removeEventListener("pointerup",finish);surface.removeEventListener("pointercancel",cancel);surface.removeEventListener("lostpointercapture",cancel);
     const next=[...categoriesList.querySelectorAll(".category-row")].map(r=>state.original[Number(r.dataset.categoryIndex)]);
     state.ghost?.remove();row.classList.remove("dragging");categoryDragState=null;
-    if(handle.hasPointerCapture(state.pointerId))handle.releasePointerCapture(state.pointerId);
+    if(surface.hasPointerCapture(state.pointerId))surface.releasePointerCapture(state.pointerId);
     if(state.active&&e.type!=="pointercancel"&&JSON.stringify(next)!==JSON.stringify(state.original)){
       await applyCategoryOrder(next);
       const position=categories.indexOf(state.original[index]);categoriesList.querySelectorAll(".category-drag")[position]?.focus();
     }else renderCategories();
   };
-  const cancel=e=>finish({pointerId:e.pointerId,type:"pointercancel"});
+  const cancel=e=>{if(e.type==="lostpointercapture"&&e.target!==surface)return;return finish({pointerId:e.pointerId,type:"pointercancel"})};
   const tick=()=>{
     if(categoryDragState!==state)return;
     if(state.y<85)window.scrollBy(0,-12);else if(state.y>window.innerHeight-70)window.scrollBy(0,12);
@@ -528,7 +529,7 @@ function startCategoryDrag(event,index){
     if(before){if(row.nextElementSibling!==before)categoriesList.insertBefore(row,before)}else if(categoriesList.lastElementChild!==row)categoriesList.appendChild(row);
     state.frame=requestAnimationFrame(tick);
   };
-  handle.addEventListener("pointermove",move);handle.addEventListener("pointerup",finish);handle.addEventListener("pointercancel",cancel);handle.addEventListener("lostpointercapture",cancel);
+  surface.addEventListener("pointermove",move);surface.addEventListener("pointerup",finish);surface.addEventListener("pointercancel",cancel);surface.addEventListener("lostpointercapture",cancel);
   state.timer=setTimeout(()=>{
     if(categoryDragState!==state)return;
     state.active=true;state.ghost=row.cloneNode(true);state.ghost.classList.add("category-drag-ghost");state.ghost.setAttribute("aria-hidden","true");state.ghost.style.width=rect.width+"px";state.ghost.style.left=rect.left+"px";document.body.appendChild(state.ghost);row.classList.add("dragging");showMessage("categoriesMessage","Desliza la categoría y suelta para guardar.");state.frame=requestAnimationFrame(tick);
