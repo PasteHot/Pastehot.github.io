@@ -1,0 +1,44 @@
+const {PGlite}=require('@electric-sql/pglite'),fs=require('fs'),assert=require('assert/strict');
+(async()=>{
+ const pg=new PGlite(),id='00000000-0000-4000-8000-000000000001';
+ const original=fs.readFileSync(__dirname+'/fixtures/checkout-v2.sql','utf8');
+ const columns=original.match(/insert into public.orders\(([\s\S]*?)\)\s*values/)[1].split(',').map(c=>c.trim());
+ const numeric=new Set(['subtotal','delivery_fee','total','delivery_base_fee','delivery_rain_surcharge']);
+ const booleans=new Set(['inventory_applied','inventory_restored','delivery_address_edited','delivery_location_verified']);
+ const schema=columns.map(c=>`${c} ${c==='items'?'jsonb':c==='delivery_zone_id'?'uuid':numeric.has(c)?'numeric':booleans.has(c)?'boolean':c.endsWith('_at')?'timestamptz':['delivery_lat','delivery_lng','delivery_accuracy_m'].includes(c)?'double precision':'text'}`).join(',');
+ await pg.exec(`create role anon;create role authenticated;create schema private;create schema extensions;create domain extensions.geometry as jsonb;
+ create table public.orders(id uuid primary key default gen_random_uuid(),${schema});
+ create table public.products(id uuid primary key,name text,price numeric,available boolean,track_stock boolean,stock integer,updated_at timestamptz);
+ create table public.settings(key text,value text);
+ create table public.delivery_zones(id uuid primary key,name text,fee numeric,priority integer,enabled boolean,geom extensions.geometry);
+ create table private.delivery_service_areas(area_key text,geom extensions.geometry);
+ create function extensions.st_makepoint(double precision,double precision) returns extensions.geometry language sql as $$select jsonb_build_object('lng',$1,'lat',$2);$$;
+ create function extensions.st_setsrid(extensions.geometry,integer) returns extensions.geometry language sql as $$select $1;$$;
+ create function extensions.st_covers(extensions.geometry,extensions.geometry) returns boolean language sql as $$select ($2->>'lat')::numeric between 20 and 22 and ($2->>'lng')::numeric between -91 and -87;$$;
+ create function private.pastehot_owner_allowed() returns boolean language sql as $$select false;$$;
+ create function private.pastehot_staff_allowed() returns boolean language sql as $$select false;$$;
+ insert into products values('${id}','Paste de prueba',25,true,true,10,null);
+ insert into private.delivery_service_areas values('yucatan_state','{}');
+ insert into delivery_zones values('${id}','Zona de prueba',20,1,true,'{}');
+ insert into settings values('rain_surcharge_enabled','true'),('rain_surcharge_amount','10');`);
+ await pg.exec(original);
+ const items=JSON.stringify([{product_id:id,quantity:2}]);
+ const pickupArgs=['PRUEBA','Cliente de prueba','529990000000','pickup','','cash','',items];
+ const call=(version,args)=>pg.query(`select create_pending_order_with_location_${version}(${args.map((_,i)=>'$'+(i+1)).join(',')}) as result`,args);
+ await assert.rejects(call('v2',pickupArgs),/record "v_zone" is not assigned yet/);
+ assert.equal((await pg.query('select count(*)::int as n from orders')).rows[0].n,0);
+ await pg.exec(fs.readFileSync(__dirname+'/../supabase/migrations/20261010015600_order_pickup_status_preview.sql','utf8'));
+ await pg.exec('set role anon');
+ for(const payment of ['cash','transfer']){
+   const args=[...pickupArgs];args[5]=payment;const order=(await call('v3',args)).rows[0].result;
+   assert.equal(order.order_status,'pendiente_confirmacion');assert.equal(order.total,50);assert.equal(order.delivery_fee,0);assert.equal(order.delivery_zone_id,null);assert.equal(order.inventory_applied,false);
+ }
+ const delivery=[...pickupArgs];delivery[3]='delivery';delivery.push(20.98,-89.62,10,'Calle de prueba',null,'Puerta azul',null,'Yucatán',null,'MX');
+ const delivered=(await call('v3',delivery)).rows[0].result;assert.equal(delivered.delivery_fee,30);assert.equal(delivered.total,80);assert.equal(delivered.delivery_zone_id,id);assert.equal(delivered.delivery_location_verified,true);assert.match(delivered.delivery_verification_code,/^[A-Z][0-9]{3}$/);
+ const bad=[...delivery];bad[8]=null;await assert.rejects(call('v3',bad),/UBICACION_REQUERIDA/);
+ const excessive=[...pickupArgs];excessive[7]=JSON.stringify([{product_id:id,quantity:11}]);await assert.rejects(call('v3',excessive),/STOCK_INSUFICIENTE/);
+ await pg.exec('reset role');const rows=(await pg.query('select * from orders')).rows;
+ assert.equal(rows.length,3);assert(rows.filter(o=>o.delivery_type==='pickup').every(o=>o.delivery_lat===null&&o.delivery_zone_id===null&&o.delivery_verification_code===null&&o.delivery_fee==='0'));
+ assert.equal((await pg.query('select stock from products')).rows[0].stock,10);
+ await pg.close();console.log('PASS: original pickup failure reproduced; anonymous cash/transfer pickup succeeds without GPS or fees; delivery validation and surcharge preserved; failed checkout creates no order; pending checkout does not deduct stock.');
+})().catch(e=>{console.error(e);process.exitCode=1;});

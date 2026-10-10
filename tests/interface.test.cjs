@@ -4,6 +4,7 @@ const tick=()=>new Promise(r=>setTimeout(r,20));
 (async()=>{
  const dom=new JSDOM(fs.readFileSync(root+'/admin.html','utf8'),{url:'https://deploy-preview-99--cheerful-daifuku-76579b.netlify.app/admin.html?demo=1',runScripts:'outside-only',pretendToBeVisual:true});
  const w=dom.window;let alerts=[];w.alert=s=>alerts.push(s);w.confirm=()=>true;
+ const soundLoops=[];const nativeInterval=w.setInterval.bind(w);w.setInterval=(fn,ms,...args)=>{if(ms===3000)soundLoops.push(fn);return nativeInterval(fn,ms,...args);};
  const files=['receipt.js','admin-orders.js','admin-preview-demo.js','admin-access.js','admin-store-control.js','admin-reports.js','admin-image-maintenance.js'].map(file=>fs.readFileSync(root+'/'+file,'utf8'));
  const inline=[...fs.readFileSync(root+'/admin.html','utf8').matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)].find(m=>!m[1].includes('src=')&&m[2].includes('SUPABASE_URL'))[2];w.eval(files.join('\n')+'\n'+inline);
  await tick();await tick();
@@ -19,21 +20,34 @@ const tick=()=>new Promise(r=>setTimeout(r,20));
  await w.changeAdminSession(tablet.session_id,'revoked');assert(w.document.getElementById('accessSessions').textContent.includes('Eliminar de la lista'));
  await w.removeAdminSession(tablet.session_id);assert(!w.PasteHotDemo.state.sessions.some(s=>s.session_id===tablet.session_id));
  tablet.status='approved';tablet.online=true;w.PasteHotDemo.state.sessions.push(tablet);await w.refreshAdminAccess();
- let fakeAudio;const tones=[],gains=[],soundLoops=[];const nativeInterval=w.setInterval.bind(w);w.setInterval=(fn,ms,...args)=>{if(ms===3000)soundLoops.push(fn);return nativeInterval(fn,ms,...args);};
+ let fakeAudio;const tones=[],gains=[];
  w.AudioContext=class{constructor(){fakeAudio=this;this.state='running';this.currentTime=0;this.destination={};}async resume(){}createOscillator(){const tone={type:'',frequency:{value:0},connect(){},disconnect(){},start(time){this.startAt=time;},stop(time){this.stopAt=time;this.stopped=true;}};tones.push(tone);return tone;}createGain(){const events=[];const gain={events,gain:{setValueAtTime(value,time){events.push(['set',value,time]);},linearRampToValueAtTime(value,time){events.push(['ramp',value,time]);},exponentialRampToValueAtTime(value,time){events.push(['decay',value,time]);},cancelScheduledValues(time){events.push(['cancel',time]);}},connect(){},disconnect(){}};gains.push(gain);return gain;}};
- await w.toggleOrderSound();assert.equal(tones.length,8);assert(tones.every(t=>t.type==='square'));assert(gains.every(g=>g.events.some(e=>e[0]==='ramp'&&e[1]>.65&&e[1]<1)));
+ await w.resumeOrderAudio();assert.equal(tones.length,8);assert(tones.every(t=>t.type==='square'));assert(gains.every(g=>g.events.some(e=>e[0]==='ramp'&&e[1]>.65&&e[1]<1)));
  assert(tones.every((t,i)=>i===0||t.startAt>=tones[i-1].stopAt));
  w.playOrderChime(true);assert.equal(tones.length,8); // Consecutive orders cannot double the amplitude.
  assert.equal(soundLoops.length,1);fakeAudio.currentTime=3.1;soundLoops[0]();assert.equal(tones.length,16);
  const initialOrder=w.PasteHotDemo.tables.orders[0];w.reviewInboxOrder(initialOrder.id);assert(gains.every(g=>g.events.at(-1)[0]==='set'&&g.events.at(-1)[1]===0));
  fakeAudio.currentTime=6.2;soundLoops[0]();assert.equal(tones.length,16); // Reviewing the last alert prevents any further ringing.
  await w.toggleOrderSound();assert(gains.every(g=>g.events.at(-1)[0]==='set'&&g.events.at(-1)[1]===0));assert(tones.every(t=>t.stopAt===undefined));
+ assert.equal(w.localStorage.getItem('pastehot_order_sound_'+(await w.PasteHotDemo.client.auth.getSession()).data.session.user.id),'off');
+ w.initializeOrderSound();await tick();assert(w.document.getElementById('adminSoundButton').textContent.includes('silenciado'));
+ w.document.dispatchEvent(new w.Event('pointerdown'));await tick();assert(w.document.getElementById('adminSoundButton').textContent.includes('silenciado'));
+ await w.toggleOrderSound();fakeAudio.state='suspended';let blocked=true;fakeAudio.resume=async()=>{if(!blocked)fakeAudio.state='running';};
+ await w.resumeOrderAudio();assert(w.document.getElementById('adminSoundButton').textContent.includes('toca la pantalla'));
+ blocked=false;w.document.dispatchEvent(new w.Event('pointerdown'));await tick();assert(w.document.getElementById('adminSoundButton').textContent.includes('Sonido activo'));
+ await w.toggleOrderSound();
 
  w.demoBurstOrders();await tick();await tick();assert.equal(w.document.querySelectorAll('.alert-order').length,3);
  w.document.querySelector('[data-inbox-order]').click();await tick();assert(w.document.getElementById('orderModal').classList.contains('show'));assert.equal(w.document.querySelectorAll('.alert-order').length,2);
  w.closeOrderModal();w.demoConnection();await tick();assert.equal(w.document.getElementById('adminLiveStatus'),null);assert(w.document.querySelector('.order-sound-controls #adminSoundButton'));assert.equal(w.document.querySelector('.topbar #adminSoundButton'),null);
  w.demoConnection();await tick();await tick();assert.equal(w.document.querySelectorAll('.alert-order').length,3);
  await w.demoRole('staff');await tick();assert.equal(w.document.querySelectorAll('.tabs .tab:not(.hidden)').length,1);assert(w.document.getElementById('ordersMetrics').classList.contains('hidden'));
+ assert(w.allowedOrderStatuses({order_status:'pendiente_confirmacion',delivery_type:'pickup'}).includes('cancelado'));
+ assert(w.allowedOrderStatuses({order_status:'listo',delivery_type:'delivery'}).includes('en_reparto'));
+ assert(!w.allowedOrderStatuses({order_status:'listo',delivery_type:'pickup'}).includes('en_reparto'));
+ const sample={order_code:'PH-123',customer_phone:'9991234567',delivery_type:'pickup'};
+ for(const status of ['confirmado','preparando','listo','en_reparto','entregado','cancelado'])assert(decodeURIComponent(w.orderStatusWhatsAppUrl(sample,status)).includes('PH-123'));
+ assert(decodeURIComponent(w.orderStatusWhatsAppUrl(sample,'listo')).includes('recoger'));
  assert(!w.document.getElementById('section-orders').classList.contains('hidden'));
  assert(!w.document.getElementById('storeEmergencyButton').disabled);w.openEmergencyStoreModal();assert(w.document.getElementById('storeChangeModal').classList.contains('show'));assert(w.document.querySelector('.store-audit-warning').textContent.includes('registrada'));
  w.document.getElementById('storeChangeReason').value='Fuga de agua en cocina';await w.submitEmergencyStoreChange({preventDefault(){}});assert(w.PasteHotDemo.state.storeEvents[0].closed);assert.equal(w.PasteHotDemo.state.storeEvents[0].actor_role,'staff');assert(w.document.getElementById('storeEmergencyStatus').textContent.includes('cerrada manualmente'));
@@ -68,6 +82,17 @@ const tick=()=>new Promise(r=>setTimeout(r,20));
  const principal=w.PasteHotDemo.state.members.find(m=>m.primary_owner);await w.changeAdminMember(principal.user_id,false);await w.changeAdminMemberRole(principal.user_id,'staff');await w.deleteAdminMember(principal.user_id);assert.equal(principal.enabled,true);assert.equal(principal.role,'owner');assert(w.PasteHotDemo.state.members.includes(principal));assert(!w.document.querySelector('[onclick="deleteAdminMember(\''+principal.user_id+'\')"]'));assert(w.document.getElementById('accessMembers').textContent.includes('Cuenta principal protegida'));
  await w.demoRole('owner');await tick();await w.changeAdminMember(delegatedMember.user_id,false);assert.equal(delegatedMember.enabled,false);await w.deleteAdminMember(delegatedMember.user_id);assert(!w.PasteHotDemo.state.members.includes(delegatedMember));
  assert.equal(w.PasteHotDemo.state.role,'owner');
+ // WhatsApp is prepared only after a successful state save; failure closes the
+ // preopened window, and a blocked popup leaves a usable user-clicked fallback.
+ const adapter=w.PasteHotDemo,client=adapter.client,nativeRpc=client.rpc;
+ const testOrder=adapter.tables.orders[0];testOrder.order_status='confirmado';
+ let popup;w.open=()=>popup={closed:false,document:{write(){},close(){}},location:{href:''},close(){this.closed=true;}};
+ delete w.PasteHotDemo;
+ await w.updateOrderStatus(testOrder.id,'preparando');assert(decodeURIComponent(popup.location.href).includes('EN PREPARACIÓN'));
+ client.rpc=async(name,args)=>name==='update_order_status_with_inventory_v2'?{error:{message:'STOCK_INSUFICIENTE|Prueba|0|2'}}:nativeRpc.call(client,name,args);
+ await w.updateOrderStatus(testOrder.id,'listo');assert(popup.closed);assert.equal(testOrder.order_status,'preparando');assert.equal(popup.location.href,'');
+ client.rpc=nativeRpc;w.open=()=>null;await w.updateOrderStatus(testOrder.id,'listo');assert(w.document.querySelector('#ordersMessage a[href^="https://wa.me/"]'));assert.equal(testOrder.order_status,'listo');
+ w.PasteHotDemo=adapter;
  w.openOrderModal(w.PasteHotDemo.tables.orders[0].id);assert(w.document.getElementById('orderModal').classList.contains('show'));w.denyAdminAccess('Revocado');assert(!w.document.getElementById('orderModal').classList.contains('show'));assert.equal(w.document.getElementById('orderDetail').textContent,'');assert.equal(w.document.getElementById('adminSoundButton').textContent,'Activar sonido');
  w.stopAdminEnhancements();dom.window.close();
  // Query flags can never bypass authorization on the public domain.

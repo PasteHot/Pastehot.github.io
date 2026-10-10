@@ -188,6 +188,21 @@ function setupOrderInbox(){
   let reviewed=[];try{reviewed=JSON.parse(localStorage.getItem('pastehot_reviewed_'+adminSession.user.id)||'[]');if(!Array.isArray(reviewed))reviewed=[];}catch{}
   orderInbox=new PasteHotOrders.OrderInbox({reviewed,onChange:renderOrderInbox,onNew:()=>{clearTimeout(orderSoundDebounce);orderSoundDebounce=setTimeout(()=>playOrderChime(),300);}});
 }
+function orderSoundPreferenceKey(){return 'pastehot_order_sound_'+adminSession.user.id;}
+function rememberOrderSound(){try{localStorage.setItem(orderSoundPreferenceKey(),orderSoundEnabled?'on':'off');}catch{}}
+function updateOrderSoundButton(){
+  const button=document.getElementById('adminSoundButton');if(!button)return;
+  button.textContent=!orderSoundEnabled?'Sonido silenciado · activar':orderAudio?.state==='running'?'Sonido activo · silenciar':'Sonido listo · toca la pantalla';
+  button.setAttribute('aria-pressed',String(orderSoundEnabled));
+}
+function initializeOrderSound(){
+  try{orderSoundEnabled=localStorage.getItem(orderSoundPreferenceKey())!=='off';}catch{orderSoundEnabled=true;}
+  updateOrderSoundButton();resumeOrderAudio();
+}
+// Browsers may require a gesture after restoring a session. Any tap/key unlocks
+// enabled alerts; it never overrides a saved mute preference.
+document.addEventListener('pointerdown',()=>{if(adminAccessAllowed&&orderSoundEnabled&&orderAudio?.state!=='running')resumeOrderAudio();},{capture:true});
+document.addEventListener('keydown',()=>{if(adminAccessAllowed&&orderSoundEnabled&&orderAudio?.state!=='running')resumeOrderAudio();},{capture:true});
 function receiveRealtimeOrder(payload){
   if(!adminAccessAllowed||!orderInbox)return;
   if(payload.eventType==='DELETE'){orderInbox.remove(payload.old?.id);return;}
@@ -200,7 +215,7 @@ function renderOrderInbox(list){
   document.getElementById('newOrdersCount').textContent=`${list.length} sin revisar`;
   document.getElementById('newOrdersList').innerHTML=list.map(o=>`<div class="alert-order"><div><strong>Pedido ${escapeHtml(o.order_code||String(o.id).slice(0,8))}</strong><p>${o.delivery_type==='delivery'?'Envío a domicilio':'Recoger en tienda'} · ${escapeHtml(formatDate(o.created_at))}</p><p>${o.order_status==='pendiente_confirmacion'?'Pendiente de confirmar':'Nuevo pedido'}</p></div><button class="btn btn-primary" data-inbox-order="${escapeAttr(o.id)}">Ver pedido</button></div>`).join('');
   document.getElementById('newOrdersList').querySelectorAll('[data-inbox-order]').forEach(b=>b.addEventListener('click',()=>openInboxOrder(b.dataset.inboxOrder)));
-  document.getElementById('orderSoundNote').textContent=orderSoundEnabled?'Sonido activo. La alerta se repite cada 3 segundos hasta pulsar Ver pedido en los pedidos pendientes.':'Activa el sonido para escuchar los pedidos nuevos.';
+  document.getElementById('orderSoundNote').textContent=orderSoundEnabled?(orderAudio?.state==='running'?'Sonido activo. La alerta se repite cada 3 segundos hasta pulsar Ver pedido.':'Los avisos están activados. Toca cualquier parte de la pantalla para permitir el audio del navegador.'):'Avisos silenciados. Activa el sonido si deseas escuchar los pedidos nuevos.';
   if(!list.length){stopOrderChime();clearTimeout(orderSoundDebounce);clearInterval(orderSoundTimer);orderSoundTimer=null;}
   else if(orderSoundEnabled&&!orderSoundTimer)orderSoundTimer=setInterval(playOrderChime,3000);
 }
@@ -214,12 +229,11 @@ function reviewInboxOrder(id){
   try{localStorage.setItem('pastehot_reviewed_'+adminSession.user.id,JSON.stringify(reviewed));}catch{}
 }
 async function toggleOrderSound(){
-  if(orderSoundEnabled){orderSoundEnabled=false;stopOrderChime();if(adminWakeLock){adminWakeLock.release().catch(()=>{});adminWakeLock=null;}clearInterval(orderSoundTimer);orderSoundTimer=null;document.getElementById('adminSoundButton').textContent='Activar sonido';renderOrderInbox(orderInbox?.list()||[]);return;}
-  try{
-    const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)throw new Error('Este navegador no permite el sonido de alertas.');
-    orderAudio=orderAudio||new Audio();await orderAudio.resume();if(orderAudio.state!=='running')throw new Error('No se pudo activar el sonido. Toca de nuevo Activar sonido.');
-    orderSoundEnabled=true;document.getElementById('adminSoundButton').textContent='Sonido activo · silenciar';renderOrderInbox(orderInbox?.list()||[]);playOrderChime(true);await requestAdminWakeLock();
-  }catch(error){alert(error.message||'No se pudo activar el sonido.');}
+  if(!adminAccessAllowed)return;
+  orderSoundEnabled=!orderSoundEnabled;rememberOrderSound();
+  if(!orderSoundEnabled){stopOrderChime();if(adminWakeLock){adminWakeLock.release().catch(()=>{});adminWakeLock=null;}clearInterval(orderSoundTimer);orderSoundTimer=null;}
+  updateOrderSoundButton();renderOrderInbox(orderInbox?.list()||[]);
+  if(orderSoundEnabled)await resumeOrderAudio();
 }
 function stopOrderChime(){
   orderChimeUntil=0;
@@ -231,7 +245,7 @@ function stopOrderChime(){
 }
 function playOrderChime(test=false){
   if(!orderSoundEnabled||!adminAccessAllowed||(!test&&!orderInbox?.list().length))return;
-  if(!orderAudio||orderAudio.state!=='running'){document.getElementById('adminSoundButton').textContent='Reactivar sonido';return;}
+  if(!orderAudio||orderAudio.state!=='running'){updateOrderSoundButton();return;}
   const base=orderAudio.currentTime;
   // A bright incoming-call pattern; consecutive orders never stack voices.
   if(base<orderChimeUntil)return;
@@ -246,7 +260,13 @@ function playOrderChime(test=false){
   });
 }
 
-async function resumeOrderAudio(){if(orderSoundEnabled){try{await orderAudio?.resume();if(orderInbox?.list().length)playOrderChime();await requestAdminWakeLock();}catch{document.getElementById('adminSoundButton').textContent='Reactivar sonido';}}}
+async function resumeOrderAudio(){
+  if(!orderSoundEnabled||!adminAccessAllowed)return;
+  try{const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)throw new Error('Audio no disponible');orderAudio=orderAudio||new Audio();await orderAudio.resume();
+    if(!orderSoundEnabled||!adminAccessAllowed)return;
+    updateOrderSoundButton();renderOrderInbox(orderInbox?.list()||[]);if(orderAudio.state==='running'&&orderInbox?.list().length)playOrderChime();await requestAdminWakeLock();
+  }catch{updateOrderSoundButton();const note=document.getElementById('orderSoundNote');if(note)note.textContent='No se pudo iniciar el audio. Toca la pantalla o revisa los permisos de sonido del navegador.';}
+}
 async function requestAdminWakeLock(){
   if(document.visibilityState!=='visible'||!orderSoundEnabled||!navigator.wakeLock||adminWakeLock)return;
   try{adminWakeLock=await navigator.wakeLock.request('screen');adminWakeLock.addEventListener('release',()=>{adminWakeLock=null;});}catch{}
