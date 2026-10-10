@@ -34,6 +34,7 @@ async function setupAdminAccess(session){
   renderAdminAccess();return true;
 }
 function denyAdminAccess(message){
+  const accountPassword=document.getElementById('staffAccountPassword');if(accountPassword)accountPassword.value='';
   clearStaffInvitation();
   adminAccessAllowed=false;stopAdminEnhancements();
   document.querySelectorAll('.modal.show').forEach(el=>el.classList.remove('show'));
@@ -54,7 +55,7 @@ function adminRoleName(role){return {owner:'Propietario',manager:'Encargado',sta
 function applyAdminPermissions(){
   const owner=adminRole==='owner';
   document.querySelectorAll('[data-owner-only]').forEach(el=>el.classList.toggle('hidden',!owner));
-  if(window.PasteHotDemo)document.getElementById('demoRoleSelect').value=adminRole;
+  if(window.PasteHotDemo)document.getElementById('demoRoleSelect').value=window.PasteHotDemo.state.delegated?'delegated':adminRole;
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('hidden',!adminCanOpenTab(b.getAttribute('onclick')?.match(/showTab\('([^']+)'/)?.[1])));
   document.getElementById('ordersMetrics').classList.toggle('hidden',!owner);
   document.querySelector('#section-orders .analytics-grid').classList.toggle('hidden',!owner);
@@ -65,7 +66,7 @@ function applyAdminPermissions(){
   document.getElementById('categoryAdminCard').classList.toggle('hidden',!owner);
   if(!owner)showTab('orders');
 }
-function openAdminAccess(){if(adminRole==='owner')showTab('access');else alert(`Acceso de ${adminRole==='manager'?'encargado':'empleado'}. El propietario administra los dispositivos autorizados.`);}
+function openAdminAccess(){if(adminRole==='owner')showTab('access');else alert(`Acceso de ${adminRole==='manager'?'encargado':'empleado'}. El propietario administra las cuentas del equipo.`);}
 function renderAdminAccess(){
   const state=adminAccessState||{},enforced=!!state.enforced,installed=adminSecurityInstalled;
   const sessions=state.sessions||[],members=state.members||[];
@@ -73,20 +74,22 @@ function renderAdminAccess(){
   document.getElementById('adminPresenceDots').innerHTML=online.length?'<span class="presence-dot" aria-hidden="true"></span>':'';
   document.getElementById('adminPresenceText').textContent=installed?`${online.length} conectado${online.length===1?'':'s'}`:'Accesos por preparar';
   document.getElementById('adminPresence').setAttribute('aria-label',installed?`Accesos: ${online.length} navegadores conectados`:'Ver preparación de accesos');
-  const note=!installed?'Preview: el control de empleados y dispositivos está preparado para prueba. Aún no se ha activado en la base de datos del negocio.':!enforced?'El control de empleados está instalado. La autorización de navegadores aún no está activa. Actívalo primero en tu teléfono y después autoriza la tablet.':'Protección activa: cada navegador requiere tu aprobación. No hay un límite fijo de dispositivos.';
+  const direct=!!state.direct_access;
+  const note=direct?'El propietario también puede entrar desde cualquier dispositivo, sin autorización adicional. Acceso directo: cada persona entra con su usuario y contraseña. Desactivar su cuenta bloquea todos sus dispositivos.':!installed?'Preview: el control de empleados y dispositivos está preparado para prueba. Aún no se ha activado en la base de datos del negocio.':!enforced?'El control de empleados está instalado. La autorización de navegadores aún no está activa. Actívalo primero en tu teléfono y después autoriza la tablet.':'Protección activa: cada navegador requiere tu aprobación. No hay un límite fijo de dispositivos.';
   document.getElementById('accessSetupNote').textContent=note;
   document.getElementById('accessProtectionText').textContent=note;
   document.getElementById('enableAdminSecurity').disabled=!installed||enforced||adminAccessBusy;
   document.getElementById('enableAdminSecurity').classList.toggle('hidden',enforced);
-  document.getElementById('staffInviteButton').disabled=!installed||!enforced||adminAccessBusy;
+  document.getElementById('staffInviteButton').disabled=!installed||!direct||adminAccessBusy;
+  document.getElementById('deviceProtectionCard')?.classList.toggle('hidden',direct);
   document.getElementById('staffInviteForm').classList.toggle('hidden',adminRole!=='owner');
-  document.getElementById('staffInviteButton').textContent=window.PasteHotDemo?'Simular invitación · no envía correo':'Preparar invitación de acceso';
+  document.getElementById('staffInviteButton').textContent=window.PasteHotDemo?'Simular cuenta · no crea acceso real':'Crear cuenta activa';
   document.getElementById('accessSessions').innerHTML=sessions.length?sessions.map(s=>{
     const pending=s.status==='pending',approved=s.status==='approved',current=s.current;
-    const owner=adminRole==='owner',canAuthorize=s.member_enabled!==false,revoked=s.status==='revoked';
-    return `<div class="access-row"><div><strong>${escapeHtml(s.label||'Navegador sin nombre')}${current?' · este navegador':''}</strong><small>${escapeHtml(s.display_name||'')} · ${adminRoleName(s.role)}</small><span class="state-tag ${escapeAttr(s.status)}">${approved?'Autorizado':pending?'Esperando autorización':'Revocado'}</span> <span class="${s.online?'access-online':'access-offline'}">${s.online?'Conectado':'Sin actividad reciente'}</span>${s.member_enabled===false?'<small>Cuenta desactivada</small>':''}</div><div class="access-row-actions">${owner?`<button class="btn btn-light" onclick="renameAdminSession('${s.session_id}')">Renombrar</button>${['staff','manager'].includes(s.role)?`<button class="btn btn-light" onclick="openAccountPermissions('${s.user_id}')">Cambiar permisos</button>`:'<small>Cuenta del propietario</small>'}${!current?(approved?`<button class="btn btn-danger" onclick="changeAdminSession('${s.session_id}','revoked')">Revocar acceso</button>`:canAuthorize?`<button class="btn btn-dark" onclick="changeAdminSession('${s.session_id}','approved')">Autorizar</button>`:''):''}${!current&&revoked?`<button class="btn btn-danger" onclick="removeAdminSession('${s.session_id}')">Eliminar de la lista</button>`:''}`:''}</div></div>`;
+    const owner=adminRole==='owner'&&(!s.primary_owner||state.primary_owner),canAuthorize=s.member_enabled!==false,revoked=s.status==='revoked';
+    return `<div class="access-row"><div><strong>${escapeHtml(s.label||'Navegador sin nombre')}${current?' · este navegador':''}</strong><small>${escapeHtml(s.display_name||'')} · ${adminRoleName(s.role)}</small><span class="state-tag ${escapeAttr(s.status)}">${direct?(s.member_enabled===false?'Cuenta desactivada':'Acceso por cuenta'):approved?'Autorizado':pending?'Esperando autorización':'Revocado'}</span> <span class="${s.online?'access-online':'access-offline'}">${s.online?'Conectado':'Sin actividad reciente'}</span>${s.member_enabled===false?'<small>Cuenta desactivada</small>':''}</div><div class="access-row-actions">${owner?`<button class="btn btn-light" onclick="renameAdminSession('${s.session_id}')">Renombrar</button>${['owner','staff','manager'].includes(s.role)&&!s.primary_owner?`<button class="btn btn-light" onclick="openAccountPermissions('${s.user_id}')">Cambiar permisos</button>`:'<small>Cuenta del propietario</small>'}${!direct&&!current?(approved?`<button class="btn btn-danger" onclick="changeAdminSession('${s.session_id}','revoked')">Revocar acceso</button>`:canAuthorize?`<button class="btn btn-dark" onclick="changeAdminSession('${s.session_id}','approved')">Autorizar</button>`:''):''}${!current&&revoked?`<button class="btn btn-danger" onclick="removeAdminSession('${s.session_id}')">Eliminar de la lista</button>`:''}`:''}</div></div>`;
   }).join(''):'<p class="media-note">Las sesiones aparecerán aquí cuando se active el control de accesos.</p>';
-  document.getElementById('accessMembers').innerHTML=members.filter(m=>['staff','manager'].includes(m.role)).map(m=>`<div class="access-row"><div><strong>${escapeHtml(m.display_name)}</strong><small>${escapeHtml(m.email||'')} · ${adminRoleName(m.role)}</small><span class="state-tag">${m.enabled?'Acceso habilitado':'Acceso desactivado'}</span></div><div class="access-row-actions"><label>Permisos<select id="account-role-${m.user_id}" aria-label="Permisos de ${escapeAttr(m.display_name)}" ${adminAccessBusy?'disabled':''} onchange="changeAdminMemberRole('${m.user_id}',this.value)"><option value="staff" ${m.role==='staff'?'selected':''}>Empleado</option><option value="manager" ${m.role==='manager'?'selected':''}>Encargado</option></select></label><button class="btn ${m.enabled?'btn-danger':'btn-dark'}" onclick="changeAdminMember('${m.user_id}',${!m.enabled})">${m.enabled?'Desactivar acceso':'Habilitar acceso'}</button></div></div>`).join('')||'<p class="media-note">No hay empleados o encargados registrados.</p>';
+  document.getElementById('accessMembers').innerHTML=members.filter(m=>['owner','staff','manager'].includes(m.role)).map(m=>`<div class="access-row"><div><strong>${escapeHtml(m.display_name)}</strong><small>${escapeHtml(m.email?.startsWith('staff+')&&m.email.endsWith('@accounts.pastehot.com')?m.email.split('@')[0].slice(6):m.email||'')} · ${adminRoleName(m.role)}</small>${m.primary_owner?'<small>Cuenta principal protegida</small>':m.role==='owner'?'<small>Segundo propietario · control completo</small>':''}<span class="state-tag">${m.enabled?'Acceso habilitado':'Acceso desactivado'}</span></div><div class="access-row-actions">${m.primary_owner||m.current?'<small>Cuenta protegida</small>':`<label>Permisos<select id="account-role-${m.user_id}" aria-label="Permisos de ${escapeAttr(m.display_name)}" ${adminAccessBusy?'disabled':''} onchange="changeAdminMemberRole('${m.user_id}',this.value)"><option value="owner" ${m.role==='owner'?'selected':''}>Segundo propietario</option><option value="staff" ${m.role==='staff'?'selected':''}>Empleado</option><option value="manager" ${m.role==='manager'?'selected':''}>Encargado</option></select></label><button class="btn ${m.enabled?'btn-danger':'btn-dark'}" onclick="changeAdminMember('${m.user_id}',${!m.enabled})">${m.enabled?'Desactivar acceso':'Habilitar acceso'}</button>${direct?`<button class="btn btn-danger" ${adminAccessBusy?'disabled':''} onclick="deleteAdminMember('${m.user_id}')">Borrar cuenta</button>`:''}`}</div></div>`).join('')||'<p class="media-note">No hay empleados o encargados registrados.</p>';
   const banner=document.getElementById('adminAccessBanner');
   banner.classList.toggle('hidden',installed||adminRole!=='owner');
   banner.textContent=!installed?'Preview de mejoras: las alertas y categorías pueden probarse aquí. Los nuevos permisos de empleados aún no están activados en el negocio.':'';
@@ -116,14 +119,27 @@ async function changeAdminSession(id,status){
   await adminAccessAction(async()=>{const {error}=await db.rpc('pastehot_set_session',{p_session_id:id,p_status:status});if(error)throw error;});
 }
 async function changeAdminMember(id,enabled){
-  if(!confirm(enabled?'¿Habilitar el acceso de esta cuenta? Sus navegadores deben autorizarse nuevamente.':'¿Desactivar esta cuenta y revocar todos sus navegadores?'))return;
+  const member=adminAccessState?.members?.find(m=>m.user_id===id);if(!member||member.primary_owner||member.current)return;
+  if(!confirm(enabled?'¿Habilitar esta cuenta? Podrá entrar directamente con sus credenciales.':'¿Desactivar esta cuenta y revocar todos sus navegadores?'))return;
   await adminAccessAction(async()=>{const {error}=await db.rpc('pastehot_set_staff_enabled',{p_user_id:id,p_enabled:enabled});if(error)throw error;});
 }
+async function deleteAdminMember(id){
+  if(adminRole!=='owner'||!adminAccessAllowed||!adminAccessState?.direct_access)return;
+  const member=adminAccessState.members?.find(m=>m.user_id===id);
+  if(!member||member.primary_owner||member.current||!['owner','staff','manager'].includes(member.role))return;
+  if(!confirm(`¿Borrar definitivamente la cuenta de ${member.display_name}? Se eliminarán sus credenciales, dispositivos y registros de apertura/cierre de tienda. Los pedidos y ventas se conservan. Esta acción no se puede deshacer.`))return;
+  await adminAccessAction(async()=>{
+    const {data,error}=await db.functions.invoke('pastehot-create-staff',{body:{action:'delete',userId:id,deviceToken:adminDeviceToken()}});
+    if(error||data?.error){let message=data?.error;try{if(!message&&error?.context?.json)message=(await error.context.json())?.error;}catch{}throw new Error(message||'No se completó el borrado. Actualiza accesos y vuelve a intentarlo.');}
+    if(typeof loadStoreHistory==='function')await loadStoreHistory();
+    return data?.delivery==='demo'?'Cuenta ficticia borrada de la prueba.':'Cuenta, dispositivos e historial asociado borrados.';
+  });
+}
 async function changeAdminMemberRole(id,role){
-  if(!['manager','staff'].includes(role)||adminRole!=='owner'||!adminAccessAllowed)return;
+  if(!['owner','manager','staff'].includes(role)||adminRole!=='owner'||!adminAccessAllowed)return;
   const member=adminAccessState?.members?.find(m=>m.user_id===id);
-  if(!member||member.role===role)return;
-  if(!confirm(`¿Cambiar los permisos de ${member.display_name} a ${adminRoleName(role)}? Sus navegadores perderán la autorización y deberás aprobarlos nuevamente.`)){renderAdminAccess();return;}
+  if(!member||member.primary_owner||member.current||member.role===role)return;
+  if(!confirm(`¿Cambiar los permisos de ${member.display_name} a ${adminRoleName(role)}? Los nuevos permisos se aplicarán a su cuenta y a todos sus dispositivos.`)){renderAdminAccess();return;}
   await adminAccessAction(async()=>{const {error}=await db.rpc('pastehot_set_staff_role',{p_user_id:id,p_role:role});if(error)throw error;});
 }
 async function activateAdminProtection(){
@@ -145,26 +161,25 @@ async function removeAdminSession(id){
 }
 function openAccountPermissions(id){
   if(adminRole!=='owner'||!adminAccessAllowed)return;const member=adminAccessState?.members?.find(m=>m.user_id===id);
-  if(!member||!['manager','staff'].includes(member.role))return;
+  if(!member||member.primary_owner||member.current||!['owner','manager','staff'].includes(member.role))return;
   const select=document.getElementById('account-role-'+id);select?.scrollIntoView({behavior:'smooth',block:'center'});select?.focus();
-  showMessage('accessMessage',`Los permisos de ${member.display_name} se aplican a todos los dispositivos de su cuenta. Selecciona Empleado o Encargado.`);
+  showMessage('accessMessage',`Los permisos de ${member.display_name} se aplican a todos los dispositivos de su cuenta. Selecciona Empleado, Encargado o Segundo propietario.`);
 }
-async function inviteAdminStaff(event){
-  event.preventDefault();if(!adminSecurityInstalled||!adminAccessState?.enforced)return;
-  clearStaffInvitation();
-  const email=document.getElementById('staffInviteEmail').value.trim(),name=document.getElementById('staffInviteName').value.trim();
+async function createAdminStaff(event){
+  event.preventDefault();if(adminRole!=='owner'||!adminAccessAllowed||!adminAccessState?.direct_access)return;
+  if(document.getElementById('staffInviteRole').value==='owner'&&!confirm('El segundo propietario tendrá control completo del administrador, excepto sobre tu cuenta principal protegida. ¿Crear esta cuenta con esos permisos?'))return;
+  const input=document.getElementById('staffAccountPassword');
+  const username=document.getElementById('staffAccountUsername').value.trim().toLowerCase(),name=document.getElementById('staffInviteName').value.trim();
   await adminAccessAction(async()=>{
-    const {data,error}=await db.functions.invoke('pastehot-invite-staff',{body:{email,name,redirectTo:location.origin+'/admin.html',deviceToken:adminDeviceToken(),role:document.getElementById('staffInviteRole').value}});
-    if(error||data?.error)throw new Error(data?.error||'No se pudo enviar la invitación. Revisa el correo o intenta más tarde.');
-    if(data?.delivery==='manual'&&data.invitationLink){
-      const link=new URL(data.invitationLink);
-      if(link.origin!==SUPABASE_URL||link.pathname!=='/auth/v1/verify'||link.searchParams.get('type')!=='invite')throw new Error('No se pudo verificar la invitación.');
-      document.getElementById('staffInvitationLink').value=link.href;
-      document.getElementById('staffInvitationResult').classList.remove('hidden');
-    }
+    const password=input.value;
+    if(!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(username))throw new Error('Revisa el usuario: de 3 a 32 caracteres, sin espacios ni acentos.');
+    if(password.length<12||password.length>128||!/[a-zA-Z]/.test(password)||!/[0-9]/.test(password))throw new Error('Usa una contraseña de al menos 12 caracteres con letras y números.');
+    const {data,error}=await db.functions.invoke('pastehot-create-staff',{body:{username,name,password,deviceToken:adminDeviceToken(),role:document.getElementById('staffInviteRole').value}});
+    if(error||data?.error){let message=data?.error;try{if(!message&&error?.context?.json)message=(await error.context.json())?.error;}catch{}throw new Error(message||'No se creó la cuenta. Revisa los datos y la conexión.');}
     document.getElementById('staffInviteForm').reset();
-    return data?.delivery==='demo'?'Prueba completada: persona agregada solo a la demostración. No se creó una cuenta real ni se envió un correo.':data?.delivery==='manual'?'Invitación preparada. No se envió correo: copia el enlace privado que aparece abajo y entrégalo a la persona invitada.':'Invitación enviada al correo indicado. Revisa también la carpeta de spam.';
+    return data?.delivery==='demo'?'Prueba completada: cuenta ficticia agregada. No se creó una cuenta real ni se enviaron credenciales.':`Cuenta ${username} creada y activa. Entrega a la persona su usuario y la contraseña que elegiste. Puede entrar directamente.`;
   });
+  input.value='';
 }
 function clearStaffInvitation(){const input=document.getElementById('staffInvitationLink');if(input)input.value='';document.getElementById('staffInvitationResult')?.classList.add('hidden');}
 async function copyStaffInvitation(){if(adminRole!=='owner'||!adminAccessAllowed)return;const input=document.getElementById('staffInvitationLink');if(!input?.value)return;try{await navigator.clipboard.writeText(input.value);showMessage('accessMessage','Enlace copiado. Compártelo únicamente con la persona invitada.');}catch{input.focus();input.select();showMessage('accessMessage','Selecciona y copia el enlace para entregarlo a la persona invitada.');}}
