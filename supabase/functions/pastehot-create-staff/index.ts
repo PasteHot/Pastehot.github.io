@@ -18,6 +18,18 @@ Deno.serve(async(req:Request)=>{
     const {data:state,error:stateError}=await caller.rpc('pastehot_admin_state',{p_visible:true,p_device_token:String(body.deviceToken||'')});
     if(stateError||!state?.allowed||state.role!=='owner')return reply(403,{error:'Solo el propietario puede crear cuentas.'});
     if(!state.direct_access)return reply(409,{error:'Esta mejora aún no está activada para cuentas reales.'});
+    if(body.action==='reset_password'){
+      const id=String(body.userId||''),password=typeof body.password==='string'?body.password:'';
+      const target=state.members?.find((m:{user_id:string,role:string,primary_owner?:boolean})=>m.user_id===id);
+      if(!target||id===auth.user.id||target.primary_owner||!['owner','manager','staff'].includes(target.role))return reply(403,{error:'No puedes cambiar la contraseña de esta cuenta.'});
+      if(password.length<12||password.length>128||!/[a-zA-Z]/.test(password)||!/[0-9]/.test(password))return reply(400,{error:'Usa una contraseña de 12 a 128 caracteres con letras y números.'});
+      const service=createClient(url,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false,autoRefreshToken:false}});
+      const {error:passwordError}=await service.auth.admin.updateUserById(id,{password});
+      if(passwordError)return reply(409,{error:'No se cambió la contraseña. Verifica los requisitos e inténtalo nuevamente.'});
+      const {error:revokeError}=await caller.rpc('pastehot_revoke_member_sessions',{p_user_id:id});
+      if(revokeError)return reply(409,{error:'La nueva contraseña quedó guardada, pero no se pudieron cerrar las sesiones anteriores. Contacta al propietario antes de entregar el acceso.'});
+      return reply(200,{ok:true});
+    }
     if(body.action==='delete'){
       const id=String(body.userId||'');
       const target=state.members?.find((m:{user_id:string,role:string})=>m.user_id===id);
