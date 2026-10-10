@@ -37,8 +37,8 @@ function scheduleAdminSettingsReload(payload){scheduleAdminViewRefresh('store',a
 function scheduleAdminViewRefresh(...views){views.forEach(view=>{adminPendingViews.add(view);adminViewVersions.set(view,(adminViewVersions.get(view)||0)+1);});clearTimeout(adminViewRefreshTimer);adminViewRefreshTimer=setTimeout(flushAdminViews,180);}
 function adminViewCanRun(view){
  if(view==='store'||view==='report')return true;
- if(view==='products')return adminCanEditProducts();
- if(view==='categories')return adminCanEditProducts()&&!categoryDragState&&!categoryOrderSaving&&!document.getElementById('productModal').classList.contains('show');
+ if(view==='products')return adminCanToggleProduct();
+ if(view==='categories')return adminCanToggleProduct()&&!categoryDragState&&!categoryOrderSaving&&!document.getElementById('productModal').classList.contains('show');
  return document.getElementById('section-'+view)?.classList.contains('active')&&adminCanOpenTab(view)&&!adminFormIsDirty(view)&&!(view==='delivery-zones'&&pendingZoneId);
 }
 async function flushAdminViews(){
@@ -48,8 +48,8 @@ async function flushAdminViews(){
    if(!adminAccessAllowed||user!==adminSession?.user?.id)break;
    const active=[...document.querySelectorAll('.section')].find(el=>el.classList.contains('active'))?.id.replace('section-','');
    if(view==='store'){adminPendingViews.delete(view);await loadStoreControl();continue;}
-   if(view==='categories'){if(!adminCanEditProducts()){adminPendingViews.delete(view);continue;}if(categoryDragState||categoryOrderSaving||document.getElementById('productModal').classList.contains('show'))continue;adminPendingViews.delete(view);await loadCategories();continue;}
-   if(view==='products'){adminPendingViews.delete(view);if(adminCanEditProducts())await loadProducts();continue;}
+    if(view==='categories'){if(!adminCanToggleProduct()){adminPendingViews.delete(view);continue;}if(categoryDragState||categoryOrderSaving||document.getElementById('productModal').classList.contains('show'))continue;adminPendingViews.delete(view);await loadCategories();continue;}
+    if(view==='products'){adminPendingViews.delete(view);if(adminCanToggleProduct())await loadProducts();continue;}
    if(view==='report'){adminPendingViews.delete(view);if(reportOwner()&&active==='paste-sales'&&document.getElementById('salesReportContent').textContent.trim())await prepareSalesReport();continue;}
    if(view!==active||!adminCanOpenTab(view))continue;
    if(adminFormIsDirty(view)){adminDeferredView(view);continue;}

@@ -30,7 +30,7 @@ const root=path.join(__dirname,'..'),sleep=ms=>new Promise(r=>setTimeout(r,ms));
  w.showTab('products');await sleep(250);await client.from('settings').update({value:'Pendiente en segundo plano'}).eq('key','business_name');await sleep(250);
  w.showTab('business');await sleep(250);assert.equal(input.value,'Pendiente en segundo plano');
  w.demoConnection();setting('business_name').value='Cambio sin conexión';w.demoConnection();await sleep(400);assert.equal(input.value,'Cambio sin conexión');
- await w.demoRole('manager');w.showTab('products');await sleep(250);await client.from('products').update({price:47}).eq('id',tables.products[0].id);await sleep(300);assert(w.document.getElementById('productsList').textContent.includes('$47.00'));
+ await w.demoRole('manager');w.showTab('products');await sleep(250);await client.from('products').update({available:false}).eq('id',tables.products[0].id);await sleep(300);assert(w.document.getElementById('productsList').textContent.includes('Agotado'));
  await w.demoRole('staff');await sleep(250);const before=loads;await client.from('settings').update({value:'No debe cargarlo el empleado'}).eq('key','business_name');await sleep(300);assert.equal(loads,before);assert(!w.document.getElementById('section-business').classList.contains('active'));
  w.demoNewOrder();await sleep(450);assert(w.document.getElementById('ordersTable').textContent.includes('PRUEBA-'+String(w.PasteHotDemo.state.counter-1).padStart(3,'0')));
  w.stopAdminEnhancements();dom.window.close();console.log('PASS: event coalescing; live settings and products; protected drafts, partial saves and in-flight edits; hidden-view refresh; reconnect recovery; role-scoped updates; no duplicate script execution.');
