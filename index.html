@@ -1196,7 +1196,7 @@ async function sendOrder(){
 
   let confirmed;
   try{
-    const {data,error}=await db.rpc("create_pending_order_with_location_v2",{
+    const {data,error}=await db.rpc("create_pending_order_with_location_v3",{
       p_order_code:orderCode,
       p_customer_name:name,
       p_customer_phone:normalizePhone(phone),

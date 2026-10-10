@@ -6,6 +6,20 @@ let adminAccessRefreshPromise=null,adminAccessBusy=false;
 let orderChimeUntil=0;const orderChimeVoices=new Set();
 const PASTEHOT_OWNER_ID='a0c0b64b-7809-4428-ad00-a1484d6ded53';
 function isPasteHotPreview(){return /^(deploy-preview-\d+--cheerful-daifuku-76579b\.netlify\.app|localhost|127\.0\.0\.1)$/.test(location.hostname);}
+function togglePassword(id,button){
+ const input=document.getElementById(id);if(!input)return;
+ const visible=input.type==='password';input.type=visible?'text':'password';
+ button.setAttribute('aria-pressed',String(visible));button.setAttribute('aria-label',visible?'Ocultar contraseña':'Mostrar contraseña');
+ button.classList.toggle('password-visible',visible);
+}
+function resetPasswordVisibility(){document.querySelectorAll('.password-toggle').forEach(button=>{const input=document.getElementById(button.getAttribute('aria-controls'));if(input)input.type='password';button.classList.remove('password-visible');button.setAttribute('aria-pressed','false');button.setAttribute('aria-label','Mostrar contraseña');});}
+let accountToastTimer=null;
+function showAccountActivated(username,role){
+ const toast=document.getElementById('accountCreatedToast');
+ document.getElementById('accountCreatedDetails').textContent=`${username} · ${adminRoleName(role)}${window.PasteHotDemo?' · cuenta ficticia de prueba':''}`;
+ toast.classList.remove('hidden');clearTimeout(accountToastTimer);accountToastTimer=setTimeout(hideAccountToast,10000);
+}
+function hideAccountToast(){clearTimeout(accountToastTimer);document.getElementById('accountCreatedToast')?.classList.add('hidden');}
 function showPreviewDemoEntry(){document.getElementById('previewDemoLink')?.classList.toggle('hidden',!isPasteHotPreview());document.getElementById('previewDemoBar')?.classList.toggle('hidden',!window.PasteHotDemo);}
 function adminDeviceToken(){
   const key='pastehot_device_token_'+adminSession.user.id;
@@ -34,6 +48,7 @@ async function setupAdminAccess(session){
   renderAdminAccess();return true;
 }
 function denyAdminAccess(message){
+  hideAccountToast();resetPasswordVisibility();
   const accountPassword=document.getElementById('staffAccountPassword');if(accountPassword)accountPassword.value='';
   clearStaffInvitation();
   adminAccessAllowed=false;stopAdminEnhancements();
@@ -70,7 +85,7 @@ function openAdminAccess(){if(adminRole==='owner')showTab('access');else alert(`
 function renderAdminAccess(){
   const state=adminAccessState||{},enforced=!!state.enforced,installed=adminSecurityInstalled;
   const sessions=state.sessions||[],members=state.members||[];
-  const online=sessions.filter(s=>s.status==='approved'&&s.online);
+  const online=sessions.filter(s=>s.status==='approved'&&s.online&&s.member_enabled!==false);
   document.getElementById('adminPresenceDots').innerHTML=online.length?'<span class="presence-dot" aria-hidden="true"></span>':'';
   document.getElementById('adminPresenceText').textContent=installed?`${online.length} conectado${online.length===1?'':'s'}`:'Accesos por preparar';
   document.getElementById('adminPresence').setAttribute('aria-label',installed?`Accesos: ${online.length} navegadores conectados`:'Ver preparación de accesos');
@@ -81,15 +96,16 @@ function renderAdminAccess(){
   document.getElementById('enableAdminSecurity').disabled=!installed||enforced||adminAccessBusy;
   document.getElementById('enableAdminSecurity').classList.toggle('hidden',enforced);
   document.getElementById('staffInviteButton').disabled=!installed||!direct||adminAccessBusy;
+  document.querySelectorAll('#staffInviteForm input,#staffInviteForm select,#staffInviteForm .password-toggle').forEach(el=>el.disabled=adminAccessBusy);
   document.getElementById('deviceProtectionCard')?.classList.toggle('hidden',direct);
   document.getElementById('staffInviteForm').classList.toggle('hidden',adminRole!=='owner');
   document.getElementById('staffInviteButton').textContent=window.PasteHotDemo?'Simular cuenta · no crea acceso real':'Crear cuenta activa';
-  document.getElementById('accessSessions').innerHTML=sessions.length?sessions.map(s=>{
+  document.getElementById('accessSessions').innerHTML=online.length?online.map(s=>{
     const pending=s.status==='pending',approved=s.status==='approved',current=s.current;
     const owner=adminRole==='owner'&&(!s.primary_owner||state.primary_owner),canAuthorize=s.member_enabled!==false,revoked=s.status==='revoked';
     return `<div class="access-row"><div><strong>${escapeHtml(s.label||'Navegador sin nombre')}${current?' · este navegador':''}</strong><small>${escapeHtml(s.display_name||'')} · ${adminRoleName(s.role)}</small><span class="state-tag ${escapeAttr(s.status)}">${direct?(s.member_enabled===false?'Cuenta desactivada':'Acceso por cuenta'):approved?'Autorizado':pending?'Esperando autorización':'Revocado'}</span> <span class="${s.online?'access-online':'access-offline'}">${s.online?'Conectado':'Sin actividad reciente'}</span>${s.member_enabled===false?'<small>Cuenta desactivada</small>':''}</div><div class="access-row-actions">${owner?`<button class="btn btn-light" onclick="renameAdminSession('${s.session_id}')">Renombrar</button>${['owner','staff','manager'].includes(s.role)&&!s.primary_owner?`<button class="btn btn-light" onclick="openAccountPermissions('${s.user_id}')">Cambiar permisos</button>`:'<small>Cuenta del propietario</small>'}${!direct&&!current?(approved?`<button class="btn btn-danger" onclick="changeAdminSession('${s.session_id}','revoked')">Revocar acceso</button>`:canAuthorize?`<button class="btn btn-dark" onclick="changeAdminSession('${s.session_id}','approved')">Autorizar</button>`:''):''}${!current&&revoked?`<button class="btn btn-danger" onclick="removeAdminSession('${s.session_id}')">Eliminar de la lista</button>`:''}`:''}</div></div>`;
-  }).join(''):'<p class="media-note">Las sesiones aparecerán aquí cuando se active el control de accesos.</p>';
-  document.getElementById('accessMembers').innerHTML=members.filter(m=>['owner','staff','manager'].includes(m.role)).map(m=>`<div class="access-row"><div><strong>${escapeHtml(m.display_name)}</strong><small>${escapeHtml(m.email?.startsWith('staff+')&&m.email.endsWith('@accounts.pastehot.com')?m.email.split('@')[0].slice(6):m.email||'')} · ${adminRoleName(m.role)}</small>${m.primary_owner?'<small>Cuenta principal protegida</small>':m.role==='owner'?'<small>Segundo propietario · control completo</small>':''}<span class="state-tag">${m.enabled?'Acceso habilitado':'Acceso desactivado'}</span></div><div class="access-row-actions">${m.primary_owner||m.current?'<small>Cuenta protegida</small>':`<label>Permisos<select id="account-role-${m.user_id}" aria-label="Permisos de ${escapeAttr(m.display_name)}" ${adminAccessBusy?'disabled':''} onchange="changeAdminMemberRole('${m.user_id}',this.value)"><option value="owner" ${m.role==='owner'?'selected':''}>Segundo propietario</option><option value="staff" ${m.role==='staff'?'selected':''}>Empleado</option><option value="manager" ${m.role==='manager'?'selected':''}>Encargado</option></select></label><button class="btn ${m.enabled?'btn-danger':'btn-dark'}" onclick="changeAdminMember('${m.user_id}',${!m.enabled})">${m.enabled?'Desactivar acceso':'Habilitar acceso'}</button>${direct?`<button class="btn btn-danger" ${adminAccessBusy?'disabled':''} onclick="deleteAdminMember('${m.user_id}')">Borrar cuenta</button>`:''}`}</div></div>`).join('')||'<p class="media-note">No hay empleados o encargados registrados.</p>';
+  }).join(''):'<p class="media-note">No hay dispositivos conectados en este momento.</p>';
+  document.getElementById('accessMembers').innerHTML=members.filter(m=>['owner','staff','manager'].includes(m.role)).map(m=>`<div class="access-row"><div><strong>${escapeHtml(m.display_name)}</strong><small>Usuario: ${escapeHtml(m.email?.startsWith('staff+')&&m.email.endsWith('@accounts.pastehot.com')?m.email.split('@')[0].slice(6):m.email||'')} · ${adminRoleName(m.role)}</small>${m.primary_owner?'<small>Cuenta principal protegida</small>':m.role==='owner'?'<small>Segundo propietario · control completo</small>':''}<small>Contraseña: protegida</small><span class="state-tag">${m.enabled?'Acceso habilitado':'Acceso desactivado'}</span></div><div class="access-row-actions">${m.primary_owner||m.current?'<small>Cuenta protegida</small>':`<label>Permisos<select id="account-role-${m.user_id}" aria-label="Permisos de ${escapeAttr(m.display_name)}" ${adminAccessBusy?'disabled':''} onchange="changeAdminMemberRole('${m.user_id}',this.value)"><option value="owner" ${m.role==='owner'?'selected':''}>Segundo propietario</option><option value="staff" ${m.role==='staff'?'selected':''}>Empleado</option><option value="manager" ${m.role==='manager'?'selected':''}>Encargado</option></select></label><button class="btn ${m.enabled?'btn-danger':'btn-dark'}" onclick="changeAdminMember('${m.user_id}',${!m.enabled})">${m.enabled?'Desactivar acceso':'Habilitar acceso'}</button>${direct?`<button class="btn btn-danger" ${adminAccessBusy?'disabled':''} onclick="deleteAdminMember('${m.user_id}')">Borrar cuenta</button>`:''}`}</div></div>`).join('')||'<p class="media-note">No hay empleados o encargados registrados.</p>';
   const banner=document.getElementById('adminAccessBanner');
   banner.classList.toggle('hidden',installed||adminRole!=='owner');
   banner.textContent=!installed?'Preview de mejoras: las alertas y categorías pueden probarse aquí. Los nuevos permisos de empleados aún no están activados en el negocio.':'';
@@ -166,20 +182,32 @@ function openAccountPermissions(id){
   showMessage('accessMessage',`Los permisos de ${member.display_name} se aplican a todos los dispositivos de su cuenta. Selecciona Empleado, Encargado o Segundo propietario.`);
 }
 async function createAdminStaff(event){
-  event.preventDefault();if(adminRole!=='owner'||!adminAccessAllowed||!adminAccessState?.direct_access)return;
-  if(document.getElementById('staffInviteRole').value==='owner'&&!confirm('El segundo propietario tendrá control completo del administrador, excepto sobre tu cuenta principal protegida. ¿Crear esta cuenta con esos permisos?'))return;
-  const input=document.getElementById('staffAccountPassword');
-  const username=document.getElementById('staffAccountUsername').value.trim().toLowerCase(),name=document.getElementById('staffInviteName').value.trim();
+  event.preventDefault();if(adminAccessBusy||adminRole!=='owner'||!adminAccessAllowed||!adminAccessState?.direct_access)return;
+  const form=document.getElementById('staffInviteForm'),input=document.getElementById('staffAccountPassword');
+  const username=document.getElementById('staffAccountUsername').value.trim().toLowerCase(),name=document.getElementById('staffInviteName').value.trim(),role=document.getElementById('staffInviteRole').value,password=input.value;
+  const fail=message=>showMessage('staffAccountMessage',message,false);
+  if(!name||name.length>80){fail('Escribe el nombre de la persona (máximo 80 caracteres).');return;}
+  if(!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(username)){fail('Revisa el usuario: de 3 a 32 caracteres, sin espacios ni acentos.');return;}
+  if(password.length<12||password.length>128||!/[a-zA-Z]/.test(password)||!/[0-9]/.test(password)){fail('Usa una contraseña de 12 a 128 caracteres con letras y números.');return;}
+  if(!['owner','manager','staff'].includes(role)){fail('Selecciona la función de la cuenta.');return;}
+  if(role==='owner'&&!confirm('El segundo propietario tendrá control completo del administrador, excepto sobre tu cuenta principal protegida. ¿Crear esta cuenta con esos permisos?'))return;
+  let activated=false;
   await adminAccessAction(async()=>{
-    const password=input.value;
-    if(!/^[a-z0-9][a-z0-9._-]{2,31}$/.test(username))throw new Error('Revisa el usuario: de 3 a 32 caracteres, sin espacios ni acentos.');
-    if(password.length<12||password.length>128||!/[a-zA-Z]/.test(password)||!/[0-9]/.test(password))throw new Error('Usa una contraseña de al menos 12 caracteres con letras y números.');
-    const {data,error}=await db.functions.invoke('pastehot-create-staff',{body:{username,name,password,deviceToken:adminDeviceToken(),role:document.getElementById('staffInviteRole').value}});
-    if(error||data?.error){let message=data?.error;try{if(!message&&error?.context?.json)message=(await error.context.json())?.error;}catch{}throw new Error(message||'No se creó la cuenta. Revisa los datos y la conexión.');}
-    document.getElementById('staffInviteForm').reset();
-    return data?.delivery==='demo'?'Prueba completada: cuenta ficticia agregada. No se creó una cuenta real ni se enviaron credenciales.':`Cuenta ${username} creada y activa. Entrega a la persona su usuario y la contraseña que elegiste. Puede entrar directamente.`;
+    document.getElementById('staffAccountMessage').textContent='Creando cuenta…';
+    let response;
+    try{response=await db.functions.invoke(isPasteHotPreview()?'pastehot-create-staff-preview':'pastehot-create-staff',{body:{username,name,password,deviceToken:adminDeviceToken(),role}});}catch{
+      const message='No se pudo conectar. Tus datos se conservan; revisa la conexión y el listado antes de reintentar.';fail(message);throw new Error(message);
+    }
+    const {data,error}=response;
+    if(error||data?.error||data?.ok!==true){
+      let message=data?.error;try{if(!message&&error?.context?.json){const response=await error.context.json();message=response?.error||response?.message;}}catch{}
+      message=message||'No se pudo confirmar el alta. Revisa la conexión y el listado antes de volver a intentarlo.';fail(message);throw new Error(message);
+    }
+    activated=true;form.reset();resetPasswordVisibility();showAccountActivated(username,role);
+    showMessage('staffAccountMessage',window.PasteHotDemo?'Cuenta ficticia activada para esta prueba. No se creó una cuenta real.':'Cuenta activada con éxito. Entrega el usuario y la contraseña que asignaste.');
+    return data?.delivery==='demo'?'Prueba completada: cuenta ficticia agregada. No se creó una cuenta real ni se enviaron credenciales.':`Cuenta ${username} creada y activa. Puede entrar directamente.`;
   });
-  input.value='';
+  if(activated)input.value='';
 }
 function clearStaffInvitation(){const input=document.getElementById('staffInvitationLink');if(input)input.value='';document.getElementById('staffInvitationResult')?.classList.add('hidden');}
 async function copyStaffInvitation(){if(adminRole!=='owner'||!adminAccessAllowed)return;const input=document.getElementById('staffInvitationLink');if(!input?.value)return;try{await navigator.clipboard.writeText(input.value);showMessage('accessMessage','Enlace copiado. Compártelo únicamente con la persona invitada.');}catch{input.focus();input.select();showMessage('accessMessage','Selecciona y copia el enlace para entregarlo a la persona invitada.');}}
@@ -188,6 +216,21 @@ function setupOrderInbox(){
   let reviewed=[];try{reviewed=JSON.parse(localStorage.getItem('pastehot_reviewed_'+adminSession.user.id)||'[]');if(!Array.isArray(reviewed))reviewed=[];}catch{}
   orderInbox=new PasteHotOrders.OrderInbox({reviewed,onChange:renderOrderInbox,onNew:()=>{clearTimeout(orderSoundDebounce);orderSoundDebounce=setTimeout(()=>playOrderChime(),300);}});
 }
+function orderSoundPreferenceKey(){return 'pastehot_order_sound_'+adminSession.user.id;}
+function rememberOrderSound(){try{localStorage.setItem(orderSoundPreferenceKey(),orderSoundEnabled?'on':'off');}catch{}}
+function updateOrderSoundButton(){
+  const button=document.getElementById('adminSoundButton');if(!button)return;
+  button.textContent=!orderSoundEnabled?'Sonido silenciado · activar':orderAudio?.state==='running'?'Sonido activo · silenciar':'Sonido listo · toca la pantalla';
+  button.setAttribute('aria-pressed',String(orderSoundEnabled));
+}
+function initializeOrderSound(){
+  try{orderSoundEnabled=localStorage.getItem(orderSoundPreferenceKey())!=='off';}catch{orderSoundEnabled=true;}
+  updateOrderSoundButton();resumeOrderAudio();
+}
+// Browsers may require a gesture after restoring a session. Any tap/key unlocks
+// enabled alerts; it never overrides a saved mute preference.
+document.addEventListener('pointerdown',()=>{if(adminAccessAllowed&&orderSoundEnabled&&orderAudio?.state!=='running')resumeOrderAudio();},{capture:true});
+document.addEventListener('keydown',()=>{if(adminAccessAllowed&&orderSoundEnabled&&orderAudio?.state!=='running')resumeOrderAudio();},{capture:true});
 function receiveRealtimeOrder(payload){
   if(!adminAccessAllowed||!orderInbox)return;
   if(payload.eventType==='DELETE'){orderInbox.remove(payload.old?.id);return;}
@@ -200,7 +243,7 @@ function renderOrderInbox(list){
   document.getElementById('newOrdersCount').textContent=`${list.length} sin revisar`;
   document.getElementById('newOrdersList').innerHTML=list.map(o=>`<div class="alert-order"><div><strong>Pedido ${escapeHtml(o.order_code||String(o.id).slice(0,8))}</strong><p>${o.delivery_type==='delivery'?'Envío a domicilio':'Recoger en tienda'} · ${escapeHtml(formatDate(o.created_at))}</p><p>${o.order_status==='pendiente_confirmacion'?'Pendiente de confirmar':'Nuevo pedido'}</p></div><button class="btn btn-primary" data-inbox-order="${escapeAttr(o.id)}">Ver pedido</button></div>`).join('');
   document.getElementById('newOrdersList').querySelectorAll('[data-inbox-order]').forEach(b=>b.addEventListener('click',()=>openInboxOrder(b.dataset.inboxOrder)));
-  document.getElementById('orderSoundNote').textContent=orderSoundEnabled?'Sonido activo. La alerta se repite cada 3 segundos hasta pulsar Ver pedido en los pedidos pendientes.':'Activa el sonido para escuchar los pedidos nuevos.';
+  document.getElementById('orderSoundNote').textContent=orderSoundEnabled?(orderAudio?.state==='running'?'Sonido activo. La alerta se repite cada 3 segundos hasta pulsar Ver pedido.':'Los avisos están activados. Toca cualquier parte de la pantalla para permitir el audio del navegador.'):'Avisos silenciados. Activa el sonido si deseas escuchar los pedidos nuevos.';
   if(!list.length){stopOrderChime();clearTimeout(orderSoundDebounce);clearInterval(orderSoundTimer);orderSoundTimer=null;}
   else if(orderSoundEnabled&&!orderSoundTimer)orderSoundTimer=setInterval(playOrderChime,3000);
 }
@@ -214,12 +257,11 @@ function reviewInboxOrder(id){
   try{localStorage.setItem('pastehot_reviewed_'+adminSession.user.id,JSON.stringify(reviewed));}catch{}
 }
 async function toggleOrderSound(){
-  if(orderSoundEnabled){orderSoundEnabled=false;stopOrderChime();if(adminWakeLock){adminWakeLock.release().catch(()=>{});adminWakeLock=null;}clearInterval(orderSoundTimer);orderSoundTimer=null;document.getElementById('adminSoundButton').textContent='Activar sonido';renderOrderInbox(orderInbox?.list()||[]);return;}
-  try{
-    const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)throw new Error('Este navegador no permite el sonido de alertas.');
-    orderAudio=orderAudio||new Audio();await orderAudio.resume();if(orderAudio.state!=='running')throw new Error('No se pudo activar el sonido. Toca de nuevo Activar sonido.');
-    orderSoundEnabled=true;document.getElementById('adminSoundButton').textContent='Sonido activo · silenciar';renderOrderInbox(orderInbox?.list()||[]);playOrderChime(true);await requestAdminWakeLock();
-  }catch(error){alert(error.message||'No se pudo activar el sonido.');}
+  if(!adminAccessAllowed)return;
+  orderSoundEnabled=!orderSoundEnabled;rememberOrderSound();
+  if(!orderSoundEnabled){stopOrderChime();if(adminWakeLock){adminWakeLock.release().catch(()=>{});adminWakeLock=null;}clearInterval(orderSoundTimer);orderSoundTimer=null;}
+  updateOrderSoundButton();renderOrderInbox(orderInbox?.list()||[]);
+  if(orderSoundEnabled)await resumeOrderAudio();
 }
 function stopOrderChime(){
   orderChimeUntil=0;
@@ -231,7 +273,7 @@ function stopOrderChime(){
 }
 function playOrderChime(test=false){
   if(!orderSoundEnabled||!adminAccessAllowed||(!test&&!orderInbox?.list().length))return;
-  if(!orderAudio||orderAudio.state!=='running'){document.getElementById('adminSoundButton').textContent='Reactivar sonido';return;}
+  if(!orderAudio||orderAudio.state!=='running'){updateOrderSoundButton();return;}
   const base=orderAudio.currentTime;
   // A bright incoming-call pattern; consecutive orders never stack voices.
   if(base<orderChimeUntil)return;
@@ -246,15 +288,23 @@ function playOrderChime(test=false){
   });
 }
 
-async function resumeOrderAudio(){if(orderSoundEnabled){try{await orderAudio?.resume();if(orderInbox?.list().length)playOrderChime();await requestAdminWakeLock();}catch{document.getElementById('adminSoundButton').textContent='Reactivar sonido';}}}
+async function resumeOrderAudio(){
+  if(!orderSoundEnabled||!adminAccessAllowed)return;
+  try{const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)throw new Error('Audio no disponible');orderAudio=orderAudio||new Audio();await orderAudio.resume();
+    if(!orderSoundEnabled||!adminAccessAllowed)return;
+    updateOrderSoundButton();renderOrderInbox(orderInbox?.list()||[]);if(orderAudio.state==='running'&&orderInbox?.list().length)playOrderChime();await requestAdminWakeLock();
+  }catch{updateOrderSoundButton();const note=document.getElementById('orderSoundNote');if(note)note.textContent='No se pudo iniciar el audio. Toca la pantalla o revisa los permisos de sonido del navegador.';}
+}
 async function requestAdminWakeLock(){
   if(document.visibilityState!=='visible'||!orderSoundEnabled||!navigator.wakeLock||adminWakeLock)return;
   try{adminWakeLock=await navigator.wakeLock.request('screen');adminWakeLock.addEventListener('release',()=>{adminWakeLock=null;});}catch{}
 }
-function startOrderRecovery(){clearInterval(adminRecoveryTimer);adminRecoveryTimer=setInterval(()=>{if(adminAccessAllowed&&navigator.onLine&&document.visibilityState==='visible'&&!adminRealtimeOnline)loadOrders();},30000);}
+function startOrderRecovery(){clearInterval(adminRecoveryTimer);adminRecoveryTimer=setInterval(()=>{if(adminAccessAllowed&&navigator.onLine&&document.visibilityState==='visible'&&!adminRealtimeOnline)refreshAdminAfterWake();},30000);}
 function stopAdminEnhancements(){
+  hideAccountToast();resetPasswordVisibility();document.getElementById('staffInviteForm')?.reset();
+  document.getElementById('staffAccountMessage').textContent='';
   clearStaffInvitation();
-  stopStoreControl();resetAdminReports();stopOrderChime();
+  stopAdminViewSync();stopStoreControl();resetAdminReports();stopOrderChime();
   clearInterval(adminAccessTimer);clearInterval(adminRecoveryTimer);clearInterval(orderSoundTimer);clearTimeout(orderSoundDebounce);
   clearTimeout(adminOrdersTimer);clearTimeout(adminProductsTimer);clearTimeout(adminSettingsTimer);clearTimeout(adminZonesTimer);
   orderSoundEnabled=false;orderSoundTimer=null;
