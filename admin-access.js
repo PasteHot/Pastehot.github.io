@@ -14,12 +14,47 @@ function togglePassword(id,button){
 }
 function resetPasswordVisibility(){document.querySelectorAll('.password-toggle').forEach(button=>{const input=document.getElementById(button.getAttribute('aria-controls'));if(input)input.type='password';button.classList.remove('password-visible');button.setAttribute('aria-pressed','false');button.setAttribute('aria-label','Mostrar contraseña');});}
 let accountToastTimer=null;
+let accountPasswordTarget=null;
 function showAccountActivated(username,role){
  const toast=document.getElementById('accountCreatedToast');
  document.getElementById('accountCreatedDetails').textContent=`${username} · ${adminRoleName(role)}${window.PasteHotDemo?' · cuenta ficticia de prueba':''}`;
  toast.classList.remove('hidden');clearTimeout(accountToastTimer);accountToastTimer=setTimeout(hideAccountToast,10000);
 }
 function hideAccountToast(){clearTimeout(accountToastTimer);document.getElementById('accountCreatedToast')?.classList.add('hidden');}
+async function copyTextValue(value,message='Copiado.'){
+ const text=String(value??'');if(!text){showMessage('accessMessage','No hay texto para copiar.',false);return false;}
+ try{await navigator.clipboard.writeText(text);}catch{
+  const area=document.createElement('textarea');area.value=text;area.style.position='fixed';area.style.opacity='0';document.body.append(area);area.select();const copied=document.execCommand('copy');area.remove();if(!copied){showMessage('accessMessage','No se pudo copiar. Selecciona el texto manualmente.',false);return false;}
+ }
+ showMessage('accessMessage',message);return true;
+}
+function copyInputValue(id,message){const input=document.getElementById(id);return copyTextValue(input?.value,message);}
+function openResetAccountPassword(id){
+ if(adminRole!=='owner'||!adminAccessAllowed)return;
+ const member=adminAccessState?.members?.find(m=>m.user_id===id);
+ if(!member||member.primary_owner||!['owner','manager','staff'].includes(member.role))return;
+ accountPasswordTarget=member;document.getElementById('accountPasswordPerson').textContent=`${member.display_name} · ${adminRoleName(member.role)}`;
+ document.getElementById('accountNewPassword').value='';document.getElementById('accountPasswordResetMessage').textContent='';
+ document.getElementById('accountPasswordModal').classList.add('show');
+}
+function closeAccountPasswordModal(){document.getElementById('accountPasswordModal').classList.remove('show');document.getElementById('accountNewPassword').value='';resetPasswordVisibility();accountPasswordTarget=null;}
+async function submitAccountPasswordReset(event){
+ event.preventDefault();if(adminAccessBusy||adminRole!=='owner'||!adminAccessAllowed||!accountPasswordTarget)return;
+ const password=document.getElementById('accountNewPassword').value,member=accountPasswordTarget;
+ if(password.length<12||password.length>128||!/[a-zA-Z]/.test(password)||!/[0-9]/.test(password)){showMessage('accountPasswordResetMessage','Usa 12 a 128 caracteres, con letras y números.',false);return;}
+ if(!confirm(member.current?'Se cambiará tu contraseña y se cerrarán las otras sesiones de esta cuenta. ¿Continuar?':`Se cambiará la contraseña de ${member.display_name} y se cerrarán sus sesiones abiertas. ¿Continuar?`))return;
+ const button=document.getElementById('accountPasswordResetButton');button.disabled=true;
+ try{
+  if(member.current){const {error}=await db.auth.updateUser({password});if(error)throw error;const {error:signoutError}=await db.auth.signOut({scope:'others'});showMessage('accountPasswordResetMessage',signoutError?'Contraseña actualizada. Cópiala aquí; algunas sesiones previas podrían seguir activas.':'Contraseña actualizada y otras sesiones cerradas. Puedes copiarla.');return;}
+  await adminAccessAction(async()=>{
+   const {data,error}=await db.functions.invoke(isPasteHotPreview()?'pastehot-create-staff-preview':'pastehot-create-staff',{body:{action:'reset_password',userId:member.user_id,password,deviceToken:adminDeviceToken()}});
+   if(error||data?.error||data?.ok!==true){let message=data?.error;try{if(!message&&error?.context?.json)message=(await error.context.json())?.error;}catch{}throw new Error(message||'No se confirmó el cambio.');}
+   return `Contraseña de ${member.display_name} cambiada. Cópiala ahora y compártela en privado.`;
+  });
+  showMessage('accountPasswordResetMessage','Contraseña actualizada. Puedes copiarla aquí y enviarla de forma privada.');
+ }catch(error){showMessage('accountPasswordResetMessage',String(error.message||'No se pudo cambiar la contraseña.'),false);}
+ finally{button.disabled=false;}
+}
 function showPreviewDemoEntry(){document.getElementById('previewDemoLink')?.classList.toggle('hidden',!isPasteHotPreview());document.getElementById('previewDemoBar')?.classList.toggle('hidden',!window.PasteHotDemo);}
 function adminDeviceToken(){
   const key='pastehot_device_token_'+adminSession.user.id;
@@ -64,12 +99,21 @@ function showWaitingAccess(state){
     clearInterval(adminAccessTimer);adminAccessTimer=setInterval(()=>checkSession(),15000);
   }
 }
-function adminCanEditProducts(){return adminAccessAllowed&&['owner','manager'].includes(adminRole);}
-function adminCanOpenTab(name){return adminAccessAllowed&&(adminRole==='owner'||name==='orders'||(adminRole==='manager'&&['products','store-history'].includes(name)));}
+function isPrimaryOwner(){return !!adminAccessState?.primary_owner||(!adminSecurityInstalled&&adminRole==='owner');}
+function adminCanEditProducts(){return adminAccessAllowed&&adminRole==='owner';}
+function adminCanToggleProduct(){return adminAccessAllowed&&['owner','manager'].includes(adminRole);}
+function adminCanOpenTab(name){
+ if(!adminAccessAllowed)return false;
+ if(adminRole==='owner')return isPrimaryOwner()||name!=='business';
+ if(name==='orders')return true;
+ return adminRole==='manager'&&['products','store-history','operation','batch'].includes(name);
+}
 function adminRoleName(role){return {owner:'Propietario',manager:'Encargado',staff:'Empleado'}[role]||'Sin permisos';}
 function applyAdminPermissions(){
   const owner=adminRole==='owner';
+  const primary=isPrimaryOwner(),manager=adminRole==='manager';
   document.querySelectorAll('[data-owner-only]').forEach(el=>el.classList.toggle('hidden',!owner));
+  document.querySelectorAll('[data-primary-owner-only]').forEach(el=>el.classList.toggle('hidden',!primary));
   if(window.PasteHotDemo)document.getElementById('demoRoleSelect').value=window.PasteHotDemo.state.delegated?'delegated':adminRole;
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('hidden',!adminCanOpenTab(b.getAttribute('onclick')?.match(/showTab\('([^']+)'/)?.[1])));
   document.getElementById('ordersMetrics').classList.toggle('hidden',!owner);
@@ -78,8 +122,15 @@ function applyAdminPermissions(){
   document.querySelector('#section-orders .media-note').textContent=owner?'La búsqueda por folio revisa todo el historial, sin limitarse al periodo seleccionado.':'Busca entre los pedidos de las últimas 48 horas disponibles para atención.';
   document.querySelector('#section-orders .section-title h2').textContent=owner?'Pedidos y ventas':'Pedidos';
   document.querySelector('#section-orders .section-title p').textContent=owner?'Resumen calculado a partir de los pedidos registrados.':'Revisa, imprime y prepara los pedidos. Los datos son solo para atender al cliente.';
-  document.getElementById('categoryAdminCard').classList.toggle('hidden',!owner);
-  if(!owner)showTab('orders');
+  document.getElementById('categoryAdminCard').classList.toggle('hidden',!owner&&!manager);
+  document.getElementById('newProductButton')?.classList.toggle('hidden',!owner);
+  document.querySelectorAll('[data-owner-product-edit]').forEach(el=>el.classList.toggle('hidden',!owner));
+  document.querySelectorAll('[data-manager-operation]').forEach(el=>el.classList.toggle('hidden',!owner&&!manager));
+  document.querySelectorAll('[data-owner-operation]').forEach(el=>el.classList.toggle('hidden',manager));
+  document.getElementById('weeklyScheduleCard')?.classList.toggle('hidden',manager);
+  if(manager)document.querySelector('#section-operation .section-title p').textContent='El encargado solo puede ajustar métodos de pago y recargo por lluvia. La hornada se administra en su apartado.';
+  else document.querySelector('#section-operation .section-title p').textContent='Horarios, cierre temporal y mensajes comerciales del encabezado.';
+  if(!primary&&!manager)showTab('orders');
 }
 function openAdminAccess(){if(adminRole==='owner')showTab('access');else alert(`Acceso de ${adminRole==='manager'?'encargado':'empleado'}. El propietario administra las cuentas del equipo.`);}
 function renderAdminAccess(){
@@ -96,7 +147,7 @@ function renderAdminAccess(){
   document.getElementById('enableAdminSecurity').disabled=!installed||enforced||adminAccessBusy;
   document.getElementById('enableAdminSecurity').classList.toggle('hidden',enforced);
   document.getElementById('staffInviteButton').disabled=!installed||!direct||adminAccessBusy;
-  document.querySelectorAll('#staffInviteForm input,#staffInviteForm select,#staffInviteForm .password-toggle').forEach(el=>el.disabled=adminAccessBusy);
+  document.querySelectorAll('#staffInviteForm input,#staffInviteForm select,#staffInviteForm button').forEach(el=>el.disabled=adminAccessBusy);
   document.getElementById('deviceProtectionCard')?.classList.toggle('hidden',direct);
   document.getElementById('staffInviteForm').classList.toggle('hidden',adminRole!=='owner');
   document.getElementById('staffInviteButton').textContent=window.PasteHotDemo?'Simular cuenta · no crea acceso real':'Crear cuenta activa';
@@ -105,7 +156,7 @@ function renderAdminAccess(){
     const owner=adminRole==='owner'&&(!s.primary_owner||state.primary_owner),canAuthorize=s.member_enabled!==false,revoked=s.status==='revoked';
     return `<div class="access-row"><div><strong>${escapeHtml(s.label||'Navegador sin nombre')}${current?' · este navegador':''}</strong><small>${escapeHtml(s.display_name||'')} · ${adminRoleName(s.role)}</small><span class="state-tag ${escapeAttr(s.status)}">${direct?(s.member_enabled===false?'Cuenta desactivada':'Acceso por cuenta'):approved?'Autorizado':pending?'Esperando autorización':'Revocado'}</span> <span class="${s.online?'access-online':'access-offline'}">${s.online?'Conectado':'Sin actividad reciente'}</span>${s.member_enabled===false?'<small>Cuenta desactivada</small>':''}</div><div class="access-row-actions">${owner?`<button class="btn btn-light" onclick="renameAdminSession('${s.session_id}')">Renombrar</button>${['owner','staff','manager'].includes(s.role)&&!s.primary_owner?`<button class="btn btn-light" onclick="openAccountPermissions('${s.user_id}')">Cambiar permisos</button>`:'<small>Cuenta del propietario</small>'}${!direct&&!current?(approved?`<button class="btn btn-danger" onclick="changeAdminSession('${s.session_id}','revoked')">Revocar acceso</button>`:canAuthorize?`<button class="btn btn-dark" onclick="changeAdminSession('${s.session_id}','approved')">Autorizar</button>`:''):''}${!current&&revoked?`<button class="btn btn-danger" onclick="removeAdminSession('${s.session_id}')">Eliminar de la lista</button>`:''}`:''}</div></div>`;
   }).join(''):'<p class="media-note">No hay dispositivos conectados en este momento.</p>';
-  document.getElementById('accessMembers').innerHTML=members.filter(m=>['owner','staff','manager'].includes(m.role)).map(m=>`<div class="access-row"><div><strong>${escapeHtml(m.display_name)}</strong><small>Usuario: ${escapeHtml(m.email?.startsWith('staff+')&&m.email.endsWith('@accounts.pastehot.com')?m.email.split('@')[0].slice(6):m.email||'')} · ${adminRoleName(m.role)}</small>${m.primary_owner?'<small>Cuenta principal protegida</small>':m.role==='owner'?'<small>Segundo propietario · control completo</small>':''}<small>Contraseña: protegida</small><span class="state-tag">${m.enabled?'Acceso habilitado':'Acceso desactivado'}</span></div><div class="access-row-actions">${m.primary_owner||m.current?'<small>Cuenta protegida</small>':`<label>Permisos<select id="account-role-${m.user_id}" aria-label="Permisos de ${escapeAttr(m.display_name)}" ${adminAccessBusy?'disabled':''} onchange="changeAdminMemberRole('${m.user_id}',this.value)"><option value="owner" ${m.role==='owner'?'selected':''}>Segundo propietario</option><option value="staff" ${m.role==='staff'?'selected':''}>Empleado</option><option value="manager" ${m.role==='manager'?'selected':''}>Encargado</option></select></label><button class="btn ${m.enabled?'btn-danger':'btn-dark'}" onclick="changeAdminMember('${m.user_id}',${!m.enabled})">${m.enabled?'Desactivar acceso':'Habilitar acceso'}</button>${direct?`<button class="btn btn-danger" ${adminAccessBusy?'disabled':''} onclick="deleteAdminMember('${m.user_id}')">Borrar cuenta</button>`:''}`}</div></div>`).join('')||'<p class="media-note">No hay empleados o encargados registrados.</p>';
+  document.getElementById('accessMembers').innerHTML=members.filter(m=>['owner','staff','manager'].includes(m.role)).map(m=>{const username=m.email?.startsWith('staff+')&&m.email.endsWith('@accounts.pastehot.com')?m.email.split('@')[0].slice(6):m.email||'';return `<div class="access-row"><div><strong>${escapeHtml(m.display_name)}</strong><div class="credential-line"><span>Usuario: <code>${escapeHtml(username)}</code> · ${adminRoleName(m.role)}</span><button class="btn btn-light btn-small" onclick="copyTextValue('${escapeAttr(username)}','Usuario copiado.')">Copiar usuario</button></div>${m.primary_owner?'<small>Cuenta principal protegida</small>':m.role==='owner'?'<small>Segundo propietario · acceso a todos los apartados excepto Negocio</small>':''}<div class="credential-line"><span>Contraseña actual: protegida; no se puede recuperar.</span>${!m.primary_owner?`<button class="btn btn-light btn-small" onclick="openResetAccountPassword('${m.user_id}')">${m.current?'Cambiar mi contraseña':'Cambiar y copiar contraseña'}</button>`:''}</div><span class="state-tag">${m.enabled?'Acceso habilitado':'Acceso desactivado'}</span></div><div class="access-row-actions">${m.primary_owner||m.current?'<small>Cuenta protegida</small>':`<label>Permisos<select id="account-role-${m.user_id}" aria-label="Permisos de ${escapeAttr(m.display_name)}" ${adminAccessBusy?'disabled':''} onchange="changeAdminMemberRole('${m.user_id}',this.value)"><option value="owner" ${m.role==='owner'?'selected':''}>Segundo propietario</option><option value="staff" ${m.role==='staff'?'selected':''}>Empleado</option><option value="manager" ${m.role==='manager'?'selected':''}>Encargado</option></select></label><button class="btn ${m.enabled?'btn-danger':'btn-dark'}" onclick="changeAdminMember('${m.user_id}',${!m.enabled})">${m.enabled?'Desactivar acceso':'Habilitar acceso'}</button>${direct?`<button class="btn btn-danger" ${adminAccessBusy?'disabled':''} onclick="deleteAdminMember('${m.user_id}')">Borrar cuenta</button>`:''}`}</div></div>`}).join('')||'<p class="media-note">No hay empleados o encargados registrados.</p>';
   const banner=document.getElementById('adminAccessBanner');
   banner.classList.toggle('hidden',installed||adminRole!=='owner');
   banner.textContent=!installed?'Preview de mejoras: las alertas y categorías pueden probarse aquí. Los nuevos permisos de empleados aún no están activados en el negocio.':'';
@@ -204,10 +255,10 @@ async function createAdminStaff(event){
       message=message||'No se pudo confirmar el alta. Revisa la conexión y el listado antes de volver a intentarlo.';fail(message);throw new Error(message);
     }
     activated=true;form.reset();resetPasswordVisibility();showAccountActivated(username,role);
+    document.getElementById('createdAccountUsername').textContent=username;document.getElementById('createdAccountPassword').textContent=password;document.getElementById('createdAccountCredential').classList.remove('hidden');
     showMessage('staffAccountMessage',window.PasteHotDemo?'Cuenta ficticia activada para esta prueba. No se creó una cuenta real.':'Cuenta activada con éxito. Entrega el usuario y la contraseña que asignaste.');
     return data?.delivery==='demo'?'Prueba completada: cuenta ficticia agregada. No se creó una cuenta real ni se enviaron credenciales.':`Cuenta ${username} creada y activa. Puede entrar directamente.`;
   });
-  if(activated)input.value='';
 }
 function clearStaffInvitation(){const input=document.getElementById('staffInvitationLink');if(input)input.value='';document.getElementById('staffInvitationResult')?.classList.add('hidden');}
 async function copyStaffInvitation(){if(adminRole!=='owner'||!adminAccessAllowed)return;const input=document.getElementById('staffInvitationLink');if(!input?.value)return;try{await navigator.clipboard.writeText(input.value);showMessage('accessMessage','Enlace copiado. Compártelo únicamente con la persona invitada.');}catch{input.focus();input.select();showMessage('accessMessage','Selecciona y copia el enlace para entregarlo a la persona invitada.');}}
@@ -303,6 +354,8 @@ function startOrderRecovery(){clearInterval(adminRecoveryTimer);adminRecoveryTim
 function stopAdminEnhancements(){
   hideAccountToast();resetPasswordVisibility();document.getElementById('staffInviteForm')?.reset();
   document.getElementById('staffAccountMessage').textContent='';
+  document.getElementById('createdAccountCredential')?.classList.add('hidden');document.getElementById('createdAccountUsername').textContent='';document.getElementById('createdAccountPassword').textContent='';
+  closeAccountPasswordModal();
   clearStaffInvitation();
   stopAdminViewSync();stopStoreControl();resetAdminReports();stopOrderChime();
   clearInterval(adminAccessTimer);clearInterval(adminRecoveryTimer);clearInterval(orderSoundTimer);clearTimeout(orderSoundDebounce);
