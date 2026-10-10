@@ -14,7 +14,7 @@ const sid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
  create function auth.jwt() returns jsonb language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb;$$;
  create function auth.uid() returns uuid language sql stable as $$select (auth.jwt()->>'sub')::uuid;$$;
  grant usage on schema auth to authenticated,anon;grant execute on function auth.uid(),auth.jwt() to authenticated,anon;
- create table public.products(id uuid primary key,name text,image_url text,stock integer default 10,updated_at timestamptz);
+ create table public.products(id uuid primary key,name text,description text,category text,price numeric,image_url text,available boolean default true,stock integer default 10,updated_at timestamptz);
  create table public.orders(id uuid primary key,order_status text,created_at timestamptz default now(),items jsonb default '[]',inventory_applied boolean default false,inventory_restored boolean default false);
  create table public.categories(id uuid primary key);create table public.customers(id uuid primary key);create table public.order_items(id uuid primary key);create table public.settings(id uuid primary key default gen_random_uuid(),key text unique,value text,updated_at timestamptz default now());create table public.delivery_zones(id uuid primary key,name text,fee numeric,enabled boolean,priority integer,geom extensions.geometry,updated_at timestamptz);
  create table storage.objects(id uuid primary key,bucket_id text,name text);
@@ -164,6 +164,8 @@ const sid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
  // The new migration enables account-based admission while keeping server-enforced roles.
  await pg.exec('reset role;');
  await pg.exec(fs.readFileSync(__dirname+'/../supabase/migrations/20261009223804_direct_staff_credentials.sql','utf8'));
+ await pg.exec(`insert into settings(key,value) values('categories','["Pastes"]'),('business_name','PasteHot'),('bank_clabe','000000000000000000'),('delivery_transfer_only','false'),('rain_surcharge_enabled','false'),('batch_timer_enabled','false'),('weekly_schedule','{}') on conflict(key) do update set value=excluded.value;`);
+ await pg.exec(fs.readFileSync(__dirname+'/../supabase/migrations/20261010033445_owner_manager_scope_and_credential_reset.sql','utf8'));
  await pg.exec(`insert into auth.sessions values('${sid(401)}','${owner}'),('${sid(402)}','${staff}');`);
  await login(owner,sid(401));let direct=await state(401);assert.equal(direct.allowed,true);assert.equal(direct.direct_access,true);assert.equal(direct.status,'approved');
  await pg.exec(`select pastehot_set_staff_enabled('${staff}',true);select pastehot_set_staff_role('${staff}','staff');`);
@@ -172,7 +174,7 @@ const sid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
  await login(staff,sid(402));assert.equal((await state(402)).allowed,false);assert.equal((await pg.query('select * from orders')).rows.length,0);await denied(`select pastehot_set_store_closed(true,'Intento con cuenta desactivada',false);`);
  await login(other,sid(4));assert.equal((await state(4)).allowed,false);
  await login(owner,sid(401));await pg.exec(`select pastehot_set_staff_enabled('${staff}',true);select pastehot_set_staff_role('${staff}','manager');`);
- await login(staff,sid(402));assert.equal((await state(402)).role,'manager');assert.equal((await state(402)).allowed,true);assert((await pg.query("update products set name='Nuevo precio encargado' returning id")).rows.length>0);await denied('select pastehot_sales_summary();');
+ await login(staff,sid(402));assert.equal((await state(402)).role,'manager');assert.equal((await state(402)).allowed,true);assert((await pg.query("update products set available=false returning id")).rows.length>0);await denied("update products set name='Cambio prohibido'");assert.equal((await pg.query(`delete from products where id='${sid(30)}' returning id`)).rows.length,0);assert.equal((await pg.query("update settings set value='Nueva clave' where key='bank_clabe' returning id")).rows.length,0);assert.equal((await pg.query("update settings set value='true' where key='delivery_transfer_only' returning id")).rows.length,1);assert.equal((await pg.query("update settings set value='true' where key='rain_surcharge_enabled' returning id")).rows.length,1);assert.equal((await pg.query("update settings set value='true' where key='batch_timer_enabled' returning id")).rows.length,1);assert.equal((await pg.query("update settings set value='{}' where key='weekly_schedule' returning id")).rows.length,0);assert((await pg.query("select pastehot_add_category('Pastes dulces')")).rows[0]);assert.equal((await pg.query("update settings set value='[\\\"otra\\\"]' where key='categories' returning id")).rows.length,0);await denied('select pastehot_sales_summary();');
  await pg.exec('reset role;');await pg.exec(`delete from auth.sessions where id='${sid(402)}';`);
  await login(staff,sid(402));await denied('select pastehot_admin_state();');assert.equal((await pg.query('select * from orders')).rows.length,0);
  // Hard account deletion removes linked identity and audit, preserving business data.
@@ -193,7 +195,7 @@ const sid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
  // Delegation grants full owner operations without transferring root control.
  await login(owner,sid(401));await pg.exec(`select pastehot_set_staff_role('${other}','owner');select pastehot_set_staff_enabled('${other}',true);`);
  await pg.exec('reset role;');await pg.exec(`insert into auth.sessions values('${sid(403)}','${other}');insert into auth.users values('${sid(410)}','third@example.invalid');`);
- await login(other,sid(403));const delegated=await state(403);assert.equal(delegated.allowed,true);assert.equal(delegated.role,'owner');assert.equal(delegated.primary_owner,false);assert(delegated.members.find(m=>m.user_id===owner).primary_owner);
+ await login(other,sid(403));const delegated=await state(403);assert.equal(delegated.allowed,true);assert.equal(delegated.role,'owner');assert.equal(delegated.primary_owner,false);assert(delegated.members.find(m=>m.user_id===owner).primary_owner);assert.equal((await pg.query("update settings set value='Otra cuenta' where key='bank_clabe' returning id")).rows.length,0);assert.equal((await pg.query("update settings set value='Otro nombre' where key='business_name' returning id")).rows.length,0);
  assert((await pg.query('select * from orders')).rows.length>0);await pg.query('select pastehot_sales_summary()');
  assert((await pg.query("update products set name='Cambio por propietario delegado' returning id")).rows.length>0);
  await denied(`select pastehot_set_staff_enabled('${owner}',false);`);await denied(`select pastehot_set_staff_role('${owner}','staff');`);await denied(`select pastehot_set_staff_enabled('${other}',false);`);
