@@ -25,7 +25,10 @@
     }
     const previous=storeState();
     if(previous.manual_closed!==args.p_expected_closed)return {data:null,error:{message:'ESTADO_CAMBIO: otra persona modificó la tienda. Actualiza antes de continuar.'}};
-    if(previous.manual_closed===args.p_closed)return {data:{...previous,changed:false},error:null};
+    if(previous.manual_closed===args.p_closed){
+      if(state.role==='owner'&&args.p_public_reason!=null){let row=tables.settings.find(s=>s.key==='store_manual_close_reason');const value=String(args.p_public_reason).trim();if(row)row.value=value;else{row={id:uuid(900+state.storeEventCounter),key:'store_manual_close_reason',value};tables.settings.push(row);}emit('settings',row,'UPDATE');}
+      return {data:{...previous,changed:false},error:null};
+    }
     if(!args.p_reason||args.p_reason.trim().length<5||args.p_reason.trim().length>240)return {data:null,error:{message:'MOTIVO_REQUERIDO'}};
     const nameOfUser=state.role==='owner'&&!state.delegated?'Propietario':state.members.find(m=>m.user_id===currentUser()).display_name,session=state.sessions.find(s=>s.user_id===currentUser());
     state.storeEvents.push({id:state.storeEventCounter++,created_at:new Date().toISOString(),closed:args.p_closed,actor_id:currentUser(),actor_name:nameOfUser,actor_role:state.role,session_label:session?.label||'Mi navegador',reason:args.p_reason.trim(),during_hours:previous.scheduled_open});
