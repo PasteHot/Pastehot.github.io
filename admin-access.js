@@ -1,7 +1,7 @@
 /* UI convenience checks complement database authorization; they never grant permissions. */
 let adminRole=null,adminAccessAllowed=false,adminSession=null,adminAccessState=null;
 let adminSecurityInstalled=false,adminRealtimeOnline=false,adminAccessTimer=null,adminRecoveryTimer=null;
-let orderInbox=null,orderAudio=null,orderSoundEnabled=false,orderSoundTimer=null,orderSoundDebounce=null,adminWakeLock=null;
+let orderInbox=null,orderAudio=null,orderSoundEnabled=false,orderSoundTimer=null,orderSoundDebounce=null,orderInboxSyncTimer=null,orderInboxSyncBusy=false,adminWakeLock=null;
 let adminAccessRefreshPromise=null,adminAccessBusy=false;
 let orderChimeUntil=0;const orderChimeVoices=new Set();
 const PASTEHOT_OWNER_ID='a0c0b64b-7809-4428-ad00-a1484d6ded53';
@@ -305,6 +305,25 @@ function setupOrderInbox(){
   let reviewed=[];try{reviewed=JSON.parse(localStorage.getItem('pastehot_reviewed_'+adminSession.user.id)||'[]');if(!Array.isArray(reviewed))reviewed=[];}catch{}
   orderInbox=new PasteHotOrders.OrderInbox({reviewed,onChange:renderOrderInbox,onNew:()=>{clearTimeout(orderSoundDebounce);orderSoundDebounce=setTimeout(()=>playOrderChime(),300);}});
 }
+// Realtime is the immediate path. While an alert is ringing, verify its
+// authoritative status occasionally so a missed UPDATE event on another
+// device cannot leave this session sounding indefinitely.
+async function syncPendingOrderAlerts(){
+  if(orderInboxSyncBusy||!adminAccessAllowed||!navigator.onLine||document.visibilityState!=='visible'||!orderInbox)return;
+  const pending=orderInbox.list();if(!pending.length)return;
+  orderInboxSyncBusy=true;
+  try{
+    const ids=pending.map(o=>String(o.id));
+    const {data,error}=await db.from('orders').select('*').in('id',ids);
+    if(error||!Array.isArray(data)||!adminAccessAllowed)return;
+    const current=new Map(data.map(o=>[String(o.id),o]));
+    for(const old of pending){
+      const latest=current.get(String(old.id));
+      if(!latest)handleOrderRealtimeChange({eventType:'DELETE',old:{id:old.id}});
+      else if(latest.order_status!==old.order_status)handleOrderRealtimeChange({eventType:'UPDATE',new:latest});
+    }
+  }catch{}finally{orderInboxSyncBusy=false;}
+}
 function orderSoundPreferenceKey(){return 'pastehot_order_sound_'+adminSession.user.id;}
 function rememberOrderSound(){try{localStorage.setItem(orderSoundPreferenceKey(),orderSoundEnabled?'on':'off');}catch{}}
 function updateOrderSoundButton(){
@@ -332,9 +351,12 @@ function renderOrderInbox(list){
   document.getElementById('newOrdersCount').textContent=`${list.length} sin revisar`;
   document.getElementById('newOrdersList').innerHTML=list.map(o=>`<div class="alert-order"><div><strong>Pedido ${escapeHtml(o.order_code||String(o.id).slice(0,8))}</strong><p>${o.delivery_type==='delivery'?'Envío a domicilio':'Recoger en tienda'} · ${escapeHtml(formatDate(o.created_at))}</p><p>${o.order_status==='pendiente_confirmacion'?'Pendiente de confirmar':'Nuevo pedido'}</p></div><button class="btn btn-primary" data-inbox-order="${escapeAttr(o.id)}">Ver pedido</button></div>`).join('');
   document.getElementById('newOrdersList').querySelectorAll('[data-inbox-order]').forEach(b=>b.addEventListener('click',()=>openInboxOrder(b.dataset.inboxOrder)));
-  document.getElementById('orderSoundNote').textContent=orderSoundEnabled?(orderAudio?.state==='running'?'Sonido activo. La alerta se repite cada 3 segundos hasta pulsar Ver pedido.':'Los avisos están activados. Toca cualquier parte de la pantalla para permitir el audio del navegador.'):'Avisos silenciados. Activa el sonido si deseas escuchar los pedidos nuevos.';
-  if(!list.length){stopOrderChime();clearTimeout(orderSoundDebounce);clearInterval(orderSoundTimer);orderSoundTimer=null;}
-  else if(orderSoundEnabled&&!orderSoundTimer)orderSoundTimer=setInterval(playOrderChime,3000);
+  document.getElementById('orderSoundNote').textContent=orderSoundEnabled?(orderAudio?.state==='running'?'Sonido activo. Se repite cada 3 segundos hasta abrir el pedido aquí o actualizarlo desde otra sesión.':'Los avisos están activados. Toca cualquier parte de la pantalla para permitir el audio del navegador.'):'Avisos silenciados. Activa el sonido si deseas escuchar los pedidos nuevos.';
+  if(!list.length){stopOrderChime();clearTimeout(orderSoundDebounce);clearInterval(orderSoundTimer);orderSoundTimer=null;clearInterval(orderInboxSyncTimer);orderInboxSyncTimer=null;}
+  else{
+    if(orderSoundEnabled&&!orderSoundTimer)orderSoundTimer=setInterval(playOrderChime,3000);
+    if(!orderInboxSyncTimer)orderInboxSyncTimer=setInterval(syncPendingOrderAlerts,4000);
+  }
 }
 async function openInboxOrder(id){
   if(!orders.some(o=>String(o.id)===String(id)))await loadOrders();
@@ -396,9 +418,9 @@ function stopAdminEnhancements(){
   closeAccountPasswordModal();
   clearStaffInvitation();
   stopAdminViewSync();stopStoreControl();resetAdminReports();stopOrderChime();
-  clearInterval(adminAccessTimer);clearInterval(adminRecoveryTimer);clearInterval(orderSoundTimer);clearTimeout(orderSoundDebounce);
+  clearInterval(adminAccessTimer);clearInterval(adminRecoveryTimer);clearInterval(orderSoundTimer);clearInterval(orderInboxSyncTimer);clearTimeout(orderSoundDebounce);
   clearTimeout(adminOrdersTimer);clearTimeout(adminProductsTimer);clearTimeout(adminSettingsTimer);clearTimeout(adminZonesTimer);
-  orderSoundEnabled=false;orderSoundTimer=null;
+  orderSoundEnabled=false;orderSoundTimer=null;orderInboxSyncTimer=null;orderInboxSyncBusy=false;
   const soundButton=document.getElementById('adminSoundButton');if(soundButton)soundButton.textContent='Activar sonido';
   if(adminRealtimeChannel){db.removeChannel(adminRealtimeChannel);adminRealtimeChannel=null;}
   if(adminWakeLock){adminWakeLock.release().catch(()=>{});adminWakeLock=null;}
