@@ -28,7 +28,7 @@ Deno.serve(async(req:Request)=>{
     if(body.action==='reset_password'){
       const id=String(body.userId||''),password=typeof body.password==='string'?body.password:'';
       const target=await getTarget(id);
-      if(!target||id===auth.user.id||target.primary_owner||!['owner','manager','staff'].includes(target.role)||(manager&&!['manager','staff'].includes(target.role)))return reply(403,{error:'No puedes cambiar la contraseña de esta cuenta.'});
+      if(!target||id===auth.user.id||target.primary_owner||!['owner','manager','staff'].includes(target.role)||(manager&&target.role!=='staff'))return reply(403,{error:'El encargado solo puede cambiar contraseñas de empleados.'});
       if(password.length<12||password.length>128||!/[a-zA-Z]/.test(password)||!/[0-9]/.test(password))return reply(400,{error:'Usa una contraseña de 12 a 128 caracteres con letras y números.'});
       const service=createClient(url,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false,autoRefreshToken:false}});
       const {error:passwordError}=await service.auth.admin.updateUserById(id,{password});
@@ -40,7 +40,7 @@ Deno.serve(async(req:Request)=>{
     if(body.action==='delete'){
       const id=String(body.userId||'');
       const target=await getTarget(id);
-      if(id===auth.user.id||!target||target.primary_owner||!['owner','staff','manager'].includes(target.role)||(manager&&!['manager','staff'].includes(target.role)))return reply(403,{error:'Las cuentas de propietarios y tu propia cuenta están protegidas.'});
+      if(id===auth.user.id||!target||target.primary_owner||!['owner','staff','manager'].includes(target.role)||(manager&&target.role!=='staff'))return reply(403,{error:'El encargado solo puede borrar cuentas de empleados; las cuentas de propietarios, encargados y la tuya están protegidas.'});
       const {error:blockError}=await caller.rpc(manager?'pastehot_manager_set_staff_enabled':'pastehot_set_staff_enabled',{p_user_id:id,p_enabled:false});
       if(blockError)return reply(409,{error:'No se pudo bloquear la cuenta; no se ha borrado.'});
       const service=createClient(url,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false,autoRefreshToken:false}});
