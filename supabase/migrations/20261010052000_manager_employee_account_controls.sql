@@ -14,7 +14,7 @@ begin
   ) order by m.display_name),'[]'::jsonb)
   into v_accounts
   from private.pastehot_members m join auth.users u on u.id=m.user_id
-  where m.role='staff';
+  where m.role in ('staff','manager') and m.user_id<>auth.uid();
   return v_accounts;
 end;
 $$;
@@ -57,7 +57,7 @@ as $$
 begin
   if not private.pastehot_manager_allowed() then raise exception 'NO_AUTORIZADO'; end if;
   if p_user_id is null or p_user_id=auth.uid()
-     or not exists(select 1 from private.pastehot_members where user_id=p_user_id and role='staff' and not primary_owner) then
+     or not exists(select 1 from private.pastehot_members where user_id=p_user_id and role in ('staff','manager') and not primary_owner) then
     raise exception 'CUENTA_NO_MODIFICABLE';
   end if;
   update private.pastehot_members set enabled=p_enabled where user_id=p_user_id;
@@ -79,7 +79,7 @@ as $$
 begin
   if not private.pastehot_manager_allowed() then raise exception 'NO_AUTORIZADO'; end if;
   if p_user_id is null or p_user_id=auth.uid()
-     or not exists(select 1 from private.pastehot_members where user_id=p_user_id and role='staff' and not primary_owner) then
+     or not exists(select 1 from private.pastehot_members where user_id=p_user_id and role in ('staff','manager') and not primary_owner) then
     raise exception 'CUENTA_NO_MODIFICABLE';
   end if;
   update private.pastehot_sessions set status='revoked',visible=false where user_id=p_user_id;

@@ -33,14 +33,14 @@ function copyInputValue(id,message){const input=document.getElementById(id);retu
 function openResetAccountPassword(id){
  if(!['owner','manager'].includes(adminRole)||!adminAccessAllowed)return;
  const member=adminAccessState?.members?.find(m=>m.user_id===id);
- if(!member||member.primary_owner||(member.current&&adminRole!=='owner')||!['owner','manager','staff'].includes(member.role)||(adminRole==='manager'&&member.role!=='staff'))return;
+ if(!member||member.primary_owner||(member.current&&adminRole!=='owner')||!['owner','manager','staff'].includes(member.role)||(adminRole==='manager'&&!['manager','staff'].includes(member.role)))return;
  accountPasswordTarget=member;document.getElementById('accountPasswordPerson').textContent=`${member.display_name} · ${adminRoleName(member.role)}`;
  document.getElementById('accountNewPassword').value='';document.getElementById('accountPasswordResetMessage').textContent='';
  document.getElementById('accountPasswordModal').classList.add('show');
 }
 function closeAccountPasswordModal(){document.getElementById('accountPasswordModal').classList.remove('show');document.getElementById('accountNewPassword').value='';resetPasswordVisibility();accountPasswordTarget=null;}
 async function submitAccountPasswordReset(event){
- event.preventDefault();if(adminAccessBusy||!['owner','manager'].includes(adminRole)||!adminAccessAllowed||!accountPasswordTarget||(adminRole==='manager'&&accountPasswordTarget.role!=='staff'))return;
+ event.preventDefault();if(adminAccessBusy||!['owner','manager'].includes(adminRole)||!adminAccessAllowed||!accountPasswordTarget||(adminRole==='manager'&&!['manager','staff'].includes(accountPasswordTarget.role)))return;
  if(isAccountPreviewReadOnly()){showMessage('accountPasswordResetMessage','Este Preview es de solo lectura para las cuentas reales. Prueba la gestión ficticia desde la barra “Prueba con datos ficticios”.',false);return;}
  const password=document.getElementById('accountNewPassword').value,member=accountPasswordTarget;
  if(password.length<12||password.length>128||!/[a-zA-Z]/.test(password)||!/[0-9]/.test(password)){showMessage('accountPasswordResetMessage','Usa 12 a 128 caracteres, con letras y números.',false);return;}
@@ -170,7 +170,7 @@ function renderAdminAccess(){
   document.getElementById('staffInviteRole').disabled=manager||adminAccessBusy;
   if(manager)document.getElementById('staffInviteRole').value='staff';
   document.getElementById('staffInviteForm').querySelector('h3').textContent=manager?'Crear cuenta de empleado':'Crear cuenta';
-  document.querySelector('#section-access .section-title p').textContent=manager?'Gestiona las cuentas de empleados. Puedes crear, desactivar o borrar empleados y asignarles una contraseña nueva. No puedes cambiar cuentas de propietarios, de encargados ni la tuya.':'El propietario administra los accesos. Asigna a cada persona los permisos que necesita.';
+  document.querySelector('#section-access .section-title p').textContent=manager?'Gestiona las cuentas del equipo. Puedes crear cuentas de empleados y administrar cuentas de empleados y otros encargados. No puedes cambiar cuentas de propietarios ni la tuya.':'El propietario administra los accesos. Asigna a cada persona los permisos que necesita.';
   document.getElementById('staffInviteButton').textContent=window.PasteHotDemo?'Simular cuenta · no crea acceso real':'Crear cuenta activa';
   document.getElementById('accessSessions').innerHTML=online.length?online.map(s=>{
     const pending=s.status==='pending',approved=s.status==='approved',current=s.current;
@@ -179,10 +179,10 @@ function renderAdminAccess(){
   }).join(''):'<p class="media-note">No hay dispositivos conectados en este momento.</p>';
   document.getElementById('accessSessions').parentElement.classList.toggle('hidden',manager);
   document.getElementById('deviceProtectionCard').classList.toggle('hidden',direct||manager);
-  document.getElementById('accessMembers').innerHTML=members.filter(m=>['owner','staff','manager'].includes(m.role)&&(adminRole!=='manager'||m.role==='staff')).map(m=>{
+  document.getElementById('accessMembers').innerHTML=members.filter(m=>['owner','staff','manager'].includes(m.role)&&(adminRole!=='manager'||['staff','manager'].includes(m.role))).map(m=>{
     const username=m.email?.startsWith('staff+')&&m.email.endsWith('@accounts.pastehot.com')?m.email.split('@')[0].slice(6):m.email||'';
-    const protectedAccount=m.primary_owner||m.current||manager&&m.role!=='staff';
-    const credentialActions=!m.primary_owner&&(!m.current||adminRole==='owner')&&(!manager||m.role==='staff');
+    const protectedAccount=m.primary_owner||m.current;
+    const credentialActions=!m.primary_owner&&(!m.current||adminRole==='owner')&&(!manager||['manager','staff'].includes(m.role));
     return `<div class="access-row"><div><strong>${escapeHtml(m.display_name)}</strong><div class="credential-line"><span>Usuario: <code>${escapeHtml(username)}</code> · ${adminRoleName(m.role)}</span><button class="btn btn-light btn-small" onclick="copyTextValue('${escapeAttr(username)}','Usuario copiado.')">Copiar usuario</button></div>${m.primary_owner?'<small>Cuenta principal protegida</small>':m.role==='owner'?'<small>Segundo propietario · acceso a todos los apartados excepto Negocio</small>':''}<div class="credential-line"><span>La contraseña no se puede recuperar; puedes asignar una nueva.</span>${credentialActions?`<button class="btn btn-light btn-small" onclick="openResetAccountPassword('${m.user_id}')">Asignar y copiar contraseña</button>`:''}</div><span class="state-tag">${m.enabled?'Acceso habilitado':'Acceso desactivado'}</span></div><div class="access-row-actions">${protectedAccount?'<small>Cuenta protegida</small>':`${!manager?`<label>Permisos<select id="account-role-${m.user_id}" aria-label="Permisos de ${escapeAttr(m.display_name)}" ${adminAccessBusy?'disabled':''} onchange="changeAdminMemberRole('${m.user_id}',this.value)"><option value="owner" ${m.role==='owner'?'selected':''}>Segundo propietario</option><option value="staff" ${m.role==='staff'?'selected':''}>Empleado</option><option value="manager" ${m.role==='manager'?'selected':''}>Encargado</option></select></label>`:''}<button class="btn ${m.enabled?'btn-danger':'btn-dark'}" ${adminAccessBusy?'disabled':''} onclick="changeAdminMember('${m.user_id}',${!m.enabled})">${m.enabled?'Desactivar acceso':'Habilitar acceso'}</button>${direct?`<button class="btn btn-danger" ${adminAccessBusy?'disabled':''} onclick="deleteAdminMember('${m.user_id}')">Borrar cuenta</button>`:''}`}</div></div>`
   }).join('')||'<p class="media-note">No hay cuentas de empleados registradas.</p>';
   const banner=document.getElementById('adminAccessBanner');
@@ -223,14 +223,14 @@ async function changeAdminSession(id,status){
 }
 async function changeAdminMember(id,enabled){
   const member=adminAccessState?.members?.find(m=>m.user_id===id);if(!member||member.primary_owner||member.current)return;
-  if(adminRole==='manager'&&member.role!=='staff')return;
+  if(adminRole==='manager'&&!['manager','staff'].includes(member.role))return;
   if(!confirm(enabled?'¿Habilitar esta cuenta? Podrá entrar directamente con sus credenciales.':'¿Desactivar esta cuenta y revocar todos sus navegadores?'))return;
   await adminAccessAction(async()=>{const {error}=await db.rpc(adminRole==='manager'?'pastehot_manager_set_staff_enabled':'pastehot_set_staff_enabled',{p_user_id:id,p_enabled:enabled});if(error)throw error;});
 }
 async function deleteAdminMember(id){
   if(!['owner','manager'].includes(adminRole)||!adminAccessAllowed||!adminAccessState?.direct_access)return;
   const member=adminAccessState.members?.find(m=>m.user_id===id);
-  if(!member||member.primary_owner||member.current||!['owner','staff','manager'].includes(member.role)||(adminRole==='manager'&&member.role!=='staff'))return;
+  if(!member||member.primary_owner||member.current||!['owner','staff','manager'].includes(member.role)||(adminRole==='manager'&&!['manager','staff'].includes(member.role)))return;
   if(!confirm(`¿Borrar definitivamente la cuenta de ${member.display_name}? Primero se desactivará y se cerrarán sus sesiones. Si el borrado no termina, permanecerá desactivada. Se eliminarán sus credenciales, dispositivos y registros asociados; los pedidos y ventas se conservan. Esta acción no se puede deshacer.`))return;
   await adminAccessAction(async()=>{
     const {data,error}=await db.functions.invoke('pastehot-create-staff',{body:{action:'delete',userId:id,deviceToken:adminDeviceToken()}});
