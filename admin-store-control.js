@@ -1,7 +1,38 @@
 /* Audited store controls. Employee permissions never include editing schedules/settings. */
 let storeControlState=null,storeControlReady=false,storeControlBusy=false,storeControlLoad=null;
 let storeChangeTarget=null,storeChangeExpected=null,storeHistoryRows=[],storeHistoryMore=false,storeHistoryBusy=false,storeHistoryRequest=0;
+const DEFAULT_STORE_CLOSE_MESSAGE='En unos instantes volveremos a recibir pedidos.';
+let storeMessageEditing=false,storeMessageBusy=false,storeMessageOriginal=DEFAULT_STORE_CLOSE_MESSAGE;
 function storeHistoryAllowed(){return adminAccessAllowed&&['owner','manager'].includes(adminRole);}
+function renderStoreMessageEditor(){
+  const field=document.getElementById('manualCloseReason');if(!field)return;
+  const owner=adminAccessAllowed&&adminRole==='owner';field.readOnly=!owner||!storeMessageEditing;field.setAttribute('aria-readonly',String(field.readOnly));
+  document.getElementById('editStorePublicMessage').classList.toggle('hidden',!owner||storeMessageEditing);
+  document.getElementById('saveStorePublicMessage').classList.toggle('hidden',!owner||!storeMessageEditing);
+  document.getElementById('cancelStorePublicMessageEdit').classList.toggle('hidden',!owner||!storeMessageEditing);
+  document.getElementById('saveStorePublicMessage').disabled=storeMessageBusy;document.getElementById('cancelStorePublicMessageEdit').disabled=storeMessageBusy;
+}
+function editStorePublicMessage(){
+  if(!adminAccessAllowed||adminRole!=='owner')return;
+  storeMessageOriginal=operationSettings.manualReason||DEFAULT_STORE_CLOSE_MESSAGE;storeMessageEditing=true;manualCloseReason.value=storeMessageOriginal;
+  document.getElementById('storePublicMessageStatus').innerHTML='';renderStoreMessageEditor();manualCloseReason.focus();
+}
+function cancelStorePublicMessageEdit(){
+  if(storeMessageBusy)return;storeMessageEditing=false;manualCloseReason.value=storeMessageOriginal;renderStoreMessageEditor();
+}
+async function saveStorePublicMessage(){
+  if(!adminAccessAllowed||adminRole!=='owner'||!storeMessageEditing||storeMessageBusy)return;
+  const message=manualCloseReason.value.trim();if(!message||message.length>160){showMessage('storePublicMessageStatus','Escribe un mensaje de 1 a 160 caracteres.',false);return;}
+  storeMessageBusy=true;renderStoreMessageEditor();
+  try{
+    if(!storeControlReady)await loadStoreControl();
+    if(!storeControlReady||!storeControlState)throw new Error('No se pudo confirmar el estado actual de la tienda. Intenta de nuevo.');
+    await auditedStoreChange(storeControlState.manual_closed,'Actualización del mensaje público',storeControlState.manual_closed,message);
+    operationSettings.manualReason=message;storeMessageOriginal=message;storeMessageEditing=false;manualCloseReason.value=message;
+    showMessage('storePublicMessageStatus','Mensaje guardado. Se aplicará a los cierres manuales de todos los roles.');
+  }catch(error){showMessage('storePublicMessageStatus',error.message||'No se pudo guardar el mensaje.',false);}
+  finally{storeMessageBusy=false;renderStoreMessageEditor();}
+}
 function storeLocalDay(){return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Merida',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}
 function storeEventTime(value){return new Intl.DateTimeFormat('es-MX',{timeZone:'America/Merida',dateStyle:'medium',timeStyle:'medium'}).format(new Date(value));}
 async function loadStoreControl(){
@@ -20,6 +51,7 @@ async function loadStoreControl(){
 }
 function renderStoreControl(){
   const closed=!!storeControlState?.manual_closed;
+  renderStoreMessageEditor();
   document.getElementById('storeEmergencyCard').classList.toggle('hidden',!adminAccessAllowed);
   document.getElementById('storeEmergencyStatus').textContent=!storeControlReady?'Control de emergencia pendiente de activación':closed?'Tienda cerrada manualmente':storeControlState.open?'Tienda abierta':'Tienda cerrada por horario';
   document.getElementById('storeEmergencyStatus').className='store-emergency-status'+(closed?' closed':'');
@@ -83,6 +115,6 @@ function renderStoreHistory(){
   document.getElementById('storeHistoryMore').classList.toggle('hidden',!storeHistoryMore);
 }
 function stopStoreControl(){
-  storeControlState=null;storeControlReady=false;storeHistoryRequest++;storeHistoryRows=[];storeControlLoad=null;
+  storeControlState=null;storeControlReady=false;storeHistoryRequest++;storeHistoryRows=[];storeControlLoad=null;storeMessageEditing=false;storeMessageBusy=false;renderStoreMessageEditor();
   document.getElementById('storeHistoryRows').innerHTML='';document.getElementById('storeEmergencyCard').classList.add('hidden');
 }
