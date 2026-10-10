@@ -12,7 +12,7 @@ Deno.serve(async(req:Request)=>{
   try{
     const url=Deno.env.get('SUPABASE_URL')!;
     const caller=createClient(url,Deno.env.get('SUPABASE_ANON_KEY')!,{global:{headers:{Authorization:token}},auth:{persistSession:false,autoRefreshToken:false}});
-    const {data:auth,error:authError}=await caller.auth.getUser();
+    const {data:auth,error:authError}=await caller.auth.getUser(token.slice(7));
     if(authError||!auth.user)return reply(401,{error:'Sesión no válida.'});
     const body=await req.json();
     const {data:state,error:stateError}=await caller.rpc('pastehot_admin_state',{p_visible:true,p_device_token:String(body.deviceToken||'')});
@@ -39,11 +39,22 @@ Deno.serve(async(req:Request)=>{
     const email=`staff+${username}@accounts.pastehot.com`;
     const service=createClient(url,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false,autoRefreshToken:false}});
     const {data:created,error:createError}=await service.auth.admin.createUser({email,password,email_confirm:true});
-    if(createError||!created.user)return reply(409,{error:'No se creó la cuenta. El usuario puede estar ocupado o la contraseña no cumplir los requisitos. Prueba otro usuario.'});
+    if(createError||!created.user){
+      if(['email_exists','user_already_exists'].includes(createError?.code||''))return reply(409,{error:'Ese usuario ya existe. Elige otro; su cuenta y contraseña no se han modificado.'});
+      if(createError?.code==='weak_password')return reply(400,{error:'La contraseña no cumple los requisitos de seguridad. Usa una diferente con letras y números.'});
+      return reply(409,{error:'No se creó la cuenta. Revisa que el usuario no esté ocupado y que la contraseña cumpla los requisitos.'});
+    }
     const {error:memberError}=await caller.rpc('pastehot_add_staff',{p_email:email,p_name:name,p_role:role});
     // A failed membership registration grants no permissions. Never overwrite an existing account.
     // Passwords are handled by Auth; never logged, returned or stored in the membership table.
-    if(memberError)return reply(409,{error:'No se habilitó la cuenta y no tiene permisos. Contacta al propietario antes de volver a intentarlo.'});
+    if(memberError){
+      // Only undo the user created by this request; never touch an existing account.
+      const {error:cleanupError}=await service.auth.admin.deleteUser(created.user.id,false);
+      if(cleanupError)return reply(409,{error:'El alta no terminó. La cuenta no tiene permisos; revisa con el propietario antes de reintentar.'});
+      const message=String(memberError.message||'');
+      if(message.includes('pastehot_one_delegated_owner'))return reply(409,{error:'Ya existe un segundo propietario. Revisa el listado antes de agregar otro.'});
+      return reply(409,{error:'No se activó la cuenta. No se guardó el usuario; puedes corregir los datos e intentarlo de nuevo.'});
+    }
     return reply(200,{ok:true,username,role});
   }catch{return reply(500,{error:'No se pudo crear la cuenta. Revisa la conexión e intenta nuevamente.'});}
 });
