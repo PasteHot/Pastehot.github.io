@@ -2,7 +2,7 @@
   "name": "pastehot-admin-tests",
   "private": true,
   "scripts": {
-    "test": "node --test orders.test.cjs && node access.test.cjs && node checkout.test.cjs && node interface.test.cjs && node reports.test.cjs && node invite.test.cjs && node create-staff.test.cjs && node live-sync.test.cjs && node account-form.test.cjs"
+    "test": "node whatsapp-handoff.test.cjs && node --test orders.test.cjs && node access.test.cjs && node checkout.test.cjs && node interface.test.cjs && node reports.test.cjs && node invite.test.cjs && node create-staff.test.cjs && node live-sync.test.cjs && node account-form.test.cjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.3.14",
