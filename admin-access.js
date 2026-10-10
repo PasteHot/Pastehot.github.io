@@ -133,8 +133,17 @@ function applyAdminPermissions(){
   if(!primary&&!manager)showTab('orders');
 }
 function openAdminAccess(){if(adminRole==='owner')showTab('access');else alert(`Acceso de ${adminRole==='manager'?'encargado':'empleado'}. El propietario administra las cuentas del equipo.`);}
+function renderAdminSessionIdentity(state=adminAccessState||{}){
+  const label=document.getElementById('adminSessionIdentity');if(!label)return;
+  const userId=adminSession?.user?.id;
+  const session=(state.sessions||[]).find(s=>s.current&&(!userId||s.user_id===userId));
+  const member=(state.members||[]).find(m=>m.user_id===userId);
+  const name=session?.display_name||member?.display_name||adminSession?.user?.user_metadata?.display_name||'Usuario en turno';
+  label.textContent=`${adminRoleName(adminRole)} · ${name}`;
+}
 function renderAdminAccess(){
   const state=adminAccessState||{},enforced=!!state.enforced,installed=adminSecurityInstalled;
+  renderAdminSessionIdentity(state);
   const sessions=state.sessions||[],members=state.members||[];
   const online=sessions.filter(s=>s.status==='approved'&&s.online&&s.member_enabled!==false);
   document.getElementById('adminPresenceDots').innerHTML=online.length?'<span class="presence-dot" aria-hidden="true"></span>':'';
