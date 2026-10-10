@@ -44,6 +44,13 @@ const tick=()=>new Promise(r=>setTimeout(r,20));
  w.document.querySelector('[data-inbox-order]').click();await tick();assert(w.document.getElementById('orderModal').classList.contains('show'));assert.equal(w.document.querySelectorAll('.alert-order').length,2);
  w.closeOrderModal();w.demoConnection();await tick();assert.equal(w.document.getElementById('adminLiveStatus'),null);assert(w.document.querySelector('.order-sound-controls #adminSoundButton'));assert.equal(w.document.querySelector('.topbar #adminSoundButton'),null);
  w.demoConnection();await tick();await tick();assert.equal(w.document.querySelectorAll('.alert-order').length,3);
+ // Another device confirms orders, but this browser misses their Realtime
+ // UPDATE. The small fallback query must reconcile the shared database state.
+ const remotePending=[...w.document.querySelectorAll('[data-inbox-order]')].map(el=>String(el.dataset.inboxOrder));assert.equal(remotePending.length,3);
+ fakeAudio.currentTime=30;w.playOrderChime();const toneCountBeforeRemoteConfirm=tones.length;
+ for(const id of remotePending){const row=w.PasteHotDemo.tables.orders.find(o=>String(o.id)===id);row.order_status='confirmado';}
+ await w.syncPendingOrderAlerts();assert.equal(w.document.querySelectorAll('[data-inbox-order]').length,0);assert.equal(w.document.querySelectorAll('.alert-order').length,0);
+ w.playOrderChime();assert.equal(tones.length,toneCountBeforeRemoteConfirm,'all ringing stops after another session confirms the pending orders');
  await w.demoRole('staff');await tick();assert.equal(w.document.querySelectorAll('.tabs .tab:not(.hidden)').length,1);assert(w.document.querySelector('[data-access-manage]').classList.contains('hidden'));assert(w.document.getElementById('ordersMetrics').classList.contains('hidden'));
  assert(w.allowedOrderStatuses({order_status:'pendiente_confirmacion',delivery_type:'pickup'}).includes('cancelado'));
  assert(w.allowedOrderStatuses({order_status:'listo',delivery_type:'delivery'}).includes('en_reparto'));
