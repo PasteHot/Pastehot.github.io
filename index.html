@@ -357,6 +357,7 @@ let cart={};
 let deliveryLocation=null;
 const whatsappOrderHandoff=window.PasteHotOrderHandoff.create();
 let pendingWhatsAppDraft=null,registeringConfirmedWhatsAppOrder=false,whatsAppOrderSaved=false;
+function isPasteHotDeployPreview(){return /^deploy-preview-\d+--cheerful-daifuku-76579b\.netlify\.app$/.test(location.hostname)}
 let publicRealtimeChannel=null;
 let publicProductsRefreshTimer=null;
 let publicSettingsRefreshTimer=null;
@@ -1204,6 +1205,8 @@ function renderPendingWhatsAppOrder(){
   const main=document.getElementById("whatsappButton"),actions=document.getElementById("whatsappHandoffActions");
   const active=!!pendingWhatsAppDraft;
   actions.hidden=!active;main.disabled=active;main.textContent=active?"Pedido preparado · esperando que envíes WhatsApp":"📲 Enviar pedido por WhatsApp";
+  actions.querySelector("p").textContent=isPasteHotDeployPreview()?"Preview de prueba: no se abrirá WhatsApp ni se guardará un pedido real. Simula el envío aquí; las alertas se prueban con pedidos ficticios en el administrador de preview.":"WhatsApp no confirma a esta página si pulsaste Enviar. Regresa aquí después de enviarlo y confirma para registrar el pedido y avisar a la tienda. Si no enviaste el mensaje, cancela; no se registrará nada.";
+  document.getElementById("whatsappSentButton").textContent=isPasteHotDeployPreview()?"Simular envío de WhatsApp":"Ya envié el mensaje · registrar pedido";
   document.getElementById("whatsappSentButton").disabled=whatsappOrderHandoff.busy;
   document.getElementById("whatsappCancelButton").disabled=whatsappOrderHandoff.busy;
   document.querySelectorAll("#cartItems .qty-controls button").forEach(button=>button.disabled=active||!isStoreOpen());
@@ -1223,6 +1226,12 @@ function cancelWhatsAppOrder(){
 async function confirmWhatsAppOrderSent(){
   if(!pendingWhatsAppDraft||whatsappOrderHandoff.busy)return;
   renderPendingWhatsAppOrder();whatsAppOrderSaved=false;
+  if(isPasteHotDeployPreview()){
+    await whatsappOrderHandoff.confirm(async()=>({ok:true,preview:true}));
+    pendingWhatsAppDraft=null;renderPendingWhatsAppOrder();
+    showOrderMessage("Prueba completada: no se abrió WhatsApp ni se creó un pedido real. En producción, el aviso a la tienda ocurre después de esta confirmación.","ok");
+    return;
+  }
   const result=await whatsappOrderHandoff.confirm(async draft=>{
     pendingWhatsAppDraft=draft;applyPendingWhatsAppDraft(draft);registeringConfirmedWhatsAppOrder=true;
     try{await sendOrder();return {ok:whatsAppOrderSaved};}
@@ -1232,7 +1241,7 @@ async function confirmWhatsAppOrderSent(){
   else{pendingWhatsAppDraft=whatsappOrderHandoff.current;renderPendingWhatsAppOrder();if(result?.expired)showOrderMessage("La preparación venció después de 45 minutos. Vuelve a abrir WhatsApp para iniciar otra solicitud.","warn");}
 }
 function confirmCurbsideDelivery(){return new Promise(resolve=>{const modal=document.getElementById("curbsideModal"),back=document.getElementById("curbsideBack"),accept=document.getElementById("curbsideAccept");const finish=value=>{modal.classList.remove("show");document.body.style.overflow="";back.onclick=null;accept.onclick=null;resolve(value)};back.onclick=()=>finish(false);accept.onclick=()=>finish(true);modal.classList.add("show");document.body.style.overflow="hidden"})}
-function openWhatsAppOrder(url){window.location.href=url}
+function openWhatsAppOrder(url){if(isPasteHotDeployPreview()){showOrderMessage("Preview: aquí se abriría WhatsApp. No se enviará un mensaje ni se creará un pedido real.","warn");return;}window.location.href=url}
 async function sendOrder(){
   if(pendingWhatsAppDraft&&!registeringConfirmedWhatsAppOrder){renderPendingWhatsAppOrder();return;}
   if(blockClosedAction())return;
