@@ -476,7 +476,7 @@ function isMinuteInsideSchedule(nowMin,openMin,closeMin){
 
 function currentStoreState(){
   if(boolSetting(settings.store_manual_closed,false)){
-    return {open:false,manual:true,reason:settings.store_manual_close_reason||"Cerrado temporalmente."};
+    return {open:false,manual:true,reason:settings.store_manual_close_reason||"En unos instantes volveremos a recibir pedidos."};
   }
   const now=meridaNowParts();
   const schedule=getWeeklySchedule();
@@ -524,7 +524,7 @@ function renderStoreState(){
   if(reason){
     if(state.open){reason.classList.remove("show");reason.textContent=""}
     else{
-      const detail=state.manual?(state.reason||"Cerrado temporalmente."):(nextOpeningText(state.next)||"Cerrado por horario.");
+      const detail=state.manual?(state.reason||"En unos instantes volveremos a recibir pedidos."):(nextOpeningText(state.next)||"Cerrado por horario.");
       reason.textContent=detail;
       reason.classList.add("show");
     }

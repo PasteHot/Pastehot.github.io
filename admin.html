@@ -12,7 +12,7 @@
 <script src="admin-orders.js?v=1"></script>
 <script src="admin-preview-demo.js?v=6"></script>
 <script src="admin-access.js?v=8"></script>
-<script src="admin-store-control.js?v=1"></script>
+<script src="admin-store-control.js?v=2"></script>
 <script src="admin-reports.js?v=1"></script>
 <script src="admin-image-maintenance.js?v=1"></script>
 <script src="admin-live-sync.js?v=1"></script>
@@ -159,8 +159,15 @@
       </div>
 
       <div class="form-group" style="margin-top:16px">
-        <label>Mensaje opcional cuando cierres manualmente</label>
-        <input id="manualCloseReason" placeholder="Ej. Cerrado hoy por mantenimiento. Regresamos mañana.">
+        <label for="manualCloseReason">Mensaje público para cualquier cierre manual</label>
+        <input id="manualCloseReason" value="En unos instantes volveremos a recibir pedidos." readonly aria-readonly="true">
+        <div class="hint">Este mismo mensaje se muestra sin importar quién cierre la tienda. Solo un propietario puede cambiarlo.</div>
+        <div class="operation-actions" style="margin-top:8px">
+          <button id="editStorePublicMessage" class="btn btn-light" type="button" onclick="editStorePublicMessage()">Editar mensaje</button>
+          <button id="saveStorePublicMessage" class="btn btn-primary hidden" type="button" onclick="saveStorePublicMessage()">Guardar mensaje</button>
+          <button id="cancelStorePublicMessageEdit" class="btn btn-light hidden" type="button" onclick="cancelStorePublicMessageEdit()">Cancelar</button>
+        </div>
+        <div id="storePublicMessageStatus" aria-live="polite"></div>
       </div>
 
       <div class="operation-actions">
@@ -884,7 +891,7 @@ async function loadOperationSettings(){const liveGuard=adminFormLoadGuard('opera
   if(!liveGuard())return;const s={};(data||[]).forEach(r=>s[r.key]=r.value);
 
   operationSettings.manualClosed=parseSettingBool(s.store_manual_closed,false);
-  operationSettings.manualReason=s.store_manual_close_reason||"";
+  operationSettings.manualReason=s.store_manual_close_reason||"En unos instantes volveremos a recibir pedidos.";
   operationSettings.deliveryEnabled=parseSettingBool(s.delivery_badge_enabled,true);
   operationSettings.deliveryText=s.delivery_badge_text||"Envío en menos de 20 min";
   operationSettings.socialEnabled=parseSettingBool(s.social_proof_enabled,true);
@@ -903,6 +910,7 @@ async function loadOperationSettings(){const liveGuard=adminFormLoadGuard('opera
   if(document.getElementById("manualStoreClosed")){
     manualStoreClosed.checked=operationSettings.manualClosed;
     manualCloseReason.value=operationSettings.manualReason;
+    renderStoreMessageEditor();
     deliveryBadgeEnabled.checked=operationSettings.deliveryEnabled;
     deliveryBadgeText.value=operationSettings.deliveryText;
     socialProofEnabled.checked=operationSettings.socialEnabled;
@@ -984,10 +992,9 @@ function updateMarketingPreview(){
 async function saveOperationSettings(){
   operationMessage.innerHTML="";
   try{
-    const result=await auditedStoreChange(manualStoreClosed.checked,manualCloseReason.value.trim().length>=5?manualCloseReason.value.trim():"Cambio manual de operación por el propietario.",storeControlState?.manual_closed,manualCloseReason.value.trim());
+    const result=await auditedStoreChange(manualStoreClosed.checked,manualStoreClosed.checked?"Cierre manual desde Operación":"Reapertura manual desde Operación",storeControlState?.manual_closed,null);
     if(storeHistoryAllowed())await loadStoreHistory();
     operationSettings.manualClosed=manualStoreClosed.checked;
-    operationSettings.manualReason=manualCloseReason.value.trim();
     previewOperationStatus();
     showMessage("operationMessage",result.changed?"Estado operativo guardado y registrado en el historial.":"La tienda ya tenía ese estado.");
   }catch(e){showMessage("operationMessage",e.message,false)}
@@ -1000,7 +1007,6 @@ async function closeStoreNow(){
 
 async function openStoreNow(){
   manualStoreClosed.checked=false;
-  manualCloseReason.value="";
   await saveOperationSettings();
 }
 
