@@ -24,3 +24,4 @@
 @media(max-width:900px){#adminScreen .tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));padding:10px 12px}#adminScreen .tab{white-space:normal;overflow-wrap:anywhere;padding:10px 8px}}
 @media(max-width:700px){#adminScreen .topbar{padding:12px 14px;min-height:62px;align-items:flex-start}#adminScreen .topbar-title{font-size:18px}#adminScreen .topbar-identity{align-items:flex-start;flex-direction:column}.order-sound-controls{padding:10px 12px}}
 @media(max-width:420px){#adminScreen .tabs{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.order-sound-controls>span{font-size:14px}.order-sound-controls .sound-button{flex:1 1 150px}}
+.topbar-brand{display:flex;flex-direction:column;gap:3px}.admin-session-identity{font-size:12px;font-weight:800;color:#d9d9d9;letter-spacing:.02em}
