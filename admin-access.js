@@ -351,11 +351,11 @@ function renderOrderInbox(list){
   document.getElementById('newOrdersCount').textContent=`${list.length} sin revisar`;
   document.getElementById('newOrdersList').innerHTML=list.map(o=>`<div class="alert-order"><div><strong>Pedido ${escapeHtml(o.order_code||String(o.id).slice(0,8))}</strong><p>${o.delivery_type==='delivery'?'Envío a domicilio':'Recoger en tienda'} · ${escapeHtml(formatDate(o.created_at))}</p><p>${o.order_status==='pendiente_confirmacion'?'Pendiente de confirmar':'Nuevo pedido'}</p></div><button class="btn btn-primary" data-inbox-order="${escapeAttr(o.id)}">Ver pedido</button></div>`).join('');
   document.getElementById('newOrdersList').querySelectorAll('[data-inbox-order]').forEach(b=>b.addEventListener('click',()=>openInboxOrder(b.dataset.inboxOrder)));
-  document.getElementById('orderSoundNote').textContent=orderSoundEnabled?(orderAudio?.state==='running'?'Sonido activo. Se repite cada 3 segundos hasta abrir el pedido aquí o actualizarlo desde otra sesión.':'Los avisos están activados. Toca cualquier parte de la pantalla para permitir el audio del navegador.'):'Avisos silenciados. Activa el sonido si deseas escuchar los pedidos nuevos.';
+  document.getElementById('orderSoundNote').textContent=orderSoundEnabled?(orderAudio?.state==='running'?'Sonido activo. Se repite cada 3 segundos y se apaga en todas las sesiones al confirmar el pedido. La comprobación entre dispositivos corre cada segundo.':'Los avisos están activados. Toca cualquier parte de la pantalla para permitir el audio del navegador.'):'Avisos silenciados. Activa el sonido si deseas escuchar los pedidos nuevos.';
   if(!list.length){stopOrderChime();clearTimeout(orderSoundDebounce);clearInterval(orderSoundTimer);orderSoundTimer=null;clearInterval(orderInboxSyncTimer);orderInboxSyncTimer=null;}
   else{
     if(orderSoundEnabled&&!orderSoundTimer)orderSoundTimer=setInterval(playOrderChime,3000);
-    if(!orderInboxSyncTimer)orderInboxSyncTimer=setInterval(syncPendingOrderAlerts,4000);
+    if(!orderInboxSyncTimer)orderInboxSyncTimer=setInterval(syncPendingOrderAlerts,1000);
   }
 }
 async function openInboxOrder(id){
