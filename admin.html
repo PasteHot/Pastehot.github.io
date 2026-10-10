@@ -15,8 +15,7 @@
 <script src="admin-store-control.js?v=1"></script>
 <script src="admin-reports.js?v=1"></script>
 <script src="admin-image-maintenance.js?v=1"></script>
-<script src="admin-reports.js?v=1"></script>
-<script src="admin-image-maintenance.js?v=1"></script>
+<script src="admin-live-sync.js?v=1"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -414,8 +413,11 @@ function showTab(name,button){
   document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
   document.getElementById("section-"+name)?.classList.add("active");
   (button||Array.from(document.querySelectorAll('.tab')).find(b=>b.getAttribute('onclick')?.includes("'"+name+"'")))?.classList.add("active");
+  scheduleAdminViewRefresh();
   if(name==="orders"||name==="customers"||name==="paste-sales")loadOrders();
+  if(name==="paste-sales")scheduleAdminViewRefresh("report");
   if(name==="access")refreshAdminAccess();if(name==="store-history")loadStoreHistory();
+  if(name==="business")loadBusinessSettings();
   if(name==="design")loadDesign();if(name==="batch")loadBatchSettings();if(name==="operation")loadOperationSettings();
   if(name==="delivery-zones"){loadDeliveryZones();setTimeout(()=>deliveryZonesMap?.invalidateSize(),80)}
 }
@@ -425,10 +427,6 @@ function setAdminLiveStatus(text,state=""){
   if(!el)return;
   el.textContent=text;
   el.className="live-sync-pill"+(state?" "+state:"");
-}
-function scheduleAdminSettingsReload(){
-  clearTimeout(adminSettingsTimer);
-  adminSettingsTimer=setTimeout(()=>Promise.all([loadCategories(),loadBusinessSettings(),loadDesign(),loadBatchSettings(),loadOperationSettings()]),250);
 }
 function startAdminRealtime(){
   if(adminRealtimeChannel)db.removeChannel(adminRealtimeChannel);
@@ -440,27 +438,30 @@ function startAdminRealtime(){
     })
     .on("postgres_changes",{event:"*",schema:"public",table:"products"},()=>{
       if(!adminCanEditProducts())return;
-      clearTimeout(adminProductsTimer);adminProductsTimer=setTimeout(()=>loadProducts(),180);
+      scheduleAdminViewRefresh("products","report");
     })
-    .on("postgres_changes",{event:"*",schema:"public",table:"settings"},()=>{loadStoreControl();if(adminRole==="owner")scheduleAdminSettingsReload();else if(adminRole==="manager")loadCategories()})
+    .on("postgres_changes",{event:"*",schema:"public",table:"settings"},payload=>scheduleAdminSettingsReload(payload))
     .on("postgres_changes",{event:"*",schema:"public",table:"delivery_zones"},()=>{
       if(adminRole!=="owner")return;
-      clearTimeout(adminZonesTimer);adminZonesTimer=setTimeout(()=>loadDeliveryZones(),220);
+      scheduleAdminViewRefresh("delivery-zones");
     })
     .subscribe(status=>{
-      if(status==="SUBSCRIBED"){adminRealtimeOnline=true;setAdminLiveStatus("● Actualización automática activa","online");loadOrders();}
+      if(status==="SUBSCRIBED"){adminRealtimeOnline=true;setAdminLiveStatus("● Actualización automática activa","online");refreshAdminAfterWake();}
       else adminRealtimeOnline=false;
       if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED")setAdminLiveStatus("● Reconectando…","warn");
     });
 }
 async function refreshAdminAfterWake(){
-  const {data}=await db.auth.getSession();
-  if(!data?.session)return;
-  if(!await refreshAdminAccess())return;
-  if(adminRole==='owner'){await loadCategories();await Promise.all([loadProducts(),loadOrders(),loadBusinessSettings(),loadDesign(),loadBatchSettings(),loadOperationSettings(),loadDeliveryZones()]);}
-  else if(adminRole==='manager'){await loadCategories();await Promise.all([loadProducts(),loadOrders()]);}
-  else await loadOrders();
-  await loadStoreControl();resumeOrderAudio();
+  if(adminWakeRefreshPromise)return adminWakeRefreshPromise;
+  adminWakeRefreshPromise=(async()=>{
+    const {data}=await db.auth.getSession();if(!data?.session||!await refreshAdminAccess())return;
+    if(adminCanEditProducts()){await loadCategories();await loadProducts();}
+    await loadOrders();await loadStoreControl();
+    const active=[...document.querySelectorAll('.section')].find(el=>el.classList.contains('active'))?.id.replace('section-','');
+    const loader={design:loadDesign,business:loadBusinessSettings,batch:loadBatchSettings,operation:loadOperationSettings,'delivery-zones':loadDeliveryZones,'store-history':loadStoreHistory}[active];
+    if(loader&&adminCanOpenTab(active))await loader();
+    scheduleAdminViewRefresh('report');resumeOrderAudio();
+  })();try{return await adminWakeRefreshPromise}catch{setAdminLiveStatus("● Recuperando conexión…","warn");}finally{adminWakeRefreshPromise=null;}
 }
 window.addEventListener("online",refreshAdminAfterWake);
 window.addEventListener("offline",()=>{adminRealtimeOnline=false;setAdminLiveStatus("● Sin internet · esperando conexión","warn")});
@@ -519,7 +520,7 @@ async function deleteProduct(id){
 function populateCategorySelect(selected=""){productCategory.innerHTML=categories.map(c=>`<option value="${escapeAttr(c)}" ${c===selected?"selected":""}>${escapeHtml(c)}</option>`).join("")}
 function openProductModal(product=null){if(!adminCanEditProducts())return;editingProductId=product?.id||null;productModalTitle.textContent=product?"Editar producto":"Nuevo producto";productName.value=product?.name||"";productDescription.value=product?.description||"";productPrice.value=product?.price??"";productAvailable.value=product?String(product.available):"true";productTrackStock.value=product?String(!!product.track_stock):"false";productStock.value=product?.stock??0;productLowStockThreshold.value=product?.low_stock_threshold??3;populateCategorySelect(product?.category||"");productImageFile.value="";if(product?.image_url){productImagePreview.src=product.image_url;productImagePreview.classList.remove("hidden")}else productImagePreview.classList.add("hidden");syncInventoryFields();productMessage.innerHTML="";productModal.classList.add("show")}
 function syncInventoryFields(){const tracked=productTrackStock.value==="true";productStock.disabled=!tracked;productLowStockThreshold.disabled=!tracked;inventoryFieldNote.textContent=tracked?"El menú limitará las compras a las piezas disponibles y mostrará aviso de pocas unidades según el umbral.":"Sin control de inventario: este producto seguirá vendiéndose mientras su disponibilidad manual esté en Disponible."}
-function editProduct(id){const p=products.find(x=>String(x.id)===String(id));if(p)openProductModal(p)}function closeProductModal(){productModal.classList.remove("show")}
+function editProduct(id){const p=products.find(x=>String(x.id)===String(id));if(p)openProductModal(p)}function closeProductModal(){productModal.classList.remove("show");scheduleAdminViewRefresh()}
 function previewProductImage(e){const f=e.target.files[0];if(!f)return;productImagePreview.src=URL.createObjectURL(f);productImagePreview.classList.remove("hidden")}
 async function saveProduct(){
   if(!adminCanEditProducts())return;
@@ -555,7 +556,7 @@ async function saveProduct(){
   if(cleaned)setTimeout(closeProductModal,450);
 }
 
-async function loadCategories(){if(categoryOrderSaving||categoryDragState)return;const {data}=await db.from("settings").select("value").eq("key","categories").maybeSingle();if(data?.value){try{const p=JSON.parse(data.value);if(Array.isArray(p)&&p.length)categories=p}catch{}}populateCategorySelect();renderCategories();renderProducts()}
+async function loadCategories(){if(categoryOrderSaving||categoryDragState||productModal.classList.contains("show"))return;const {data}=await db.from("settings").select("value").eq("key","categories").maybeSingle();if(data?.value){try{const p=JSON.parse(data.value);if(Array.isArray(p)&&p.length)categories=p}catch{}}populateCategorySelect();renderCategories();renderProducts()}
 let categoryOrderSaving=false,categoryDragState=null;
 function renderCategories(){categoriesList.innerHTML=categories.map((c,i)=>`<div class="category-row" data-category-index="${i}"><strong>${i+1}. ${escapeHtml(c)}</strong><div class="category-actions"><button type="button" class="category-drag" aria-label="Mover ${escapeAttr(c)}" title="Mantén presionado y desliza para mover" onpointerdown="startCategoryDrag(event,${i})" onkeydown="categoryDragKeyboard(event,${i})" ${categoryOrderSaving?"disabled":""}>⠿</button><button class="btn btn-danger btn-small" onclick="deleteCategory(${i})" ${categoryOrderSaving?"disabled":""}>Eliminar</button></div></div>`).join("")}
 function startCategoryDrag(event,index){
@@ -622,11 +623,11 @@ async function moveCategory(index,direction){
   const next=[...categories];[next[index],next[target]]=[next[target],next[index]];
   if(await applyCategoryOrder(next))document.querySelectorAll(".category-row")[target]?.querySelector(".category-drag")?.focus();
 }
-async function newCategory(){if(categoryOrderSaving||categoryDragState)return;const v=prompt("Nombre de la nueva categoría:")?.trim();if(!v)return;if(categories.some(c=>c.toLowerCase()===v.toLowerCase())){alert("Esa categoría ya existe.");return}await applyCategoryOrder([...categories,v])}
-async function deleteCategory(i){if(categoryOrderSaving||categoryDragState)return;const name=categories[i];if(products.some(p=>p.category===name)){alert("No puedes eliminar esta categoría mientras tenga productos asignados.");return}if(categories.length<=1||!confirm(`¿Eliminar la categoría "${name}"?`))return;await applyCategoryOrder(categories.filter((_,index)=>index!==i))}
+async function newCategory(){if(categoryOrderSaving||categoryDragState||productModal.classList.contains("show"))return;const v=prompt("Nombre de la nueva categoría:")?.trim();if(!v)return;if(categories.some(c=>c.toLowerCase()===v.toLowerCase())){alert("Esa categoría ya existe.");return}await applyCategoryOrder([...categories,v])}
+async function deleteCategory(i){if(categoryOrderSaving||categoryDragState||productModal.classList.contains("show"))return;const name=categories[i];if(products.some(p=>p.category===name)){alert("No puedes eliminar esta categoría mientras tenga productos asignados.");return}if(categories.length<=1||!confirm(`¿Eliminar la categoría "${name}"?`))return;await applyCategoryOrder(categories.filter((_,index)=>index!==i))}
 
 function selectDesignPanel(name){document.querySelectorAll(".design-panel").forEach(p=>p.classList.remove("active"));document.querySelectorAll(".design-tab").forEach(p=>p.classList.remove("active"));document.getElementById("panel"+name[0].toUpperCase()+name.slice(1)).classList.add("active");document.getElementById("tab"+name[0].toUpperCase()+name.slice(1)).classList.add("active")}
-async function loadDesign(){const keys=["cover_image","cover_x","cover_y","cover_scale","profile_image","profile_x","profile_y","profile_scale","background_type","background_color","background_image","background_overlay","category_title_font","category_title_size","category_title_color"];const {data,error}=await db.from("settings").select("key,value").in("key",keys);if(error)return;const s={};(data||[]).forEach(r=>s[r.key]=r.value);design.cover={url:s.cover_image||"",x:Number(s.cover_x)||0,y:Number(s.cover_y)||0,scale:Number(s.cover_scale)||1};design.profile={url:s.profile_image||"",x:Number(s.profile_x)||0,y:Number(s.profile_y)||0,scale:Number(s.profile_scale)||1};design.background={type:s.background_type||"color",color:s.background_color||"#f4f4f4",url:s.background_image||"",overlay:Number(s.background_overlay)||0};design.category={font:s.category_title_font||"Arial",size:Number(s.category_title_size)||28,color:s.category_title_color||"#171717"};syncDesignControls();updateDesignPreview()}
+async function loadDesign(){const liveGuard=adminFormLoadGuard('design');if(!liveGuard)return;const keys=["cover_image","cover_x","cover_y","cover_scale","profile_image","profile_x","profile_y","profile_scale","background_type","background_color","background_image","background_overlay","category_title_font","category_title_size","category_title_color"];const {data,error}=await db.from("settings").select("key,value").in("key",keys);if(error)return;if(!liveGuard())return;const s={};(data||[]).forEach(r=>s[r.key]=r.value);design.cover={url:s.cover_image||"",x:Number(s.cover_x)||0,y:Number(s.cover_y)||0,scale:Number(s.cover_scale)||1};design.profile={url:s.profile_image||"",x:Number(s.profile_x)||0,y:Number(s.profile_y)||0,scale:Number(s.profile_scale)||1};design.background={type:s.background_type||"color",color:s.background_color||"#f4f4f4",url:s.background_image||"",overlay:Number(s.background_overlay)||0};design.category={font:s.category_title_font||"Arial",size:Number(s.category_title_size)||28,color:s.category_title_color||"#171717"};syncDesignControls();updateDesignPreview();adminFormLoaded('design',liveGuard.version);}
 function syncDesignControls(){[["coverX",design.cover.x],["coverY",design.cover.y],["coverScale",design.cover.scale],["profileX",design.profile.x],["profileY",design.profile.y],["profileScale",design.profile.scale]].forEach(([id,v])=>document.getElementById(id).value=v);backgroundType.value=design.background.type;backgroundColor.value=design.background.color;backgroundColorText.textContent=design.background.color;backgroundOverlay.value=Math.round(design.background.overlay*100);backgroundOverlayValue.textContent=Math.round(design.background.overlay*100)+"%";categoryTitleFont.value=design.category.font;categoryTitleSize.value=design.category.size;categoryTitleSizeValue.textContent=design.category.size;categoryTitleColor.value=design.category.color;categoryTitleColorText.textContent=design.category.color;updateEditorImages();updateControlLabels();updateCategoryStylePreview()}
 function updateEditorImages(){[["cover",coverEditorImage,coverEmpty],["profile",profileEditorImage,profileEmpty]].forEach(([k,img,empty])=>{const d=design[k];if(d.url){img.src=d.url;img.classList.remove("hidden");empty.classList.add("hidden");img.style.left=`calc(50% + ${d.x}%)`;img.style.top=`calc(50% + ${d.y}%)`;img.style.transform=`translate(-50%,-50%) scale(${d.scale})`}else{img.classList.add("hidden");empty.classList.remove("hidden")}});if(design.background.url){backgroundPreview.src=design.background.url;backgroundPreview.classList.remove("hidden")}else backgroundPreview.classList.add("hidden")}
 function updateControlLabels(){coverXValue.textContent=design.cover.x;coverYValue.textContent=design.cover.y;coverScaleValue.textContent=design.cover.scale.toFixed(2);profileXValue.textContent=design.profile.x;profileYValue.textContent=design.profile.y;profileScaleValue.textContent=design.profile.scale.toFixed(2)}
@@ -659,7 +660,9 @@ async function saveDesign(){
       background_overlay:design.background.overlay,category_title_font:design.category.font,category_title_size:design.category.size,
       category_title_color:design.category.color
     };
+    const savedDesignDraft=[...adminFormSnapshot("design")].map(([field,value])=>({view:"design",field,value}));
     await Promise.all(Object.entries(pairs).map(([k,v])=>saveSetting(k,v)));
+    commitAdminSavedDraft(savedDesignDraft);
 
     for(const type of ["cover","profile","background"]){
       const current=type==="background"?design.background.url:design[type].url;
@@ -676,7 +679,7 @@ async function saveDesign(){
   }
 }
 
-async function loadBusinessSettings(){const keys=["business_name","slogan","whatsapp","business_address","opening_time","closing_time","pickup_maps_url","bank_name","bank_holder","bank_clabe","bank_card"];const {data}=await db.from("settings").select("key,value").in("key",keys);const s={};(data||[]).forEach(r=>s[r.key]=r.value);keys.forEach(k=>{const el=document.getElementById(k);if(el)el.value=s[k]||""})}
+async function loadBusinessSettings(){const liveGuard=adminFormLoadGuard('business');if(!liveGuard)return;const keys=["business_name","slogan","whatsapp","business_address","opening_time","closing_time","pickup_maps_url","bank_name","bank_holder","bank_clabe","bank_card"];const {data}=await db.from("settings").select("key,value").in("key",keys);if(!liveGuard())return;const s={};(data||[]).forEach(r=>s[r.key]=r.value);keys.forEach(k=>{const el=document.getElementById(k);if(el)el.value=s[k]||""});adminFormLoaded('business',liveGuard.version);}
 async function saveBusinessSettings(){for(const k of ["business_name","slogan","whatsapp","business_address","opening_time","closing_time","pickup_maps_url"])await saveSetting(k,document.getElementById(k).value);showMessage("businessMessage","Configuración guardada correctamente.")}
 
 function ensureDeliveryZonesMap(){
@@ -742,7 +745,7 @@ function renderDeliveryZones(){
     </div>`).join("");
 }
 
-async function loadDeliveryZones(){
+async function loadDeliveryZones(){const liveGuard=adminFormLoadGuard('delivery-zones');if(!liveGuard)return;
   const {data,error}=await db.rpc("admin_list_delivery_zones");
   if(error){
     console.error(error);
@@ -750,11 +753,11 @@ async function loadDeliveryZones(){
     if(host)host.innerHTML='<div class="message error">No se pudieron cargar las zonas de entrega.</div>';
     return;
   }
-  deliveryZones=Array.isArray(data)?data:[];
+  if(!liveGuard())return;deliveryZones=Array.isArray(data)?data:[];
   ensureDeliveryZonesMap();
   renderDeliveryZones();
   renderDeliveryZoneLayers();
-}
+adminFormLoaded('delivery-zones',liveGuard.version);}
 
 function drawDeliveryZone(id){
   ensureDeliveryZonesMap();
@@ -863,7 +866,7 @@ function parseSettingBool(v,defaultValue=false){
   return String(v)==="true";
 }
 
-async function loadOperationSettings(){
+async function loadOperationSettings(){const liveGuard=adminFormLoadGuard('operation');if(!liveGuard)return;
   const keys=[
     "store_manual_closed","store_manual_close_reason","weekly_schedule",
     "delivery_badge_enabled","delivery_badge_text",
@@ -873,7 +876,7 @@ async function loadOperationSettings(){
   ];
   const {data,error}=await db.from("settings").select("key,value").in("key",keys);
   if(error){console.error(error);return}
-  const s={};(data||[]).forEach(r=>s[r.key]=r.value);
+  if(!liveGuard())return;const s={};(data||[]).forEach(r=>s[r.key]=r.value);
 
   operationSettings.manualClosed=parseSettingBool(s.store_manual_closed,false);
   operationSettings.manualReason=s.store_manual_close_reason||"";
@@ -910,7 +913,7 @@ async function loadOperationSettings(){
     previewPaymentRestriction();
     previewRainSurcharge();
   }
-}
+adminFormLoaded('operation',liveGuard.version);}
 
 function renderWeeklySchedule(){
   const schedule=operationSettings.weekly||defaultWeeklySchedule();
@@ -1108,7 +1111,7 @@ let batchSettings={
 };
 let batchAdminInterval=null;
 
-async function loadBatchSettings(){
+async function loadBatchSettings(){const liveGuard=adminFormLoadGuard('batch');if(!liveGuard)return;
   const keys=["batch_timer_enabled","batch_duration_minutes","batch_fresh_minutes","batch_label","batch_finished_message","batch_end_time"];
   const {data,error}=await db.from("settings").select("key,value").in("key",keys);
   if(error){
@@ -1116,7 +1119,7 @@ async function loadBatchSettings(){
     if(document.getElementById("batchMessage"))showMessage("batchMessage","No se pudo cargar la configuración de hornada.",false);
     return;
   }
-  const s={};(data||[]).forEach(r=>s[r.key]=r.value);
+  if(!liveGuard())return;const s={};(data||[]).forEach(r=>s[r.key]=r.value);
   batchSettings.enabled=String(s.batch_timer_enabled||"false")==="true";
   batchSettings.duration=Math.max(5,Math.min(180,Number(s.batch_duration_minutes)||30));
   batchSettings.freshMinutes=Math.max(1,Math.min(60,Number(s.batch_fresh_minutes)||5));
@@ -1132,7 +1135,7 @@ async function loadBatchSettings(){
     batchFinishedMessage.value=batchSettings.finishedMessage;
   }
   startBatchAdminClock();
-}
+adminFormLoaded('batch',liveGuard.version);}
 
 function readBatchForm(){
   batchSettings.enabled=Boolean(batchEnabled.checked);
@@ -1469,7 +1472,7 @@ function openOrderModal(id){
 }
 function closeOrderModal(){orderModal.classList.remove("show")}
 
-async function saveSetting(key,value){const {data,error}=await db.from("settings").select("id").eq("key",key).maybeSingle();if(error)throw error;if(data){const r=await db.from("settings").update({value:String(value),updated_at:new Date().toISOString()}).eq("id",data.id);if(r.error)throw r.error}else{const r=await db.from("settings").insert({key,value:String(value)});if(r.error)throw r.error}}
+async function saveSetting(key,value){const savedDraft=adminSavedDraftForSetting(key);const {data,error}=await db.from("settings").select("id").eq("key",key).maybeSingle();if(error)throw error;if(data){const r=await db.from("settings").update({value:String(value),updated_at:new Date().toISOString()}).eq("id",data.id);if(r.error)throw r.error}else{const r=await db.from("settings").insert({key,value:String(value)});if(r.error)throw r.error};commitAdminSavedDraft(savedDraft);}
 async function optimizeImage(file,maxWidth=1800,maxHeight=1800,quality=.82){
   if(!file.type.startsWith("image/"))throw new Error("Archivo no válido.");
   const img=await createImageBitmap(file);

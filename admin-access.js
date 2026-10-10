@@ -271,10 +271,10 @@ async function requestAdminWakeLock(){
   if(document.visibilityState!=='visible'||!orderSoundEnabled||!navigator.wakeLock||adminWakeLock)return;
   try{adminWakeLock=await navigator.wakeLock.request('screen');adminWakeLock.addEventListener('release',()=>{adminWakeLock=null;});}catch{}
 }
-function startOrderRecovery(){clearInterval(adminRecoveryTimer);adminRecoveryTimer=setInterval(()=>{if(adminAccessAllowed&&navigator.onLine&&document.visibilityState==='visible'&&!adminRealtimeOnline)loadOrders();},30000);}
+function startOrderRecovery(){clearInterval(adminRecoveryTimer);adminRecoveryTimer=setInterval(()=>{if(adminAccessAllowed&&navigator.onLine&&document.visibilityState==='visible'&&!adminRealtimeOnline)refreshAdminAfterWake();},30000);}
 function stopAdminEnhancements(){
   clearStaffInvitation();
-  stopStoreControl();resetAdminReports();stopOrderChime();
+  stopAdminViewSync();stopStoreControl();resetAdminReports();stopOrderChime();
   clearInterval(adminAccessTimer);clearInterval(adminRecoveryTimer);clearInterval(orderSoundTimer);clearTimeout(orderSoundDebounce);
   clearTimeout(adminOrdersTimer);clearTimeout(adminProductsTimer);clearTimeout(adminSettingsTimer);clearTimeout(adminZonesTimer);
   orderSoundEnabled=false;orderSoundTimer=null;

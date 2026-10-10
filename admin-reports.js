@@ -17,7 +17,7 @@ function resetAdminReports(){resetImageMaintenance();invalidateSalesReports();or
 function mergeOrderCache(rows){const map=new Map(orders.map(o=>[String(o.id),o]));rows.forEach(o=>map.set(String(o.id),o));orders=[...map.values()].sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at)||String(b.id).localeCompare(String(a.id)));}
 async function loadOrderPage(append=false){
  if(!adminAccessAllowed)return;const request=++orderPageRequest,user=adminSession?.user?.id,role=adminRole,search=document.getElementById('orderSearch').value.trim();
- if(!append){orderPageRows=[];orderPageCursor=null;renderOrderPage();}document.getElementById('ordersSearchCount').textContent='Buscando pedidos…';
+ if(!append){orderPageCursor=null;}document.getElementById('ordersSearchCount').textContent='Buscando pedidos…';
  const from=role==='owner'?(search?null:reportBounds(ordersPeriod.value).from):new Date(Date.now()-48*3600000).toISOString();
  const cursor=append?orderPageCursor:null;
  const {data,error}=await db.rpc('pastehot_order_page',{p_from:from,p_search:search,p_before_time:cursor?.created_at||null,p_before_id:cursor?.id||null});
@@ -48,7 +48,7 @@ function handleOrderRealtimeChange(payload){
  if(!adminAccessAllowed)return;
  if(payload.eventType==='DELETE'){orders=orders.filter(o=>String(o.id)!==String(payload.old?.id));orderPageRows=orderPageRows.filter(o=>String(o.id)!==String(payload.old?.id));}
  else if(payload.new?.id)mergeOrderCache([payload.new]);
- invalidateSalesReports();reconcileOrderInbox(orders.filter(o=>Date.parse(o.created_at)>=Date.now()-48*3600000));
+ invalidateSalesReports();scheduleAdminViewRefresh("report");reconcileOrderInbox(orders.filter(o=>Date.parse(o.created_at)>=Date.now()-48*3600000));
  clearTimeout(adminOrdersTimer);adminOrdersTimer=setTimeout(async()=>{if(!adminAccessAllowed)return;if(document.getElementById('section-orders').classList.contains('active')){await loadOrderPage(false);if(reportOwner())await renderOrderAnalytics();}else if(reportOwner()&&document.getElementById('section-customers').classList.contains('active'))await renderCustomers();else if(reportOwner()&&document.getElementById('section-paste-sales').classList.contains('active'))await renderPasteSales();},180);
 }
 async function renderServerAnalytics(){if(!reportOwner())return;const period=ordersPeriod.value,generation=reportGeneration;try{const d=await getSalesSummary(reportBounds(period));if(period!==ordersPeriod.value||generation!==reportGeneration)return;const best=[...d.daily].sort((a,b)=>b.amount-a.amount)[0];ordersMetrics.innerHTML=metric('Pedidos',d.orders)+metric('Ventas',formatMoney(d.total))+metric('Ticket promedio',formatMoney(d.orders?d.total/d.orders:0))+metric('Mejor día',best?`${best.day} · ${formatMoney(best.amount)}`:'—');renderBarChart(productSalesChart,d.pastes.slice(0,8).map(p=>[p.name,p.quantity]),v=>`${v} u.`);renderBarChart(dailySalesChart,d.daily.slice(-14).map(d=>[d.day,d.amount]),formatMoney);}catch{reportError('ordersMetrics');}}
