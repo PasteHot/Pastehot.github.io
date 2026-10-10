@@ -36,7 +36,7 @@ const sid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
  await pg.exec(`create function public.create_order_with_inventory(text,text,text,text,text,text,text,jsonb) returns jsonb language sql as $$select '{}'::jsonb;$$;`);
  await pg.exec(`alter table public.orders add column if not exists order_code text,add column if not exists customer_name text,add column if not exists customer_phone text,add column if not exists items jsonb,add column if not exists total numeric,add column if not exists subtotal numeric;alter table public.products add column if not exists category text;`);
  const migration=fs.readFileSync(__dirname+'/../supabase/migrations/20261009175922_admin_access_sessions.sql','utf8');await pg.exec(migration);
-await pg.exec(fs.readFileSync(__dirname+'/../supabase/migrations/20261010052927_saved_store_close_message_for_all_roles.sql','utf8'));
+await pg.exec(fs.readFileSync(__dirname+'/../supabase/migrations/20261010053030_saved_store_close_message_for_all_roles.sql','utf8'));
  await pg.exec(fs.readFileSync(__dirname+'/../supabase/migrations/20261009212843_admin_session_management.sql','utf8'));
  async function login(uid,session){currentSession=Number(session.slice(-12));await pg.exec('reset role;');await pg.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({sub:uid,session_id:session,role:'authenticated'})]);await pg.exec('set role authenticated;');}
  let currentSession=1;const token=n=>n.toString(16).padStart(64,'0');
