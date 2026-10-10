@@ -20,6 +20,7 @@
 <meta property="og:image" content="https://www.pastehot.com/favicon.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","url":"https://www.pastehot.com/","name":"PasteHot®","alternateName":"PasteHot"}</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="order-handoff.js?v=1"></script>
 <style>
 *{box-sizing:border-box}
 :root{
@@ -157,6 +158,7 @@ button:disabled{cursor:not-allowed}
 @media(max-width:520px){.delivery-address-grid{grid-template-columns:1fr}.delivery-address-grid .full{grid-column:auto}}
 
 .whatsapp-button{width:100%;border:0;border-radius:14px;padding:15px;background:#20b957;color:#fff;font-size:16px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:9px}.whatsapp-button:disabled{opacity:.6}.order-status-message{display:none;padding:11px 12px;border-radius:10px;font-size:13px}.order-status-message.show{display:block}.order-status-message.ok{background:#e8f8ee;color:#0c6f34}.order-status-message.warn{background:#fff5dd;color:#805d00}
+.whatsapp-handoff-actions{display:grid;gap:9px;margin-top:12px}.whatsapp-handoff-actions[hidden]{display:none}.whatsapp-handoff-actions p{margin:0;padding:12px;border-radius:10px;background:#fff5dd;color:#684a00;font-size:13px;line-height:1.5}.whatsapp-cancel-button{width:100%;border:1px solid #b8b8b8;border-radius:12px;padding:12px;background:#fff;color:#333;font-weight:800}
 .curbside-modal{position:fixed;inset:0;z-index:1200;display:none;align-items:center;justify-content:center;padding:22px;background:rgba(0,0,0,.62);backdrop-filter:blur(4px)}.curbside-modal.show{display:flex}.curbside-card{width:min(470px,100%);background:#fff;border-radius:22px;padding:25px;box-shadow:0 26px 80px rgba(0,0,0,.3);text-align:center}.curbside-card h3{margin:0 0 12px;font-size:22px}.curbside-alert{margin:0;padding:16px;border-radius:14px;background:#fff0f1;color:#9a1118;font-size:20px;font-weight:950;line-height:1.2}.curbside-copy{margin:13px 0 0;color:#555;font-size:13px;line-height:1.5}.curbside-actions{display:grid;grid-template-columns:1fr 1.35fr;gap:9px;margin-top:20px}.curbside-actions button{border:0;border-radius:11px;padding:12px;font-weight:900}.curbside-back{background:#eee;color:#222}.curbside-accept{background:#111;color:#fff}
 .yucatan-modal{position:fixed;inset:0;z-index:1300;display:none;align-items:center;justify-content:center;padding:22px;background:rgba(0,0,0,.72);backdrop-filter:blur(5px)}.yucatan-modal.show{display:flex}.yucatan-card{width:min(450px,100%);background:#fff;border-radius:24px;padding:28px 24px;box-shadow:0 30px 90px rgba(0,0,0,.38);text-align:center;border-top:8px solid #d71920}.yucatan-icon{font-size:46px;line-height:1;margin-bottom:10px}.yucatan-card h3{margin:0 0 11px;font-size:24px;color:#171717}.yucatan-message{margin:0;color:#444;font-size:15px;line-height:1.55}.yucatan-highlight{display:block;margin:15px 0 0;padding:13px 14px;border-radius:14px;background:#fff0f1;color:#9a1118;font-weight:950;font-size:17px}.yucatan-close{width:100%;margin-top:20px;border:0;border-radius:12px;padding:13px 16px;background:#111;color:#fff;font-weight:900;font-size:15px}
 
@@ -319,6 +321,11 @@ button:disabled{cursor:not-allowed}
       <div id="orderStatusMessage" class="order-status-message"></div>
       <p style="font-size:12px;line-height:1.5;color:var(--muted)">Usamos tus datos para atender tu pedido y coordinar la entrega. Consulta la <a href="privacidad.html">política de privacidad</a> y los <a href="terminos.html">términos y condiciones</a>.</p>
       <button class="whatsapp-button" id="whatsappButton" type="button">📲 Enviar pedido por WhatsApp</button>
+      <div id="whatsappHandoffActions" class="whatsapp-handoff-actions" hidden>
+        <p>WhatsApp no confirma a esta página si pulsaste Enviar. Regresa aquí después de enviarlo y confirma para registrar el pedido y avisar a la tienda. Si no enviaste el mensaje, cancela; no se registrará nada.</p>
+        <button class="whatsapp-button" id="whatsappSentButton" type="button" onclick="confirmWhatsAppOrderSent()">Ya envié el mensaje · registrar pedido</button>
+        <button class="whatsapp-cancel-button" id="whatsappCancelButton" type="button" onclick="cancelWhatsAppOrder()">No lo envié · cancelar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -348,6 +355,8 @@ let products=[];
 let settings={};
 let cart={};
 let deliveryLocation=null;
+const whatsappOrderHandoff=window.PasteHotOrderHandoff.create();
+let pendingWhatsAppDraft=null,registeringConfirmedWhatsAppOrder=false,whatsAppOrderSaved=false;
 let publicRealtimeChannel=null;
 let publicProductsRefreshTimer=null;
 let publicSettingsRefreshTimer=null;
@@ -581,7 +590,7 @@ function blockClosedAction(){
 
 function updateCartControlsOnly(){
   const open=isStoreOpen();
-  document.querySelectorAll("#cartItems .qty-controls button").forEach(b=>b.disabled=!open);
+  document.querySelectorAll("#cartItems .qty-controls button").forEach(b=>b.disabled=!!pendingWhatsAppDraft||!open);
 }
 
 
@@ -716,7 +725,7 @@ async function init(){
   if(pr.error){console.error(pr.error);document.getElementById("menu").textContent="No se pudo cargar el menú.";return}
   if(sr.error){console.error(sr.error);return}
   products=pr.data||[]; settings={}; (sr.data||[]).forEach(r=>settings[r.key]=r.value);
-  applyDesign(); renderMenu(); restoreCheckoutState(); updateDeliverySubtitle(); updateDeliveryUI(); updateCart(); renderMarketingBadges(); startPublicBatchClock(); startStoreClock(); startPublicRealtime();
+  applyDesign(); renderMenu(); restoreCheckoutState(); restorePendingWhatsAppOrder(); updateDeliverySubtitle(); updateDeliveryUI(); updateCart(); renderPendingWhatsAppOrder(); renderMarketingBadges(); startPublicBatchClock(); startStoreClock(); startPublicRealtime();
 }
 
 function applyDesign(){
@@ -860,12 +869,13 @@ function renderProductControls(controls,product){
     return b;
   };
   if(!isAvailable(product)||!storeOpen){controls.appendChild(make("+",null,true));return}
-  if(q<=0){controls.appendChild(make("+","add"));return}
+  if(q<=0){controls.appendChild(make("+","add",!!pendingWhatsAppDraft));return}
   const qty=document.createElement("span");qty.className="quantity";qty.textContent=q;
-  controls.append(make("−","minus"),qty,make("+","add",atStockLimit));
+  controls.append(make("−","minus",!!pendingWhatsAppDraft),qty,make("+","add",atStockLimit||!!pendingWhatsAppDraft));
 }
 
 function addToCart(id){
+  if(pendingWhatsAppDraft)return;
   if(blockClosedAction())return;
   const k=normalizeId(id),p=findProductById(k);
   if(!p||!isAvailable(p))return;
@@ -875,6 +885,7 @@ function addToCart(id){
   updateCart();saveCheckoutState();
 }
 function changeQuantity(id,amount){
+  if(pendingWhatsAppDraft)return;
   if(blockClosedAction())return;
   const k=normalizeId(id),p=findProductById(k);
   if(!p)return;
@@ -923,8 +934,8 @@ function updateCart(){
     minus.type=plus.type="button";minus.textContent="−";plus.textContent="+";qty.textContent=item.quantity;
     minus.dataset.cartAction="minus";plus.dataset.cartAction="add";
     minus.dataset.productId=plus.dataset.productId=normalizeId(item.product.id);
-    minus.disabled=!isStoreOpen();
-    plus.disabled=!isStoreOpen()||!isAvailable(item.product)||(isStockTracked(item.product)&&item.quantity>=stockCount(item.product));
+    minus.disabled=!!pendingWhatsAppDraft||!isStoreOpen();
+    plus.disabled=!!pendingWhatsAppDraft||!isStoreOpen()||!isAvailable(item.product)||(isStockTracked(item.product)&&item.quantity>=stockCount(item.product));
     if(isStockTracked(item.product)&&item.quantity>=stockCount(item.product))plus.title=stockLimitMessage(item.product);
     ctr.append(minus,qty,plus);row.append(info,ctr);container.appendChild(row);
   });
@@ -1134,7 +1145,8 @@ document.getElementById("cartPanel").addEventListener("click",e=>{if(e.target===
   document.getElementById(id)?.addEventListener("input",saveCheckoutState);
 });
 window.addEventListener("pagehide",saveCheckoutState);
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")saveCheckoutState()});
+window.addEventListener("pageshow",()=>{if(whatsappOrderHandoff.restore()){restorePendingWhatsAppOrder();renderPendingWhatsAppOrder();}});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")saveCheckoutState();else{if(whatsappOrderHandoff.restore()){restorePendingWhatsAppOrder();renderPendingWhatsAppOrder();}refreshPublicAfterWake();}});
 
 
 function openImageLightbox(src,name){
@@ -1159,8 +1171,70 @@ function showOrderMessage(text,type){const el=document.getElementById("orderStat
 function orderItemsPayload(){return Object.values(cart).map(i=>({product_id:i.product.id,quantity:i.quantity}))}
 function customerMapsUrl(lat,lng){return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`}
 function generateOrderCode(){const now=new Date(),stamp=now.toISOString().replace(/\D/g,"").slice(2,12);return `PJ-${stamp}-${Math.random().toString(36).slice(2,6).toUpperCase()}`}
+function whatsappDraftMessage(draft){
+  const business=settings.business_name||"PasteHot",items=draft.cartItems;
+  const subtotal=items.reduce((sum,item)=>sum+Number(item.price||0)*Number(item.quantity||0),0);
+  const deliveryFee=draft.deliveryType==="delivery"?Number(draft.deliveryLocation?.fee||0):0;
+  let message=`*SOLICITUD DE PEDIDO ${business.toUpperCase()}*\n*Pedido:* ${draft.orderCode}\n\n*Cliente:* ${draft.name}\n*Teléfono:* ${draft.phone}\n*Modalidad:* ${draft.deliveryType==="delivery"?"Envío a domicilio":"Pasar a recoger"}\n`;
+  if(draft.deliveryType==="delivery"){
+    message+=`*Zona:* ${draft.deliveryLocation?.zoneName||"Zona de entrega"}\n*Dirección:* ${draft.address}\n*Referencia:* ${draft.deliveryReference}\n*Google Maps:* ${customerMapsUrl(draft.deliveryLocation.lat,draft.deliveryLocation.lng)}\n`;
+  }
+  message+="\n*PRODUCTOS*\n";
+  items.forEach(item=>message+=`${item.quantity} x ${item.name} — ${formatMoney(Number(item.price)*Number(item.quantity))}\n`);
+  message+=`\n*Subtotal estimado:* ${formatMoney(subtotal)}\n*Envío estimado:* ${formatMoney(deliveryFee)}\n*TOTAL estimado:* ${formatMoney(subtotal+deliveryFee)}\n*Pago:* ${draft.payment==="transfer"?"Transferencia":"Efectivo"}\n`;
+  if(draft.notes)message+=`*Notas:* ${draft.notes}\n`;
+  message+="\n*Nota:* PasteHot registrará y revisará el pedido cuando confirmes el envío desde el menú.\n";
+  if(draft.deliveryType==="delivery")message+="*Entrega:* A PIE DE CALLE.\n";
+  return message;
+}
+function applyPendingWhatsAppDraft(draft){
+  document.getElementById("customerName").value=draft.name||"";
+  document.getElementById("customerPhone").value=draft.phone||"";
+  document.getElementById("orderNotes").value=draft.notes||"";
+  document.getElementById("paymentMethod").value=draft.payment||"cash";
+  for(const [id,value] of Object.entries(draft.addressFields||{})){const input=document.getElementById(id);if(input)input.value=value||"";}
+  const radio=document.querySelector(`input[name="deliveryType"][value="${draft.deliveryType}"]`);if(radio)radio.checked=true;
+  deliveryLocation=draft.deliveryType==="delivery"?draft.deliveryLocation||null:null;
+  cart={};
+  (draft.cartItems||[]).forEach(item=>{const product=findProductById(item.product_id);if(product)cart[normalizeId(item.product_id)]={product,quantity:Number(item.quantity)||0};});
+  document.getElementById("address").value=draft.address||"";
+  updateDeliverySubtitle();updateRainSurchargeUI();updateCart();
+}
+function renderPendingWhatsAppOrder(){
+  const main=document.getElementById("whatsappButton"),actions=document.getElementById("whatsappHandoffActions");
+  const active=!!pendingWhatsAppDraft;
+  actions.hidden=!active;main.disabled=active;main.textContent=active?"Pedido preparado · esperando que envíes WhatsApp":"📲 Enviar pedido por WhatsApp";
+  document.getElementById("whatsappSentButton").disabled=whatsappOrderHandoff.busy;
+  document.getElementById("whatsappCancelButton").disabled=whatsappOrderHandoff.busy;
+  document.querySelectorAll("#cartItems .qty-controls button").forEach(button=>button.disabled=active||!isStoreOpen());
+  document.querySelectorAll("#menu [data-cart-action]").forEach(button=>button.disabled=active||!isStoreOpen());
+  ["customerName","customerPhone","orderNotes","paymentMethod","deliveryStreet","deliveryHouseNumber","deliveryCrossStreets","deliveryNeighborhood","deliveryLocality","deliveryReference","useLocationButton"].forEach(id=>{const element=document.getElementById(id);if(element)element.disabled=active;});
+  document.querySelectorAll('input[name="deliveryType"]').forEach(element=>element.disabled=active);
+}
+function restorePendingWhatsAppOrder(){
+  pendingWhatsAppDraft=whatsappOrderHandoff.restore();
+  if(pendingWhatsAppDraft)applyPendingWhatsAppDraft(pendingWhatsAppDraft);
+}
+function cancelWhatsAppOrder(){
+  if(!pendingWhatsAppDraft||!whatsappOrderHandoff.cancel())return;
+  pendingWhatsAppDraft=null;renderPendingWhatsAppOrder();updateCart();saveCheckoutState();
+  showOrderMessage("Pedido cancelado. No se registró en la tienda; tu carrito sigue aquí.","warn");
+}
+async function confirmWhatsAppOrderSent(){
+  if(!pendingWhatsAppDraft||whatsappOrderHandoff.busy)return;
+  renderPendingWhatsAppOrder();whatsAppOrderSaved=false;
+  const result=await whatsappOrderHandoff.confirm(async draft=>{
+    pendingWhatsAppDraft=draft;applyPendingWhatsAppDraft(draft);registeringConfirmedWhatsAppOrder=true;
+    try{await sendOrder();return {ok:whatsAppOrderSaved};}
+    finally{registeringConfirmedWhatsAppOrder=false;}
+  });
+  if(result?.ok){pendingWhatsAppDraft=null;renderPendingWhatsAppOrder();}
+  else{pendingWhatsAppDraft=whatsappOrderHandoff.current;renderPendingWhatsAppOrder();if(result?.expired)showOrderMessage("La preparación venció después de 45 minutos. Vuelve a abrir WhatsApp para iniciar otra solicitud.","warn");}
+}
 function confirmCurbsideDelivery(){return new Promise(resolve=>{const modal=document.getElementById("curbsideModal"),back=document.getElementById("curbsideBack"),accept=document.getElementById("curbsideAccept");const finish=value=>{modal.classList.remove("show");document.body.style.overflow="";back.onclick=null;accept.onclick=null;resolve(value)};back.onclick=()=>finish(false);accept.onclick=()=>finish(true);modal.classList.add("show");document.body.style.overflow="hidden"})}
+function openWhatsAppOrder(url){window.location.href=url}
 async function sendOrder(){
+  if(pendingWhatsAppDraft&&!registeringConfirmedWhatsAppOrder){renderPendingWhatsAppOrder();return;}
   if(blockClosedAction())return;
   const items=Object.values(cart);
   if(!items.length){alert("Agrega al menos un producto.");return}
@@ -1184,17 +1258,30 @@ async function sendOrder(){
 
   const whatsapp=normalizePhone(settings.whatsapp);
   if(!whatsapp){alert("El número de WhatsApp todavía no está configurado.");return}
-  if(deliveryType==="delivery"&&!(await confirmCurbsideDelivery()))return;
+  if(deliveryType==="delivery"&&!registeringConfirmedWhatsAppOrder&&!(await confirmCurbsideDelivery()))return;
+
+  if(!registeringConfirmedWhatsAppOrder){
+    const orderCode=generateOrderCode(),cartItems=Object.values(cart).map(({product,quantity})=>({product_id:product.id,name:product.name,price:Number(product.price||0),quantity:Number(quantity)}));
+    const draft={orderCode,name,phone,deliveryType,address,deliveryReference,payment,notes,deliveryLocation:deliveryType==="delivery"?{...deliveryLocation}:null,cartItems,
+      addressFields:Object.fromEntries(["deliveryStreet","deliveryHouseNumber","deliveryCrossStreets","deliveryNeighborhood","deliveryLocality","deliveryReference"].map(id=>[id,document.getElementById(id)?.value.trim()||""]))};
+    draft.message=whatsappDraftMessage(draft);
+    const whatsappUrl=`https://wa.me/${whatsapp}?text=${encodeURIComponent(draft.message)}`;
+    if(!whatsappOrderHandoff.begin(draft,()=>{})){showOrderMessage("No pudimos conservar el pedido preparado en esta pestaña. Activa el almacenamiento del navegador e inténtalo de nuevo.","warn");return;}
+    pendingWhatsAppDraft=whatsappOrderHandoff.current;renderPendingWhatsAppOrder();
+    showOrderMessage("WhatsApp está listo. Todavía no se registró el pedido ni se avisó a la tienda. Envía el mensaje y vuelve aquí para confirmar.","warn");
+    openWhatsAppOrder(whatsappUrl);
+    return;
+  }
 
   const itemPayload=orderItemsPayload();
-  const orderCode=generateOrderCode();
+  const orderCode=pendingWhatsAppDraft?.orderCode||generateOrderCode();
   const business=settings.business_name||"PasteHot";
   const button=document.getElementById("whatsappButton");
   button.disabled=true;
   button.textContent="Registrando pedido…";
   showOrderMessage("Comprobando disponibilidad y registrando tu pedido como pendiente de confirmación…","warn");
 
-  let confirmed;
+  let confirmed;whatsAppOrderSaved=false;
   try{
     const {data,error}=await db.rpc("create_pending_order_with_location_v3",{
       p_order_code:orderCode,
@@ -1261,6 +1348,8 @@ async function sendOrder(){
     }
 
     confirmed=data||{};
+    if(!confirmed.order_code){showOrderMessage("El sistema no confirmó el registro. Conservamos la preparación para que puedas volver a intentarlo.","warn");return;}
+    whatsAppOrderSaved=true;
     localStorage.setItem("pastehot_last_order",confirmed.order_code||orderCode);
     if(deliveryType==="delivery"&&confirmed.delivery_verification_code){
       localStorage.setItem("pastehot_last_delivery_code",confirmed.delivery_verification_code);
@@ -1317,6 +1406,12 @@ async function sendOrder(){
   updateRainSurchargeUI();
   saveCheckoutState();
   await reloadProducts();
+
+  if(registeringConfirmedWhatsAppOrder){
+    const codeNotice=deliveryType==="delivery"&&confirmed?.delivery_verification_code?` Código de entrega: ${confirmed.delivery_verification_code}. Consérvalo para recibir tu pedido.`:"";
+    showOrderMessage(`Pedido ${confirmed?.order_code||orderCode} registrado como pendiente de confirmación.${codeNotice}`,"ok");
+    return;
+  }
 
   const url=`https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`;
   window.location.href=url;
