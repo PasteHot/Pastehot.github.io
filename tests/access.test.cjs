@@ -251,8 +251,8 @@ await pg.exec(fs.readFileSync(__dirname+'/../supabase/migrations/20261010053030_
  await login(owner,sid(401));await pg.query('select pastehot_set_staff_enabled($1,false)',[worker]);
  await login(worker,workSession);await assert.rejects(change('entregado'),/NO_AUTORIZADO/);
  await pg.exec('reset role;set role anon;');await assert.rejects(change('cancelado'),/permission denied/);
- // Preview-only migration: schedule checks are enforced in database policy paths,
- // while password copies are available to the primary owner through Vault only.
+ // Preview-only migration: schedule checks are enforced in database policy paths.
+ // Password recovery is covered by the destructive credential-cleanup migration test.
  await pg.exec(`reset role;create schema vault;create table vault.secrets(id uuid primary key default gen_random_uuid(),name text,secret text,description text);create view vault.decrypted_secrets as select id,name,secret as decrypted_secret,description from vault.secrets;
  create function vault.create_secret(text,text,text) returns uuid language plpgsql as $$declare k uuid;begin insert into vault.secrets(name,secret,description) values($2,$1,$3) returning id into k;return k;end$$;
  create function vault.update_secret(uuid,text,text,text) returns uuid language plpgsql as $$begin update vault.secrets set secret=$2,name=$3,description=$4 where id=$1;return $1;end$$;`);
@@ -264,9 +264,5 @@ await pg.exec(fs.readFileSync(__dirname+'/../supabase/migrations/20261010053030_
  const blocked=(await state(501));assert.equal(blocked.allowed,false);assert.equal(blocked.status,'outside_hours');
  await pg.query("update settings set value=$1 where key='weekly_schedule'",[JSON.stringify({[localParts.day]:{enabled:true,open:'00:00',close:'23:59'}})]);
  await login(owner,sid(401));await pg.query('select pastehot_set_staff_enabled($1,true)',[worker]);
- await pg.exec('reset role;');await pg.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({role:'service_role'})]);await pg.exec('set role service_role;');
- await pg.query('select public.pastehot_store_staff_password($1,$2)',[worker,'NuevaClaveVault123!']);
- await login(owner,sid(401));assert.equal((await pg.query('select public.pastehot_get_member_password($1) as p',[worker])).rows[0].p,'NuevaClaveVault123!');
- await login(worker,workSession);await assert.rejects(pg.query('select public.pastehot_get_member_password($1)',[worker]));
  await pg.close();console.log('PASS: real PostgreSQL RLS, protected ownership, revoked accounts; preview employee delivery/cancellation transitions, pickup delivery denial, idempotent stock restoration and confirmation, old-order denial and anonymous denial.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
