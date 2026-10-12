@@ -28,13 +28,14 @@ const {JSDOM}=require('jsdom');
  await pg.close();
  const html=fs.readFileSync(path.join(__dirname,'../admin.html'),'utf8'),pos=fs.readFileSync(path.join(__dirname,'../admin-pos.js'),'utf8');
  assert.match(html,/id="section-pos"/);assert.match(html,/id="posSalesSummary"/);assert.match(pos,/p_payment_method:method/);assert.match(pos,/pastehot_pos_create_sale/);
- const posHtml='<form id="posOpenShiftForm"><input id="posOpeningCash" value="100"><button id="openShiftButton" type="submit">Abrir</button></form><div id="posShiftStatus"></div><form id="posCloseForm" class="hidden"><strong id="posCloseOpeningCash"></strong></form><section id="posSaleCard" class="hidden"><input id="posSearch"><div id="posProducts"></div><div id="posCart"></div><div id="posTotal"></div><select id="posPayment"><option value="cash">cash</option></select><input id="posCashReceived"><div id="posCashReceivedWrap"></div><div id="posChange"></div><form id="posSaleForm"></form><div id="posSaleResult" class="hidden"></div><span id="posSaleCode"></span><span id="posSaleTotal"></span><span id="posSaleChange"></span></section><div id="posMessage"></div><button id="posReportRefresh"></button><button id="posReportPrint"></button><input id="posReportDay"><select id="posReportPeriod"></select><div id="posSalesSummary"></div>';
+ const posHtml='<form id="posOpenShiftForm"><input id="posOpeningCash" value="100"><button id="openShiftButton" type="submit">Abrir</button></form><div id="posShiftStatus"></div><form id="posCloseForm" class="hidden"><strong id="posCloseOpeningCash"></strong></form><section id="posSaleCard" class="hidden"><input id="posSearch"><div id="posProducts"></div><div id="posCart"></div><div id="posTotal"></div><select id="posPayment"><option value="cash">cash</option><option value="transfer">transfer</option><option value="card">card</option></select><div id="posTransferDetails" class="hidden"></div><input id="posCashReceived"><div id="posCashReceivedWrap"></div><div id="posChange"></div><form id="posSaleForm"></form><div id="posSaleResult" class="hidden"></div><span id="posSaleCode"></span><span id="posSaleTotal"></span><span id="posSaleChange"></span></section><div id="posMessage"></div><button id="posReportRefresh"></button><button id="posReportPrint"></button><input id="posReportDay"><select id="posReportPeriod"></select><div id="posSalesSummary"></div>';
  const ui=new JSDOM(posHtml,{url:'https://www.pastehot.com/admin.html',runScripts:'outside-only'}),w=ui.window;
  const testProduct={id:'product-1',name:'Paste de prueba',category:'Salados',price:25,available:true,track_stock:true,stock:4};
  let currentShift=null;
  w.PasteHotStoreId=store;
+ const testBankSettings=[{key:'bank_name',value:'Banco Demo'},{key:'bank_holder',value:'PasteHot S.A.'},{key:'bank_clabe',value:'012345678901234567'}];
  w.db={
-  from(){const q={select(){return q},order(){return q},then(resolve,reject){return Promise.resolve({data:[testProduct],error:null}).then(resolve,reject)}};return q},
+  from(table){const q={select(){return q},order(){return q},in(){return q},then(resolve,reject){return Promise.resolve({data:table==='settings'?testBankSettings:[testProduct],error:null}).then(resolve,reject)}};return q},
   rpc:async(name)=>{
    if(name==='pastehot_pos_current_shift')return {data:currentShift,error:null};
    if(name==='pastehot_pos_open_shift'){currentShift={id:'shift-ui',opened_by_name:'Ana',opening_cash:100,opened_at:new Date().toISOString()};return {data:currentShift,error:null}}
@@ -44,6 +45,14 @@ const {JSDOM}=require('jsdom');
  w.eval(pos);
  await new Promise(resolve=>w.addEventListener('DOMContentLoaded',resolve,{once:true}));
  await w.loadPosWorkspace();
+ assert.equal(w.document.querySelector('#posTransferDetails').classList.contains('hidden'),true,'bank details stay hidden for cash');
+ const payment=w.document.querySelector('#posPayment');payment.value='transfer';payment.dispatchEvent(new w.Event('change',{bubbles:true}));
+ assert.equal(w.document.querySelector('#posTransferDetails').classList.contains('hidden'),false,'transfer selection reveals bank details');
+ assert.match(w.document.querySelector('#posTransferDetails').textContent,/Banco Demo/);
+ assert.match(w.document.querySelector('#posTransferDetails').textContent,/PasteHot S\.A\./);
+ assert.match(w.document.querySelector('#posTransferDetails').textContent,/012345678901234567/);
+ payment.value='cash';payment.dispatchEvent(new w.Event('change',{bubbles:true}));
+ assert.equal(w.document.querySelector('#posTransferDetails').classList.contains('hidden'),true,'bank details hide again for cash');
  assert.equal(w.document.querySelector('#posOpenShiftForm').classList.contains('hidden'),false);
  assert.equal(w.document.querySelector('#posSaleCard').classList.contains('hidden'),true);
  const submit=new w.Event('submit',{bubbles:true,cancelable:true});Object.defineProperty(submit,'submitter',{value:w.document.querySelector('#openShiftButton')});
