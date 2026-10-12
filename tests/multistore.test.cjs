@@ -88,6 +88,8 @@ const { PGlite } = require('@electric-sql/pglite');
   assert.match(lifecycleSql, /delete from public\.orders where store_id=p_store_id/i, 'orders must be removed before the RESTRICT store foreign key');
   assert.match(lifecycleSql, /on delete cascade/i, 'remaining branch records use cascading foreign keys');
   assert.doesNotMatch(lifecycleSql, /delete\s+from\s+storage\.objects/i, 'storage files must be deleted with the Storage API');
+  const deletionFixSql = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261012150000_multistore_delete_reauth_fix.sql'), 'utf8');
+  assert.match(deletionFixSql, /auth\.jwt\(\)->'amr'/i, 'deletion must recognize Supabase recent password auth in amr');
 
   const pg = new PGlite();
   await pg.exec(`
@@ -130,6 +132,8 @@ const { PGlite } = require('@electric-sql/pglite');
   await setOwnerClaims(Math.floor(Date.now() / 1000) - 600);
   await assert.rejects(pg.query('select public.pastehot_delete_store($1)', [secondId]), /REAUTENTICACION_REQUERIDA/);
   await setOwnerClaims(Math.floor(Date.now() / 1000));
+  await pg.exec(`select set_config('request.jwt', '${JSON.stringify({ sub: ownerId, is_primary_owner: true, amr: [{ method: 'password', timestamp: Math.floor(Date.now() / 1000) }] }).replace(/'/g, "''")}', false)`);
+  await pg.exec(deletionFixSql);
   await pg.query('select public.pastehot_delete_store($1)', [secondId]);
   const deletedBranchData = await pg.query(`select (select count(*) from public.stores) as stores,(select count(*) from public.orders) as orders,(select count(*) from public.customers) as customers,(select count(*) from public.delivery_zones) as zones,(select count(*) from private.pastehot_store_events) as events`);
   assert.deepEqual(deletedBranchData.rows[0], { stores: 1, orders: 0, customers: 0, zones: 0, events: 0 });
@@ -143,6 +147,7 @@ const { PGlite } = require('@electric-sql/pglite');
   const branchToDelete = stores[1];
   const deleteCalls = [];
   deleteWindow.confirm = message => { deleteCalls.push(['confirm', message]); return true; };
+  deleteWindow.alert = message => deleteCalls.push(['alert', message]);
   deleteWindow.db = {
     rpc: async (name, args) => {
       deleteCalls.push(['rpc', name, args]);
@@ -155,8 +160,9 @@ const { PGlite } = require('@electric-sql/pglite');
       getUser: async () => ({ data: { user: { id: 'owner-1', email: 'owner@example.com' } }, error: null }),
       signInWithPassword: async ({ email, password }) => {
         deleteCalls.push(['reauth', email, password]);
-        return { data: { user: { id: 'owner-1' } }, error: null };
-      }
+        return { data: { user: { id: 'owner-1' }, session: { access_token: 'fresh', refresh_token: 'fresh-refresh' } }, error: null };
+      },
+      setSession: async session => { deleteCalls.push(['setSession', session.access_token]); return { error: null }; }
     },
     storage: { from: bucket => ({ remove: async paths => { deleteCalls.push(['remove', bucket, paths]); return { error: null }; } }) },
     from: () => builder()
@@ -169,6 +175,11 @@ const { PGlite } = require('@electric-sql/pglite');
   assert.match(deleteCalls.find(call => call[0] === 'confirm')[1], /imágenes de Supabase/);
   const passwordModal = deleteWindow.document.querySelector('#phStoreDeletePasswordModal');
   assert(passwordModal, 'third confirmation must request the primary owner password');
+  const togglePassword = passwordModal.querySelector('#phToggleDeletePassword');
+  togglePassword.click();
+  assert.equal(passwordModal.querySelector('input').type, 'text', 'password can be revealed before confirmation');
+  togglePassword.click();
+  assert.equal(passwordModal.querySelector('input').type, 'password', 'password can be hidden again');
   passwordModal.querySelector('input[type=password]').value = 'test-owner-password';
   passwordModal.querySelector('form').dispatchEvent(new deleteWindow.Event('submit', { bubbles: true, cancelable: true }));
   await new Promise(resolve => setImmediate(resolve));
@@ -176,7 +187,8 @@ const { PGlite } = require('@electric-sql/pglite');
   assert(deleteCalls.some(call => call[0] === 'reauth' && call[1] === 'owner@example.com'), 'password must be checked against the signed-in owner account');
   const imageRemoval = deleteCalls.findIndex(call => call[0] === 'remove');
   const databaseDeletion = deleteCalls.findIndex(call => call[0] === 'rpc' && call[1] === 'pastehot_delete_store');
-  assert(imageRemoval >= 0 && databaseDeletion > imageRemoval, 'exclusive images are removed through Storage before database deletion');
+  assert(databaseDeletion >= 0 && imageRemoval > databaseDeletion, 'database deletion completes before best-effort Storage cleanup');
+  assert(deleteCalls.some(call => call[0] === 'alert' && call[1].includes('se borró exitosamente')), 'successful deletion is confirmed in a popup');
   assert.equal(Array.from(deleteCalls[imageRemoval][2]).join(','), 'products/branch photo.jpg', 'Storage object paths are URL-decoded before removal');
   assert.equal(deleteWindow.document.querySelector('[data-ph-delete="' + selected + '"]')?.disabled, true, 'the remaining selected branch is not offered for deletion after the branch count falls to one');
   deletionDom.window.close();

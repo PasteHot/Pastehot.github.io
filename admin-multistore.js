@@ -204,10 +204,18 @@
     return new Promise(resolve => {
       const overlay = document.createElement('div');
       overlay.id = 'phStoreDeletePasswordModal';
-      overlay.innerHTML = `<section class="ph-modal-card" role="dialog" aria-modal="true" aria-labelledby="phDeletePasswordTitle"><h2 id="phDeletePasswordTitle">Confirmación 3 de 3</h2><p>Para eliminar definitivamente <strong>${safe(store.name)}</strong>, escribe la contraseña de la cuenta de la propietaria principal. Se eliminarán sus ventas, clientes, productos y configuración.</p><form><label for="phDeleteOwnerPassword">Contraseña de la propietaria principal</label><input id="phDeleteOwnerPassword" type="password" autocomplete="current-password" required><div class="ph-modal-actions"><button type="button" class="ph-secondary" id="phDeleteCancel">Cancelar</button><button type="submit" class="ph-danger">Borrar definitivamente</button></div></form></section>`;
+      overlay.innerHTML = `<section class="ph-modal-card" role="dialog" aria-modal="true" aria-labelledby="phDeletePasswordTitle"><h2 id="phDeletePasswordTitle">Confirmación 3 de 3</h2><p>Para eliminar definitivamente <strong>${safe(store.name)}</strong>, escribe la contraseña de la cuenta de la propietaria principal. Se eliminarán sus ventas, clientes, productos y configuración.</p><form><label for="phDeleteOwnerPassword">Contraseña de la propietaria principal</label><div class="ph-delete-password"><input id="phDeleteOwnerPassword" type="password" autocomplete="current-password" required><button type="button" id="phToggleDeletePassword" aria-label="Mostrar contraseña" aria-pressed="false" title="Mostrar contraseña">◉</button></div><div class="ph-modal-actions"><button type="button" class="ph-secondary" id="phDeleteCancel">Cancelar</button><button type="submit" class="ph-danger">Borrar definitivamente</button></div></form></section>`;
       document.body.appendChild(overlay);
       const input = overlay.querySelector('#phDeleteOwnerPassword');
       input.focus();
+      overlay.querySelector('#phToggleDeletePassword').addEventListener('click', event => {
+        const button = event.currentTarget;
+        const visible = input.type === 'password';
+        input.type = visible ? 'text' : 'password';
+        button.setAttribute('aria-pressed', String(visible));
+        button.setAttribute('aria-label', visible ? 'Ocultar contraseña' : 'Mostrar contraseña');
+        button.title = visible ? 'Ocultar contraseña' : 'Mostrar contraseña';
+      });
       const finish = value => { input.value = ''; overlay.remove(); resolve(value); };
       overlay.querySelector('#phDeleteCancel').addEventListener('click', () => finish(null));
       overlay.querySelector('form').addEventListener('submit', event => {
@@ -226,17 +234,20 @@
       return decodeURIComponent(value.slice(index + marker.length).split('?')[0]);
     } catch { return null; }
   }
-  async function removeStoreImages(storeId) {
+  async function storeImagePaths(storeId) {
     const { data, error } = await db.rpc('pastehot_store_image_urls_for_delete', { p_store_id: storeId });
     if (error) throw error;
-    const paths = [...new Set((Array.isArray(data) ? data : [])
+    return [...new Set((Array.isArray(data) ? data : [])
       .map(row => storagePathFromPublicUrl(row?.image_url))
       .filter(Boolean))];
+  }
+  async function removeImagePaths(paths) {
     for (let i = 0; i < paths.length; i += 1000) {
       const { error: storageError } = await db.storage.from('product-images').remove(paths.slice(i, i + 1000));
       if (storageError) throw new Error(`No se pudieron eliminar las imágenes de esta sucursal: ${storageError.message || 'error de Storage'}`);
     }
   }
+  async function removeStoreImages(storeId) { return removeImagePaths(await storeImagePaths(storeId)); }
   async function deleteStore(storeId) {
     const store = stores.find(item => item.id === storeId);
     const feedback = document.getElementById('phStoreListFeedback');
@@ -248,6 +259,7 @@
     if (!window.confirm(finalWarning)) return;
     let password = await requestOwnerPassword(store);
     if (!password) return;
+    let imageCleanupError = null;
     try {
       const { data: current, error: currentError } = await db.auth.getUser();
       if (currentError || !current?.user?.email || !current?.user?.id) throw new Error('No se pudo verificar la cuenta propietaria activa.');
@@ -255,23 +267,43 @@
       const { data: verified, error: passwordError } = await db.auth.signInWithPassword({ email: current.user.email, password });
       password = '';
       if (passwordError || verified?.user?.id !== currentUserId) throw new Error('La contraseña no corresponde a la cuenta propietaria principal.');
+      if (verified?.session?.access_token && verified?.session?.refresh_token) {
+        const { error: sessionError } = await db.auth.setSession({ access_token: verified.session.access_token, refresh_token: verified.session.refresh_token });
+        if (sessionError) throw new Error('La contraseña se verificó, pero no se pudo actualizar la sesión segura. Intenta de nuevo.');
+      } else {
+        throw new Error('Supabase no devolvió una sesión nueva para confirmar la contraseña.');
+      }
+      let deleted;
       if (isDemo) {
         stores = stores.filter(item => item.id !== store.id);
         persistDemoStores();
+        deleted = true;
       } else {
-        await removeStoreImages(store.id);
-        const { error } = await db.rpc('pastehot_delete_store', { p_store_id: store.id });
+        let imagePaths = [];
+        try { imagePaths = await storeImagePaths(store.id); } catch (storageError) { imageCleanupError = storageError; }
+        const { data, error } = await db.rpc('pastehot_delete_store', { p_store_id: store.id });
         if (error) throw error;
+        if (!data || (data.id && data.id !== store.id)) throw new Error('La base de datos no confirmó la sucursal eliminada.');
+        deleted = true;
+        // Database deletion is authoritative. Storage cleanup errors must not
+        // leave the store row and its sales behind.
+        if (!imageCleanupError) try { await removeImagePaths(imagePaths); } catch (storageError) { imageCleanupError = storageError; }
         stores = stores.filter(item => item.id !== store.id);
+        if (imageCleanupError) console.error('PasteHot: quedó una imagen de la sucursal en Storage', imageCleanupError);
       }
+      if (!deleted) throw new Error('No se confirmó la eliminación.');
+      const successMessage = `La tienda “${store.name}” se borró exitosamente.`;
+      const finalMessage = successMessage + (imageCleanupError ? ' Sus registros se eliminaron, pero quedó pendiente limpiar alguna imagen en Supabase.' : '');
       if (idNow() === store.id) {
         persistSelection(stores.find(item => item.is_active) || stores[0]);
+        try { sessionStorage.setItem('pastehot_store_delete_success', finalMessage); } catch {}
         location.reload();
         return;
       }
       document.getElementById('phStoreAccessSelect').innerHTML = storeOptions(currentStore()?.id);
       document.getElementById('phStoreRenameName').value = currentStore()?.name || '';
-      feedback.textContent = `La sucursal “${store.name}” y sus datos se eliminaron. Las imágenes compartidas con otra sucursal se conservaron.`;
+      feedback.textContent = finalMessage;
+      window.alert(finalMessage);
       renderStoreList();
       await loadMembers();
     } catch (error) {
@@ -371,6 +403,13 @@
       window.PasteHotStoreId = selected.id;
       installQueryScope();
       renderBar(false);
+      try {
+        const deletedMessage = sessionStorage.getItem('pastehot_store_delete_success');
+        if (deletedMessage) {
+          sessionStorage.removeItem('pastehot_store_delete_success');
+          setTimeout(() => window.alert(deletedMessage), 0);
+        }
+      } catch {}
       return true;
     },
     async setupPublic() {

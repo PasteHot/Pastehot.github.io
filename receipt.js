@@ -29,12 +29,12 @@ function hasDeliveryLocation(o){
   if(lat==null||lng==null||String(lat).trim()===""||String(lng).trim()==="")return false;
   return Number.isFinite(Number(lat))&&Number.isFinite(Number(lng))&&Math.abs(Number(lat))<=90&&Math.abs(Number(lng))<=180;
 }
-function ticketDeliveryLabel(value){return value==="delivery"?"Envío a domicilio":value==="pickup"?"Pasar a recoger":String(value||"")}
+function ticketDeliveryLabel(value){return value==="delivery"?"Envío a domicilio":value==="pickup"?"Pasar a recoger":value==="point_of_sale"?"Punto de venta":String(value||"")}
 function ticketBusinessPhone(value){
   const digits=normalizePhone(value||"");
   return digits.length===12&&digits.startsWith("52")?digits.slice(2):digits;
 }
-function ticketPaymentLabel(value){return value==="cash"?"Efectivo":value==="transfer"?"Transferencia":String(value||"")}
+function ticketPaymentLabel(value){return value==="cash"?"Efectivo":value==="transfer"?"Transferencia":value==="card"?"Tarjeta":String(value||"")}
 function ticketDate(value){if(!value)return"";return new Intl.DateTimeFormat("es-MX",{dateStyle:"short",timeStyle:"short"}).format(new Date(value))}
 function firstCustomerName(value){
   const clean=String(value||"").trim();
@@ -150,6 +150,8 @@ function rawBtEscPosTicket(o,options={}){
   pair("Telefono",customerPhone||"Sin telefono");
   pair("Modalidad",ticketDeliveryLabel(o.delivery_type));
   pair("Pago",ticketPaymentLabel(o.payment_method));
+  if(o.cashier_name)pair("Atendió",o.cashier_name);
+  if(o.payment_method==="cash"&&o.cash_received!=null){pair("Recibido",rawBtMoney(o.cash_received));pair("Cambio",rawBtMoney(o.cash_change));}
   rule();
 
   if(items.length){
@@ -309,6 +311,8 @@ function printTicketOrder(o,options={}){
         <div><div class="label">Teléfono</div><div class="value">${escapeHtml(customerPhone||"Sin teléfono")}</div></div>
         <div class="meta-line"><div class="label">Modalidad</div><div class="value">${escapeHtml(ticketDeliveryLabel(o.delivery_type))}</div></div>
         <div class="meta-line"><div class="label">Pago</div><div class="value">${escapeHtml(ticketPaymentLabel(o.payment_method))}</div></div>
+        ${o.cashier_name?`<div class="meta-line"><div class="label">Atendió</div><div class="value">${escapeHtml(o.cashier_name)}</div></div>`:""}
+        ${o.payment_method==="cash"&&o.cash_received!=null?`<div class="meta-line"><div class="label">Recibido</div><div class="value">${formatMoney(o.cash_received)}</div></div><div class="meta-line"><div class="label">Cambio</div><div class="value">${formatMoney(o.cash_change)}</div></div>`:""}
       </div>
       <div class="rule"></div>
       <div>${itemRows||'<div style="text-align:center">Sin productos registrados.</div>'}</div>

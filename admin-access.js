@@ -144,6 +144,7 @@ function adminCanEditProducts(){return adminAccessAllowed&&adminRole==='owner';}
 function adminCanToggleProduct(){return adminAccessAllowed&&['owner','manager'].includes(adminRole);}
 function adminCanOpenTab(name){
  if(!adminAccessAllowed)return false;
+ if(name==='pos')return true;
  if(adminRole==='owner')return isPrimaryOwner()||name!=='business';
  if(name==='access')return adminRole==='manager';
  if(name==='orders')return true;
