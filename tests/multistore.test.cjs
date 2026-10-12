@@ -96,7 +96,7 @@ const { PGlite } = require('@electric-sql/pglite');
   assert.doesNotMatch(renameSql, /delete from|truncate|update public\.(orders|products|customers|settings)/i, 'renaming a branch must not delete or rewrite its store data');
   assert.match(renameSql, /revoke all on function public\.pastehot_rename_store\(uuid,text\) from public,anon/i);
   assert.match(fs.readFileSync(path.join(__dirname, '../admin-multistore.js'), 'utf8'), /pastehot_update_store_details/);
-  const storeDetailsSql = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261012184623_update_store_details.sql'), 'utf8');
+  const storeDetailsSql = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261012184840_update_store_details.sql'), 'utf8');
   assert.match(storeDetailsSql, /private\.pastehot_primary_owner_allowed\(\)/i, 'only the primary owner may edit store details');
   assert.match(storeDetailsSql, /set name = v_name,\s+area = v_area/i, 'store name and area are updated without replacing store records');
   assert.match(storeDetailsSql, /revoke all on function public\.pastehot_update_store_details\(uuid, text, text\) from public, anon/i);
