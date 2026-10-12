@@ -37,7 +37,12 @@ const { PGlite } = require('@electric-sql/pglite');
     { user_id: 'inactive-1', display_name: 'Marta', email: 'marta@example.com', role: 'empleada', assigned: true, enabled: false }
   ];
   window.db = {
-    rpc: async name => name === 'pastehot_list_stores' ? { data: stores, error: null } : name === 'pastehot_list_store_members' ? { data: teamMembers, error: null } : { data: true, error: null },
+    rpc: async (name, args) => {
+      if (name === 'pastehot_list_stores') return { data: stores, error: null };
+      if (name === 'pastehot_list_store_members') return { data: teamMembers, error: null };
+      if (name === 'pastehot_update_store_details') return { data: { ...stores[0], name: args.p_name, area: args.p_area }, error: null };
+      return { data: true, error: null };
+    },
     from: table => { calls.push(['from', table]); return builder(); }
   };
   window.adminRole = 'owner';
@@ -74,6 +79,14 @@ const { PGlite } = require('@electric-sql/pglite');
   assert.equal(storeModal.querySelector('#phStoreSaveMembers').classList.contains('ph-secondary'), false, 'save access button uses the red primary styling');
   storeModal.querySelector('#phStoreModalCloseX').click();
   assert.equal(storeModal.hidden, true, 'X closes the branch modal');
+  window.document.querySelector('#pastehotManageStores').click();
+  const renameForm = storeModal.querySelector('#phStoreRenameForm');
+  renameForm.querySelector('#phStoreRenameName').value = 'PasteHot Norte';
+  renameForm.querySelector('#phStoreRenameArea').value = 'Norte de Mérida';
+  renameForm.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(rpcArgs.p_area, 'Norte de Mérida', 'saving branch details sends the editable area to the database');
+  assert.match(storeModal.querySelector('#phStoreRenameFeedback').textContent, /zona actualizados/);
   assert.match(foundationSql, /alter table public\.orders alter column store_id set not null/i);
   assert.match(foundationSql, /create policy order_items_branch_staff_recent/i);
   assert.doesNotMatch(foundationSql, /create policy orders_branch_insert/i, 'checkout must go through its validating RPC');
@@ -82,7 +95,11 @@ const { PGlite } = require('@electric-sql/pglite');
   assert.match(renameSql, /update public\.stores\s+set name=v_name\s+where id=p_store_id/i);
   assert.doesNotMatch(renameSql, /delete from|truncate|update public\.(orders|products|customers|settings)/i, 'renaming a branch must not delete or rewrite its store data');
   assert.match(renameSql, /revoke all on function public\.pastehot_rename_store\(uuid,text\) from public,anon/i);
-  assert.match(fs.readFileSync(path.join(__dirname, '../admin-multistore.js'), 'utf8'), /pastehot_rename_store/);
+  assert.match(fs.readFileSync(path.join(__dirname, '../admin-multistore.js'), 'utf8'), /pastehot_update_store_details/);
+  const storeDetailsSql = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261012184623_update_store_details.sql'), 'utf8');
+  assert.match(storeDetailsSql, /private\.pastehot_primary_owner_allowed\(\)/i, 'only the primary owner may edit store details');
+  assert.match(storeDetailsSql, /set name = v_name,\s+area = v_area/i, 'store name and area are updated without replacing store records');
+  assert.match(storeDetailsSql, /revoke all on function public\.pastehot_update_store_details\(uuid, text, text\) from public, anon/i);
   assert.match(rpcSql, /create function public\.create_pending_order_with_location_v3\(p_store_id uuid/i);
   assert.match(rpcSql, /where id=v_item\.product_id and store_id=v_store_id/i);
   assert.match(rpcSql, /insert into private\.pastehot_store_events\(store_id,/i);
