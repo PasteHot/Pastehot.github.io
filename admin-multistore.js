@@ -401,6 +401,7 @@
       let selected = stores.find(store => store.id === idNow());
       if (!selected) { selected = stores[0]; persistSelection(selected); }
       window.PasteHotStoreId = selected.id;
+      window.PasteHotStoreName = selected.name;
       installQueryScope();
       renderBar(false);
       try {
@@ -424,6 +425,7 @@
       if (!selected) return false;
       persistSelection(selected);
       window.PasteHotStoreId = selected.id;
+      window.PasteHotStoreName = selected.name;
       installQueryScope();
       if (stores.filter(store => store.is_active).length > 1) renderBar(true);
       return true;

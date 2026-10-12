@@ -2,7 +2,7 @@
 let adminRole=null,adminAccessAllowed=false,adminSession=null,adminAccessState=null;
 let adminSecurityInstalled=false,adminRealtimeOnline=false,adminAccessTimer=null,adminRecoveryTimer=null;
 let orderInbox=null,orderAudio=null,orderSoundEnabled=false,orderSoundTimer=null,orderSoundDebounce=null,orderInboxSyncTimer=null,orderInboxSyncBusy=false,adminWakeLock=null;
-let adminAccessRefreshPromise=null,adminAccessBusy=false;
+let adminAccessRefreshPromise=null,adminAccessBusy=false,showInactiveStoreMembers=false;
 let orderChimeUntil=0;const orderChimeVoices=new Set();
 const PASTEHOT_OWNER_ID='a0c0b64b-7809-4428-ad00-a1484d6ded53';
 function isPasteHotPreview(){return /^(deploy-preview-\d+--cheerful-daifuku-76579b\.netlify\.app|localhost|127\.0\.0\.1)$/.test(location.hostname);}
@@ -49,7 +49,7 @@ async function submitAccountPasswordReset(event){
  try{
   if(member.current){const {error}=await db.auth.updateUser({password});if(error)throw error;const {error:signoutError}=await db.auth.signOut({scope:'others'});showMessage('accountPasswordResetMessage',signoutError?'Contraseña actualizada. Cópiala aquí; algunas sesiones previas podrían seguir activas.':'Contraseña actualizada y otras sesiones cerradas. Puedes copiarla.');return;}
   await adminAccessAction(async()=>{
-   const {data,error}=await db.functions.invoke(isPasteHotPreview()?'pastehot-create-staff-preview':'pastehot-create-staff',{body:{action:'reset_password',userId:member.user_id,password,deviceToken:adminDeviceToken()}});
+   const {data,error}=await db.functions.invoke(isPasteHotPreview()?'pastehot-create-staff-preview':'pastehot-create-staff',{body:{action:'reset_password',userId:member.user_id,password,deviceToken:adminDeviceToken(),storeId:window.PasteHotStoreId||null}});
    if(error||data?.error||data?.ok!==true){let message=data?.error;try{if(!message&&error?.context?.json)message=(await error.context.json())?.error;}catch{}throw new Error(message||'No se confirmó el cambio.');}
    return `Contraseña de ${member.display_name} cambiada. Cópiala ahora y compártela en privado.`;
   });
@@ -208,7 +208,8 @@ function renderAdminAccess(){
   document.getElementById('staffInviteRole').disabled=manager||adminAccessBusy;
   if(manager)document.getElementById('staffInviteRole').value='staff';
   document.getElementById('staffInviteForm').querySelector('h3').textContent=manager?'Crear cuenta de empleado':'Crear cuenta';
-  document.querySelector('#section-access .section-title p').textContent=manager?'Puedes crear, desactivar, reactivar, borrar y compartir credenciales únicamente de empleados. Tu cuenta y las cuentas de propietarios y encargados están protegidas.':'El propietario administra los accesos. Asigna a cada persona los permisos que necesita.';
+  const selectedStore=window.PasteHotStoreName||'la sucursal seleccionada';
+  document.querySelector('#section-access .section-title p').textContent=manager?`Personal activo de ${selectedStore}. Puedes administrar únicamente las cuentas de empleados asignadas a esta sucursal.`:`Personal activo de ${selectedStore}. Las cuentas de otras sucursales no aparecen aquí; selecciona otra sucursal para ver su equipo.`;
   document.getElementById('staffInviteButton').textContent=window.PasteHotDemo?'Simular cuenta · no crea acceso real':'Crear cuenta activa';
   document.getElementById('ownerRecoverySettings')?.classList.toggle('hidden',!isPrimaryOwner());
   document.getElementById('accessSessions').innerHTML=online.length?online.map(s=>{
@@ -218,12 +219,15 @@ function renderAdminAccess(){
   }).join(''):'<p class="media-note">No hay dispositivos conectados en este momento.</p>';
   document.getElementById('accessSessions').parentElement.classList.toggle('hidden',manager);
   document.getElementById('deviceProtectionCard').classList.toggle('hidden',direct||manager);
-  document.getElementById('accessMembers').innerHTML=members.filter(m=>['owner','staff','manager'].includes(m.role)&&(adminRole!=='manager'||m.role==='staff')).map(m=>{
+  const storeMembers=members.filter(m=>['owner','staff','manager'].includes(m.role)&&(adminRole!=='manager'||m.role==='staff'));
+  const visibleStoreMembers=storeMembers.filter(m=>m.enabled||showInactiveStoreMembers);
+  document.getElementById('accessMembers').innerHTML=(storeMembers.length?`<button type="button" class="btn btn-light btn-small" id="toggleInactiveStoreMembers">${showInactiveStoreMembers?'Ocultar personal desactivado':'Mostrar personal desactivado'}</button>`:'')+visibleStoreMembers.map(m=>{
     const username=m.email?.startsWith('staff+')&&m.email.endsWith('@accounts.pastehot.com')?m.email.split('@')[0].slice(6):m.email||'';
     const protectedAccount=m.primary_owner||m.current;
     const credentialActions=!m.primary_owner&&(!m.current||adminRole==='owner')&&(!manager||m.role==='staff');
     return `<div class="access-row"><div><strong>${escapeHtml(m.display_name)}</strong><div class="credential-line"><span>Usuario: <code>${escapeHtml(username)}</code> · ${adminRoleName(m.role)}</span><button class="btn btn-light btn-small" onclick="copyTextValue('${escapeAttr(username)}','Usuario copiado.')">Copiar usuario</button></div>${m.primary_owner?'<small>Cuenta principal protegida</small>':m.role==='owner'?'<small>Segundo propietario · acceso a todos los apartados excepto Negocio</small>':''}${isPrimaryOwner()&&!m.primary_owner&&['staff','manager'].includes(m.role)?`<div class="credential-line"><span>Contraseña: <code>${escapeHtml(visibleAccountPasswords.get(m.user_id)||'••••••••••••')}</code></span><button class="btn btn-light btn-small" onclick="toggleAccountPassword('${m.user_id}')">${visibleAccountPasswords.has(m.user_id)?'Ocultar':'Mostrar'}</button>${visibleAccountPasswords.has(m.user_id)?`<button class="btn btn-light btn-small" onclick="copyTextValue(visibleAccountPasswords.get('${m.user_id}'),'Contraseña copiada.')">Copiar contraseña</button>`:''}</div>`:''}<div class="credential-line"><span>${isPrimaryOwner()?'Puedes cambiar la contraseña y compartir la nueva.':'La contraseña no se puede recuperar; puedes asignar una nueva.'}</span>${credentialActions?`<button class="btn btn-light btn-small" onclick="openResetAccountPassword('${m.user_id}')">Asignar nueva contraseña</button>`:''}</div><span class="state-tag">${m.enabled?'Acceso habilitado':'Acceso desactivado'}</span></div><div class="access-row-actions">${protectedAccount?'<small>Cuenta protegida</small>':`${!manager?`<label>Permisos<select id="account-role-${m.user_id}" aria-label="Permisos de ${escapeAttr(m.display_name)}" ${adminAccessBusy?'disabled':''} onchange="changeAdminMemberRole('${m.user_id}',this.value)"><option value="owner" ${m.role==='owner'?'selected':''}>Segundo propietario</option><option value="staff" ${m.role==='staff'?'selected':''}>Empleado</option><option value="manager" ${m.role==='manager'?'selected':''}>Encargado</option></select></label>`:''}<button class="btn ${m.enabled?'btn-danger':'btn-dark'}" ${adminAccessBusy?'disabled':''} onclick="changeAdminMember('${m.user_id}',${!m.enabled})">${m.enabled?'Desactivar acceso':'Habilitar acceso'}</button>${direct?`<button class="btn btn-danger" ${adminAccessBusy?'disabled':''} onclick="deleteAdminMember('${m.user_id}')">Borrar cuenta</button>`:''}`}</div></div>`
-  }).join('')||'<p class="media-note">No hay cuentas de empleados registradas.</p>';
+  }).join('')+(storeMembers.filter(m=>!m.enabled).length&&!showInactiveStoreMembers?'<p class="media-note">Las cuentas desactivadas de esta sucursal están ocultas.</p>':'')||'<p class="media-note">No hay personal activo asignado a esta sucursal.</p>';
+  document.getElementById('toggleInactiveStoreMembers')?.addEventListener('click',()=>{showInactiveStoreMembers=!showInactiveStoreMembers;renderAdminAccess();});
   const banner=document.getElementById('adminAccessBanner');
   banner.classList.toggle('hidden',installed||adminRole!=='owner');
   banner.textContent=!installed?'Preview de mejoras: las alertas y categorías pueden probarse aquí. Los nuevos permisos de empleados aún no están activados en el negocio.':'';
@@ -238,10 +242,17 @@ async function refreshAdminAccess(){
     adminAccessState=data;adminAccessAllowed=!!data?.allowed;adminRole=data?.role;
     if(previousRole!==adminRole&&adminAccessAllowed){denyAdminAccess('Tus permisos cambiaron. Vuelve a comprobar el acceso para cargar tu nueva interfaz.');return false;}
     if(!adminAccessAllowed){showWaitingAccess(data);return false;}
-    if(adminRole==='manager'&&!await loadManagerStaffAccounts())return false;
+    if(['owner','manager'].includes(adminRole)&&!await loadStoreTeamAccounts())return false;
     renderAdminAccess();await loadStoreControl();return true;
   })();
   try{return await adminAccessRefreshPromise}catch{denyAdminAccess('No se pudo verificar el acceso. Revisa la conexión y el almacenamiento del navegador.');return false;}finally{adminAccessRefreshPromise=null;}
+}
+async function loadStoreTeamAccounts(){
+  const storeId=window.PasteHotStoreId;
+  if(!storeId)return adminRole==='manager'?loadManagerStaffAccounts():true;
+  const {data,error}=await db.rpc('pastehot_list_store_team',{p_store_id:storeId});
+  if(error){denyAdminAccess('No se pudo verificar el personal de esta sucursal. El acceso quedó pausado.');return false;}
+  adminAccessState.members=Array.isArray(data)?data:[];return true;
 }
 async function loadManagerStaffAccounts(){
   if(window.PasteHotDemo){const {data,error}=await db.rpc('pastehot_manager_staff_accounts');if(error){denyAdminAccess('No se pudieron verificar las cuentas de empleados. El acceso quedó pausado.');return false;}adminAccessState.members=data||[];return true;}
@@ -272,7 +283,7 @@ async function deleteAdminMember(id){
   if(!member||member.primary_owner||member.current||!['owner','staff','manager'].includes(member.role)||(adminRole==='manager'&&member.role!=='staff'))return;
   if(!confirm(`¿Borrar definitivamente la cuenta de ${member.display_name}? Primero se desactivará y se cerrarán sus sesiones. Si el borrado no termina, permanecerá desactivada. Se eliminarán sus credenciales, dispositivos y registros asociados; los pedidos y ventas se conservan. Esta acción no se puede deshacer.`))return;
   await adminAccessAction(async()=>{
-    const {data,error}=await db.functions.invoke('pastehot-create-staff',{body:{action:'delete',userId:id,deviceToken:adminDeviceToken()}});
+    const {data,error}=await db.functions.invoke('pastehot-create-staff',{body:{action:'delete',userId:id,deviceToken:adminDeviceToken(),storeId:window.PasteHotStoreId||null}});
     if(error||data?.error){let message=data?.error;try{if(!message&&error?.context?.json)message=(await error.context.json())?.error;}catch{}throw new Error(message||'No se completó el borrado. Actualiza accesos y vuelve a intentarlo.');}
     if(typeof loadStoreHistory==='function')await loadStoreHistory();
     return data?.delivery==='demo'?'Cuenta ficticia borrada de la prueba.':'Cuenta, dispositivos e historial asociado borrados.';
@@ -323,13 +334,21 @@ async function createAdminStaff(event){
   await adminAccessAction(async()=>{
     document.getElementById('staffAccountMessage').textContent='Creando cuenta…';
     let response;
-    try{response=await db.functions.invoke(isPasteHotPreview()?'pastehot-create-staff-preview':'pastehot-create-staff',{body:{username,name,password,deviceToken:adminDeviceToken(),role}});}catch{
+    try{response=await db.functions.invoke(isPasteHotPreview()?'pastehot-create-staff-preview':'pastehot-create-staff',{body:{username,name,password,deviceToken:adminDeviceToken(),role,storeId:window.PasteHotStoreId||null}});}catch{
       const message='No se pudo conectar. Tus datos se conservan; revisa la conexión y el listado antes de reintentar.';fail(message);throw new Error(message);
     }
     const {data,error}=response;
     if(error||data?.error||data?.ok!==true){
       let message=data?.error;try{if(!message&&error?.context?.json){const response=await error.context.json();message=response?.error||response?.message;}}catch{}
       message=message||'No se pudo confirmar el alta. Revisa la conexión y el listado antes de volver a intentarlo.';fail(message);throw new Error(message);
+    }
+    const storeId=window.PasteHotStoreId;
+    if(storeId&&adminRole==='owner'&&isPrimaryOwner()&&!window.PasteHotDemo){
+      const {data:accounts,error:accountsError}=await db.rpc('pastehot_list_store_members',{p_store_id:storeId});
+      if(accountsError)throw new Error('La cuenta se creó, pero no se pudo asignar a la sucursal seleccionada. Asígnala desde Sucursales → Asignar acceso.');
+      const email=`staff+${username}@accounts.pastehot.com`,member=(Array.isArray(accounts)?accounts:[]).find(item=>item.email===email);
+      if(!member)throw new Error('La cuenta se creó, pero no se encontró para asignarla a la sucursal. Asígnala desde Sucursales → Asignar acceso.');
+      if(!member.assigned){const {error:assignmentError}=await db.rpc('pastehot_set_store_member',{p_store_id:storeId,p_user_id:member.user_id,p_assigned:true});if(assignmentError)throw new Error('La cuenta se creó, pero no se pudo asignar a la sucursal seleccionada. Asígnala desde Sucursales → Asignar acceso.');}
     }
     activated=true;form.reset();resetPasswordVisibility();showAccountActivated(username,role);
     document.getElementById('createdAccountUsername').textContent=username;document.getElementById('createdAccountPassword').textContent=password;document.getElementById('createdAccountCredential').classList.remove('hidden');

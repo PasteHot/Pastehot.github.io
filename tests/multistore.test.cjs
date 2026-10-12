@@ -90,6 +90,11 @@ const { PGlite } = require('@electric-sql/pglite');
   assert.doesNotMatch(lifecycleSql, /delete\s+from\s+storage\.objects/i, 'storage files must be deleted with the Storage API');
   const deletionFixSql = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261012175130_multistore_delete_reauth_fix.sql'), 'utf8');
   assert.match(deletionFixSql, /auth\.jwt\(\)->'amr'/i, 'deletion must recognize Supabase recent password auth in amr');
+  const teamScopeSql = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261012190000_per_store_team_scope.sql'), 'utf8');
+  assert.match(teamScopeSql, /pastehot_store_manager_allowed\(p_store_id\)/i, 'team listings must verify access to the selected branch');
+  assert.match(teamScopeSql, /sm\.store_id=p_store_id and sm\.user_id=m\.user_id/i, 'team listings must only include members assigned to the selected branch');
+  assert.match(teamScopeSql, /m\.enabled/i, 'the UI receives account status so inactive staff can be hidden or reactivated');
+  assert.match(teamScopeSql, /insert into private\.pastehot_store_memberships\(store_id,user_id\) values\(p_store_id,v_user\)/i, 'manager-created employees are assigned to that manager\'s branch');
 
   const pg = new PGlite();
   await pg.exec(`

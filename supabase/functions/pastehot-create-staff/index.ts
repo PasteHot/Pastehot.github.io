@@ -21,7 +21,8 @@ Deno.serve(async(req:Request)=>{
     const manager=state.role==='manager';
     const getTarget=async(id:string)=>{
       if(!manager)return state.members?.find((m:{user_id:string,role:string,primary_owner?:boolean})=>m.user_id===id);
-      const {data,error}=await caller.rpc('pastehot_manager_staff_accounts');
+      const storeId=String(body.storeId||'');if(!storeId)return null;
+      const {data,error}=await caller.rpc('pastehot_list_store_team',{p_store_id:storeId});
       if(error||!Array.isArray(data))return null;
       return data.find((m:{user_id:string,role:string})=>m.user_id===id);
     };
@@ -69,7 +70,7 @@ Deno.serve(async(req:Request)=>{
       return reply(409,{error:'No se creó la cuenta. Revisa que el usuario no esté ocupado y que la contraseña cumpla los requisitos.'});
     }
     const {error:memberError}=manager
-      ?await caller.rpc('pastehot_manager_add_staff',{p_email:email,p_name:name})
+      ?await caller.rpc('pastehot_manager_add_staff',{p_email:email,p_name:name,p_store_id:String(body.storeId||'')})
       :await caller.rpc('pastehot_add_staff',{p_email:email,p_name:name,p_role:role});
     // A failed membership registration grants no permissions. Never overwrite an existing account.
     // Passwords are handled by Auth; never logged, returned or stored in the membership table.
@@ -80,6 +81,13 @@ Deno.serve(async(req:Request)=>{
       const message=String(memberError.message||'');
       if(message.includes('pastehot_one_delegated_owner'))return reply(409,{error:'Ya existe un segundo propietario. Revisa el listado antes de agregar otro.'});
       return reply(409,{error:'No se activó la cuenta. No se guardó el usuario; puedes corregir los datos e intentarlo de nuevo.'});
+    }
+    if(!manager&&body.storeId){
+      const {error:assignmentError}=await caller.rpc('pastehot_set_store_member',{p_store_id:String(body.storeId),p_user_id:created.user.id,p_assigned:true});
+      if(assignmentError){
+        const {error:cleanupError}=await service.auth.admin.deleteUser(created.user.id,false);
+        return reply(409,{error:cleanupError?'La cuenta quedó sin acceso porque no se pudo asignar a la sucursal. Contacta al propietario.':'No se activó la cuenta porque no se pudo asignar a la sucursal seleccionada. Vuelve a intentarlo.'});
+      }
     }
     const {error:vaultError}=['staff','manager'].includes(role)
       ?await service.rpc('pastehot_store_staff_password',{p_user_id:created.user.id,p_password:password})
