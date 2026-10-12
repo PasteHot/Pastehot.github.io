@@ -4,7 +4,7 @@ const owner='a0c0b64b-7809-4428-ad00-a1484d6ded53',staff='11111111-1111-4111-811
 const sid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 (async()=>{
  const pg=new PGlite();
- await pg.exec(`create role anon;create role authenticated;create schema auth;create schema storage;create schema extensions;create domain extensions.geometry as jsonb;
+ await pg.exec(`create role anon;create role authenticated;create role service_role;create schema auth;create schema storage;create schema extensions;create domain extensions.geometry as jsonb;
  create function extensions.st_asgeojson(extensions.geometry) returns text language sql as $$select $1::text;$$;
  create function extensions.st_setsrid(extensions.geometry,integer) returns extensions.geometry language sql as $$select $1;$$;
  create function extensions.st_geomfromgeojson(text) returns extensions.geometry language sql as $$select $1::jsonb;$$;
@@ -12,7 +12,7 @@ const sid=n=>`00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
  create function extensions.st_isvalid(extensions.geometry) returns boolean language sql as $$select true;$$;
  create table auth.users(id uuid primary key,email text);create table auth.sessions(id uuid primary key,user_id uuid references auth.users(id) on delete cascade);
  create function auth.jwt() returns jsonb language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb;$$;
- create function auth.uid() returns uuid language sql stable as $$select (auth.jwt()->>'sub')::uuid;$$;
+ create function auth.uid() returns uuid language sql stable as $$select (auth.jwt()->>'sub')::uuid;$$;create function auth.role() returns text language sql stable as $$select auth.jwt()->>'role';$$;
  grant usage on schema auth to authenticated,anon;grant execute on function auth.uid(),auth.jwt() to authenticated,anon;
  create table public.products(id uuid primary key,name text,description text,category text,price numeric,image_url text,available boolean default true,stock integer default 10,updated_at timestamptz);
  create table public.orders(id uuid primary key,order_status text,created_at timestamptz default now(),items jsonb default '[]',inventory_applied boolean default false,inventory_restored boolean default false);
@@ -142,7 +142,7 @@ await pg.exec(fs.readFileSync(__dirname+'/../supabase/migrations/20261010053030_
  assert.equal((await pg.query("select pastehot_order_page(null,'VEnTa 001',null,null) as p")).rows[0].p.rows.length,1);
  await login(owner,sid(6));await denied('select pastehot_sales_summary();');await denied('select pastehot_order_page();');
  await login(staff,sid(2));await denied('select pastehot_sales_summary();');
- await login(owner,sid(1));await pg.exec(`select pastehot_set_staff_enabled('${staff}',true);select pastehot_set_session('${d2}','approved');`);await login(staff,sid(2));await state();await denied('select pastehot_sales_summary();');assert.equal((await pg.query("select pastehot_order_page(null,'VENTA',null,null) as p")).rows[0].p.rows.length,4);
+ await login(owner,sid(1));await pg.exec(`select pastehot_set_staff_enabled('${staff}',true);select pastehot_set_session('${d2}','approved');update public.orders set created_at=now() where order_code like 'VENTA-%';`);await login(staff,sid(2));await state();await denied('select pastehot_sales_summary();');assert.equal((await pg.query("select pastehot_order_page(null,'VENTA',null,null) as p")).rows[0].p.rows.length,4);
  await pg.exec('reset role;');await pg.exec('set role anon;');await denied('select pastehot_sales_summary();');await denied('select pastehot_order_page();');await denied('select pastehot_admin_state();');await denied('select pastehot_store_state();');await denied('select pastehot_store_history();');await denied("select pastehot_set_store_closed(true,'Intento anónimo',false);");await denied(`select update_order_status_with_inventory('${sid(20)}','cancelado');`);assert.equal((await pg.query('select * from orders')).rows.length,0);
  await pg.exec('reset role;');const exposed=(await pg.query("select p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'pastehot_%' and p.prosecdef")).rows;assert.equal(exposed.length,0);
  // Device management must preserve authorization and immutable store history.
@@ -251,5 +251,22 @@ await pg.exec(fs.readFileSync(__dirname+'/../supabase/migrations/20261010053030_
  await login(owner,sid(401));await pg.query('select pastehot_set_staff_enabled($1,false)',[worker]);
  await login(worker,workSession);await assert.rejects(change('entregado'),/NO_AUTORIZADO/);
  await pg.exec('reset role;set role anon;');await assert.rejects(change('cancelado'),/permission denied/);
+ // Preview-only migration: schedule checks are enforced in database policy paths,
+ // while password copies are available to the primary owner through Vault only.
+ await pg.exec(`reset role;create schema vault;create table vault.secrets(id uuid primary key default gen_random_uuid(),name text,secret text,description text);create view vault.decrypted_secrets as select id,name,secret as decrypted_secret,description from vault.secrets;
+ create function vault.create_secret(text,text,text) returns uuid language plpgsql as $$declare k uuid;begin insert into vault.secrets(name,secret,description) values($2,$1,$3) returning id into k;return k;end$$;
+ create function vault.update_secret(uuid,text,text,text) returns uuid language plpgsql as $$begin update vault.secrets set secret=$2,name=$3,description=$4 where id=$1;return $1;end$$;`);
+ await pg.exec(fs.readFileSync(__dirname+'/../supabase/migrations/20261012090000_admin_hours_reporting_vault_credentials.sql','utf8'));
+ const localParts=(await pg.query("select lower(to_char(now() at time zone 'America/Merida','Dy')) as day,to_char((now() at time zone 'America/Merida')+interval '20 minutes','HH24:MI') as open")).rows[0];
+ await pg.query("update settings set value=$1 where key='weekly_schedule'",[JSON.stringify({[localParts.day]:{enabled:true,open:localParts.open,close:'23:59'}})]);
+ await login(owner,sid(401));await pg.query('select pastehot_set_staff_enabled($1,true)',[worker]);await login(worker,workSession);assert.equal((await state(501)).allowed,true);assert.equal((await pg.query('select private.pastehot_staff_schedule_allowed() as ok')).rows[0].ok,true);
+ await login(owner,sid(401));await pg.query("update settings set value=$1 where key='weekly_schedule'",[JSON.stringify({[localParts.day]:{enabled:false,open:'00:00',close:'23:59'}})]);await login(worker,workSession);
+ const blocked=(await state(501));assert.equal(blocked.allowed,false);assert.equal(blocked.status,'outside_hours');
+ await pg.query("update settings set value=$1 where key='weekly_schedule'",[JSON.stringify({[localParts.day]:{enabled:true,open:'00:00',close:'23:59'}})]);
+ await login(owner,sid(401));await pg.query('select pastehot_set_staff_enabled($1,true)',[worker]);
+ await pg.exec('reset role;');await pg.query("select set_config('request.jwt.claims',$1,false)",[JSON.stringify({role:'service_role'})]);await pg.exec('set role service_role;');
+ await pg.query('select public.pastehot_store_staff_password($1,$2)',[worker,'NuevaClaveVault123!']);
+ await login(owner,sid(401));assert.equal((await pg.query('select public.pastehot_get_member_password($1) as p',[worker])).rows[0].p,'NuevaClaveVault123!');
+ await login(worker,workSession);await assert.rejects(pg.query('select public.pastehot_get_member_password($1)',[worker]));
  await pg.close();console.log('PASS: real PostgreSQL RLS, protected ownership, revoked accounts; preview employee delivery/cancellation transitions, pickup delivery denial, idempotent stock restoration and confirmation, old-order denial and anonymous denial.');
 })().catch(e=>{console.error(e);process.exitCode=1;});

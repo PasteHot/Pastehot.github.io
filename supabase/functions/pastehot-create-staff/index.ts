@@ -33,6 +33,10 @@ Deno.serve(async(req:Request)=>{
       const service=createClient(url,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false,autoRefreshToken:false}});
       const {error:passwordError}=await service.auth.admin.updateUserById(id,{password});
       if(passwordError)return reply(409,{error:'No se cambió la contraseña. Verifica los requisitos e inténtalo nuevamente.'});
+      if(['staff','manager'].includes(target.role)){
+        const {error:vaultError}=await service.rpc('pastehot_store_staff_password',{p_user_id:id,p_password:password});
+        if(vaultError)return reply(409,{error:'La contraseña se actualizó en el acceso, pero no se pudo guardar su copia protegida. No la compartas hasta corregirlo.'});
+      }
       const {error:revokeError}=await caller.rpc(manager?'pastehot_manager_revoke_staff_sessions':'pastehot_revoke_member_sessions',{p_user_id:id});
       if(revokeError)return reply(409,{error:'La nueva contraseña quedó guardada, pero no se pudieron cerrar las sesiones anteriores. Contacta al propietario antes de entregar el acceso.'});
       return reply(200,{ok:true});
@@ -76,6 +80,13 @@ Deno.serve(async(req:Request)=>{
       const message=String(memberError.message||'');
       if(message.includes('pastehot_one_delegated_owner'))return reply(409,{error:'Ya existe un segundo propietario. Revisa el listado antes de agregar otro.'});
       return reply(409,{error:'No se activó la cuenta. No se guardó el usuario; puedes corregir los datos e intentarlo de nuevo.'});
+    }
+    const {error:vaultError}=['staff','manager'].includes(role)
+      ?await service.rpc('pastehot_store_staff_password',{p_user_id:created.user.id,p_password:password})
+      :{error:null};
+    if(vaultError){
+      const {error:cleanupError}=await service.auth.admin.deleteUser(created.user.id,false);
+      return reply(409,{error:cleanupError?'La cuenta quedó desactivada sin acceso porque falló el respaldo seguro de contraseña. Contacta al propietario.':'No se activó la cuenta porque no se pudo guardar la contraseña protegida. Vuelve a intentarlo.'});
     }
     return reply(200,{ok:true,username,role});
   }catch{return reply(500,{error:'No se pudo crear la cuenta. Revisa la conexión e intenta nuevamente.'});}

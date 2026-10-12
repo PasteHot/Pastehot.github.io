@@ -86,7 +86,7 @@ async function setupAdminAccess(session){
   renderAdminAccess();return true;
 }
 function denyAdminAccess(message){
-  hideAccountToast();resetPasswordVisibility();
+  hideAccountToast();resetPasswordVisibility();maskAccountPasswords?.();
   const accountPassword=document.getElementById('staffAccountPassword');if(accountPassword)accountPassword.value='';
   clearStaffInvitation();
   adminAccessAllowed=false;stopAdminEnhancements();
@@ -96,13 +96,50 @@ function denyAdminAccess(message){
   document.getElementById('loginMessage').innerHTML=`<div class="message error" role="alert">${escapeHtml(message)}</div><button class="btn btn-light" onclick="checkSession()">Volver a comprobar</button><button class="btn btn-light" onclick="logout()">Cerrar sesión</button>`;
 }
 function showWaitingAccess(state){
-  denyAdminAccess(state?.status==='disabled'?'Tu acceso ha sido desactivado. Consulta con el propietario.':state?.status==='revoked'?'Este navegador fue revocado. El propietario debe autorizarlo de nuevo.':'Este navegador necesita autorización del propietario. Abre Accesos desde un navegador ya autorizado.');
+  denyAdminAccess(state?.status==='outside_hours'?'Ingreso bloqueado: estás fuera del horario laboral configurado. El personal puede entrar desde 30 minutos antes de la apertura hasta el cierre.':state?.status==='disabled'?'Tu acceso ha sido desactivado. Consulta con el propietario.':state?.status==='revoked'?'Este navegador fue revocado. El propietario debe autorizarlo de nuevo.':'Este navegador necesita autorización del propietario. Abre Accesos desde un navegador ya autorizado.');
   if(state?.status==='pending'){
     document.getElementById('loginMessage').insertAdjacentHTML('beforeend','<p class="media-note">La solicitud ya aparece en Accesos. Esta pantalla comprobará la autorización automáticamente.</p>');
     clearInterval(adminAccessTimer);adminAccessTimer=setInterval(()=>checkSession(),15000);
   }
 }
-function isPrimaryOwner(){return !!adminAccessState?.primary_owner||(!adminSecurityInstalled&&adminRole==='owner');}
+function isPrimaryOwner(){return adminRole==='owner'&&(!!adminAccessState?.primary_owner||adminSession?.user?.id===PASTEHOT_OWNER_ID);}
+async function updateOwnerRecoveryEmail(){
+ if(!isPrimaryOwner()||!adminAccessAllowed)return;
+ if(isAccountPreviewReadOnly()){showMessage('ownerRecoveryEmailMessage','La preview no cambia correos reales.');return;}
+ const input=document.getElementById('ownerRecoveryEmail'),email=input.value.trim().toLowerCase();
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){showMessage('ownerRecoveryEmailMessage','Escribe un correo válido.',false);return;}
+ if(!confirm('Este correo también será el usuario para iniciar sesión en la cuenta principal. Supabase enviará un enlace de confirmación. ¿Continuar?'))return;
+ const {data,error}=await db.auth.updateUser({email});
+ if(error){showMessage('ownerRecoveryEmailMessage','No se pudo solicitar el cambio. Revisa si el correo ya está en uso y vuelve a intentar.',false);return;}
+ showMessage('ownerRecoveryEmailMessage',data?.user?.new_email?`Confirma el cambio desde ${email}. Hasta confirmarlo, conserva tu correo de acceso actual.`:'Solicitud enviada. Revisa la bandeja y confirma el correo nuevo.');
+}
+async function requestOwnerPasswordReset(){
+ const email=prompt('Escribe el correo de acceso de la cuenta propietaria.');if(!email)return;
+ if(window.PasteHotDemo){showMessage('loginMessage','Prueba ficticia: no se envió ningún correo.');return;}
+ if(isPasteHotPreview()){showMessage('loginMessage','La preview no envía correos reales. Configura el correo en la cuenta principal y prueba recuperación en producción al publicar.');return;}
+ const {error}=await db.auth.resetPasswordForEmail(email.trim(),{redirectTo:location.origin+location.pathname});
+ showMessage('loginMessage',error?'No se pudo enviar el enlace. Comprueba que ese correo sea el de acceso de la cuenta propietaria.':'Si el correo corresponde a una cuenta, Supabase enviará un enlace para restablecer la contraseña.');
+}
+function showOwnerPasswordRecovery(){document.getElementById('loginScreen').classList.add('hidden');document.getElementById('staffPasswordScreen').classList.add('hidden');document.getElementById('adminScreen').classList.add('hidden');document.getElementById('ownerRecoveryScreen').classList.remove('hidden');}
+async function completeOwnerPasswordRecovery(event){
+ event.preventDefault();const password=document.getElementById('ownerRecoveryPassword').value;
+ if(password.length<12){showMessage('ownerRecoveryMessage','Usa al menos 12 caracteres.',false);return;}
+ const {error}=await db.auth.updateUser({password});if(error){showMessage('ownerRecoveryMessage','No se pudo cambiar la contraseña. Abre de nuevo el enlace recibido.',false);return;}
+ document.getElementById('ownerRecoveryPassword').value='';showMessage('ownerRecoveryMessage','Contraseña actualizada. Vuelve a iniciar sesión con ella.');await db.auth.signOut();
+}
+async function toggleAccountPassword(userId){
+ if(!isPrimaryOwner()||!adminAccessAllowed)return;
+ const row=adminAccessState?.members?.find(m=>m.user_id===userId);
+ if(!row||row.primary_owner||!['staff','manager'].includes(row.role))return;
+ const password=visibleAccountPasswords.get(userId);
+ if(password){visibleAccountPasswords.delete(userId);renderAdminAccess();return;}
+ const {data,error}=await db.rpc('pastehot_get_member_password',{p_user_id:userId});
+ if(error||typeof data!=='string'){showMessage('accessMessage','La contraseña protegida no está disponible. Las cuentas de prueba anteriores pueden no tener una copia recuperable.',false);return;}
+ if(!isPrimaryOwner()||!adminAccessAllowed)return;
+ visibleAccountPasswords.set(userId,data);renderAdminAccess();
+}
+function maskAccountPasswords(){visibleAccountPasswords.clear();if(adminAccessAllowed&&document.getElementById('accessMembers'))renderAdminAccess();}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)maskAccountPasswords();});
 function adminCanEditProducts(){return adminAccessAllowed&&adminRole==='owner';}
 function adminCanToggleProduct(){return adminAccessAllowed&&['owner','manager'].includes(adminRole);}
 function adminCanOpenTab(name){
@@ -172,6 +209,7 @@ function renderAdminAccess(){
   document.getElementById('staffInviteForm').querySelector('h3').textContent=manager?'Crear cuenta de empleado':'Crear cuenta';
   document.querySelector('#section-access .section-title p').textContent=manager?'Puedes crear, desactivar, reactivar, borrar y compartir credenciales únicamente de empleados. Tu cuenta y las cuentas de propietarios y encargados están protegidas.':'El propietario administra los accesos. Asigna a cada persona los permisos que necesita.';
   document.getElementById('staffInviteButton').textContent=window.PasteHotDemo?'Simular cuenta · no crea acceso real':'Crear cuenta activa';
+  document.getElementById('ownerRecoverySettings')?.classList.toggle('hidden',!isPrimaryOwner());
   document.getElementById('accessSessions').innerHTML=online.length?online.map(s=>{
     const pending=s.status==='pending',approved=s.status==='approved',current=s.current;
     const owner=adminRole==='owner'&&(!s.primary_owner||state.primary_owner),canAuthorize=s.member_enabled!==false,revoked=s.status==='revoked';
@@ -183,7 +221,7 @@ function renderAdminAccess(){
     const username=m.email?.startsWith('staff+')&&m.email.endsWith('@accounts.pastehot.com')?m.email.split('@')[0].slice(6):m.email||'';
     const protectedAccount=m.primary_owner||m.current;
     const credentialActions=!m.primary_owner&&(!m.current||adminRole==='owner')&&(!manager||m.role==='staff');
-    return `<div class="access-row"><div><strong>${escapeHtml(m.display_name)}</strong><div class="credential-line"><span>Usuario: <code>${escapeHtml(username)}</code> · ${adminRoleName(m.role)}</span><button class="btn btn-light btn-small" onclick="copyTextValue('${escapeAttr(username)}','Usuario copiado.')">Copiar usuario</button></div>${m.primary_owner?'<small>Cuenta principal protegida</small>':m.role==='owner'?'<small>Segundo propietario · acceso a todos los apartados excepto Negocio</small>':''}<div class="credential-line"><span>La contraseña no se puede recuperar; puedes asignar una nueva.</span>${credentialActions?`<button class="btn btn-light btn-small" onclick="openResetAccountPassword('${m.user_id}')">Asignar y copiar contraseña</button>`:''}</div><span class="state-tag">${m.enabled?'Acceso habilitado':'Acceso desactivado'}</span></div><div class="access-row-actions">${protectedAccount?'<small>Cuenta protegida</small>':`${!manager?`<label>Permisos<select id="account-role-${m.user_id}" aria-label="Permisos de ${escapeAttr(m.display_name)}" ${adminAccessBusy?'disabled':''} onchange="changeAdminMemberRole('${m.user_id}',this.value)"><option value="owner" ${m.role==='owner'?'selected':''}>Segundo propietario</option><option value="staff" ${m.role==='staff'?'selected':''}>Empleado</option><option value="manager" ${m.role==='manager'?'selected':''}>Encargado</option></select></label>`:''}<button class="btn ${m.enabled?'btn-danger':'btn-dark'}" ${adminAccessBusy?'disabled':''} onclick="changeAdminMember('${m.user_id}',${!m.enabled})">${m.enabled?'Desactivar acceso':'Habilitar acceso'}</button>${direct?`<button class="btn btn-danger" ${adminAccessBusy?'disabled':''} onclick="deleteAdminMember('${m.user_id}')">Borrar cuenta</button>`:''}`}</div></div>`
+    return `<div class="access-row"><div><strong>${escapeHtml(m.display_name)}</strong><div class="credential-line"><span>Usuario: <code>${escapeHtml(username)}</code> · ${adminRoleName(m.role)}</span><button class="btn btn-light btn-small" onclick="copyTextValue('${escapeAttr(username)}','Usuario copiado.')">Copiar usuario</button></div>${m.primary_owner?'<small>Cuenta principal protegida</small>':m.role==='owner'?'<small>Segundo propietario · acceso a todos los apartados excepto Negocio</small>':''}${isPrimaryOwner()&&!m.primary_owner&&['staff','manager'].includes(m.role)?`<div class="credential-line"><span>Contraseña: <code>${escapeHtml(visibleAccountPasswords.get(m.user_id)||'••••••••••••')}</code></span><button class="btn btn-light btn-small" onclick="toggleAccountPassword('${m.user_id}')">${visibleAccountPasswords.has(m.user_id)?'Ocultar':'Mostrar'}</button>${visibleAccountPasswords.has(m.user_id)?`<button class="btn btn-light btn-small" onclick="copyTextValue(visibleAccountPasswords.get('${m.user_id}'),'Contraseña copiada.')">Copiar contraseña</button>`:''}</div>`:''}<div class="credential-line"><span>${isPrimaryOwner()?'Puedes cambiar la contraseña y compartir la nueva.':'La contraseña no se puede recuperar; puedes asignar una nueva.'}</span>${credentialActions?`<button class="btn btn-light btn-small" onclick="openResetAccountPassword('${m.user_id}')">Asignar nueva contraseña</button>`:''}</div><span class="state-tag">${m.enabled?'Acceso habilitado':'Acceso desactivado'}</span></div><div class="access-row-actions">${protectedAccount?'<small>Cuenta protegida</small>':`${!manager?`<label>Permisos<select id="account-role-${m.user_id}" aria-label="Permisos de ${escapeAttr(m.display_name)}" ${adminAccessBusy?'disabled':''} onchange="changeAdminMemberRole('${m.user_id}',this.value)"><option value="owner" ${m.role==='owner'?'selected':''}>Segundo propietario</option><option value="staff" ${m.role==='staff'?'selected':''}>Empleado</option><option value="manager" ${m.role==='manager'?'selected':''}>Encargado</option></select></label>`:''}<button class="btn ${m.enabled?'btn-danger':'btn-dark'}" ${adminAccessBusy?'disabled':''} onclick="changeAdminMember('${m.user_id}',${!m.enabled})">${m.enabled?'Desactivar acceso':'Habilitar acceso'}</button>${direct?`<button class="btn btn-danger" ${adminAccessBusy?'disabled':''} onclick="deleteAdminMember('${m.user_id}')">Borrar cuenta</button>`:''}`}</div></div>`
   }).join('')||'<p class="media-note">No hay cuentas de empleados registradas.</p>';
   const banner=document.getElementById('adminAccessBanner');
   banner.classList.toggle('hidden',installed||adminRole!=='owner');
