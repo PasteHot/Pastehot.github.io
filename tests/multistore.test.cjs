@@ -6,7 +6,13 @@ const { JSDOM } = require('jsdom');
 (async () => {
   const html = '<!doctype html><html><head></head><body><main id="adminScreen"></main></body></html>';
   const foundationSql = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261012113000_multistore_foundation.sql'), 'utf8');
-  const rpcSql = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261012120000_multistore_rpc_scoping.sql'), 'utf8') + '\n' + fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261012120100_multistore_rpc_scoping_reports.sql'), 'utf8');
+  const rpcSql = [
+    fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261012120000_multistore_rpc_scoping.sql'), 'utf8'),
+    fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261012120100_multistore_rpc_checkout.sql'), 'utf8'),
+    fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261012120200_multistore_rpc_delivery_and_store_management.sql'), 'utf8'),
+    fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261012120300_multistore_rpc_order_transitions.sql'), 'utf8'),
+    fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261012120400_multistore_reports_scoping.sql'), 'utf8')
+  ].join('\n');
   const dom = new JSDOM(html, { url: 'https://deploy-preview-12--cheerful-daifuku-76579b.netlify.app/admin.html', runScripts: 'outside-only' });
   const { window } = dom;
   window.Headers = global.Headers;
