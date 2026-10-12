@@ -131,12 +131,17 @@ const { PGlite } = require('@electric-sql/pglite');
   await pg.exec(`
     create role anon;
     create role authenticated;
+    create role service_role;
     create schema auth;
     create schema private;
+    create schema vault;
     create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('request.jwt',true),''),'{}')::jsonb $$;
     create function auth.uid() returns uuid language sql stable as $$ select nullif(auth.jwt()->>'sub','')::uuid $$;
     create function private.pastehot_primary_owner_allowed() returns boolean language sql stable as $$ select auth.uid() is not null and auth.jwt()->>'is_primary_owner'='true' $$;
     create table public.stores(id uuid primary key,slug text,name text,area text,is_active boolean);
+    create table private.pastehot_members(user_id uuid primary key,primary_owner boolean,role text,enabled boolean);
+    create table private.pastehot_staff_password_vault(user_id uuid primary key,secret_id uuid not null);
+    create table vault.secrets(id uuid primary key,name text,secret text,description text);
     create table public.products(id int generated always as identity primary key,store_id uuid not null references public.stores(id) on delete cascade,image_url text);
     create table public.settings(id int generated always as identity primary key,store_id uuid not null references public.stores(id) on delete cascade,key text,value text);
     create table public.orders(id int generated always as identity primary key,store_id uuid not null references public.stores(id) on delete restrict);
@@ -157,6 +162,10 @@ const { PGlite } = require('@electric-sql/pglite');
   await pg.query('insert into public.customers(store_id) values ($1)', [secondId]);
   await pg.query('insert into public.delivery_zones(store_id) values ($1)', [secondId]);
   await pg.query('insert into private.pastehot_store_events(store_id) values ($1)', [secondId]);
+  await pg.query(`insert into private.pastehot_members values ($1,true,'owner',true),($2,false,'owner',true)`, [ownerId, '88888888-8888-4888-8888-888888888888']);
+  const vaultSecret='77777777-7777-4777-8777-777777777777';
+  await pg.query('insert into vault.secrets values ($1,$2,$3,$4)', [vaultSecret,'pastehot-staff-worker','private-password-copy','staff credential']);
+  await pg.query('insert into private.pastehot_staff_password_vault values ($1,$2)', ['66666666-6666-4666-8666-666666666666',vaultSecret]);
   await pg.exec(lifecycleSql);
   const setOwnerClaims = async authTime => pg.query('select set_config(\'request.jwt\',$1,false)', [JSON.stringify({ sub: ownerId, is_primary_owner: true, auth_time: authTime })]);
   await setOwnerClaims(Math.floor(Date.now() / 1000));
@@ -170,10 +179,23 @@ const { PGlite } = require('@electric-sql/pglite');
   await setOwnerClaims(Math.floor(Date.now() / 1000));
   await pg.exec(`select set_config('request.jwt', '${JSON.stringify({ sub: ownerId, is_primary_owner: true, amr: [{ method: 'password', timestamp: Math.floor(Date.now() / 1000) }] }).replace(/'/g, "''")}', false)`);
   await pg.exec(deletionFixSql);
-  await pg.query('select public.pastehot_delete_store($1)', [secondId]);
+  const credentialCleanupSql = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261012230000_delete_store_reauth_and_password_cleanup.sql'), 'utf8');
+  await pg.exec(credentialCleanupSql);
+  assert.equal((await pg.query('select count(*)::int as n from vault.secrets')).rows[0].n, 0, 'migration removes only stored staff-password copies linked by the private index');
+  assert.equal((await pg.query("select to_regclass('private.pastehot_staff_password_vault') as name")).rows[0].name, null, 'password lookup table is removed');
+  assert.equal((await pg.query("select to_regprocedure('public.pastehot_get_member_password(uuid)') as name")).rows[0].name, null, 'password recovery RPC is removed');
+  await pg.exec(`select set_config('request.jwt','${JSON.stringify({role:'authenticated',sub:ownerId,is_primary_owner:true}).replace(/'/g,"''")}',false);set role authenticated;`);
+  await assert.rejects(pg.query('select public.pastehot_delete_store_after_reauth($1,$2)', [secondId,ownerId]), /permission denied/);
+  await pg.exec('reset role;');
+  const delegatedId='88888888-8888-4888-8888-888888888888';
+  await pg.exec(`select set_config('request.jwt','${JSON.stringify({role:'service_role'}).replace(/'/g,"''")}',false);set role service_role;`);
+  await assert.rejects(pg.query('select public.pastehot_delete_store_after_reauth($1,$2)', [secondId,delegatedId]), /NO_AUTORIZADO/);
+  await pg.query('select public.pastehot_delete_store_after_reauth($1,$2)', [secondId,ownerId]);
+  await assert.rejects(pg.query('select public.pastehot_delete_store_after_reauth($1,$2)', [migrationId,ownerId]), /NO_SE_PUEDE_ELIMINAR_LA_ULTIMA_SUCURSAL/);
+  await pg.exec('reset role;');
   const deletedBranchData = await pg.query(`select (select count(*) from public.stores) as stores,(select count(*) from public.orders) as orders,(select count(*) from public.customers) as customers,(select count(*) from public.delivery_zones) as zones,(select count(*) from private.pastehot_store_events) as events`);
   assert.deepEqual(deletedBranchData.rows[0], { stores: 1, orders: 0, customers: 0, zones: 0, events: 0 });
-  await assert.rejects(pg.query('select public.pastehot_delete_store($1)', [migrationId]), /NO_SE_PUEDE_ELIMINAR_LA_ULTIMA_SUCURSAL/);
+  await assert.rejects(pg.query('select public.pastehot_delete_store($1)', [migrationId]), /NO_AUTORIZADO/);
   await pg.close();
 
   const deletionDom = new JSDOM(html, { url: 'https://deploy-preview-13--cheerful-daifuku-76579b.netlify.app/admin.html', runScripts: 'outside-only' });
@@ -189,17 +211,9 @@ const { PGlite } = require('@electric-sql/pglite');
       deleteCalls.push(['rpc', name, args]);
       if (name === 'pastehot_list_stores') return { data: stores, error: null };
       if (name === 'pastehot_store_image_urls_for_delete') return { data: [{ image_url: 'https://example.supabase.co/storage/v1/object/public/product-images/products/branch%20photo.jpg' }], error: null };
-      if (name === 'pastehot_delete_store') return { data: { id: branchToDelete.id }, error: null };
       return { data: { id: args?.p_store_id, slug: branchToDelete.slug, name: branchToDelete.name, area: branchToDelete.area, is_active: false }, error: null };
     },
-    auth: {
-      getUser: async () => ({ data: { user: { id: 'owner-1', email: 'owner@example.com' } }, error: null }),
-      signInWithPassword: async ({ email, password }) => {
-        deleteCalls.push(['reauth', email, password]);
-        return { data: { user: { id: 'owner-1' }, session: { access_token: 'fresh', refresh_token: 'fresh-refresh' } }, error: null };
-      },
-      setSession: async session => { deleteCalls.push(['setSession', session.access_token]); return { error: null }; }
-    },
+    functions: { invoke: async (name, {body}) => { deleteCalls.push(['invoke', name, body]); return {data:{ok:true,store:{id:branchToDelete.id}},error:null}; } },
     storage: { from: bucket => ({ remove: async paths => { deleteCalls.push(['remove', bucket, paths]); return { error: null }; } }) },
     from: () => builder()
   };
@@ -220,9 +234,11 @@ const { PGlite } = require('@electric-sql/pglite');
   passwordModal.querySelector('form').dispatchEvent(new deleteWindow.Event('submit', { bubbles: true, cancelable: true }));
   await new Promise(resolve => setImmediate(resolve));
   await new Promise(resolve => setImmediate(resolve));
-  assert(deleteCalls.some(call => call[0] === 'reauth' && call[1] === 'owner@example.com'), 'password must be checked against the signed-in owner account');
+  const deleteRequest=deleteCalls.find(call=>call[0]==='invoke'&&call[1]==='pastehot-delete-store');
+  assert(deleteRequest && deleteRequest[2].password==='test-owner-password','password must be sent only to the password-verification Edge Function');
+  assert(!deleteCalls.some(call=>call[0]==='reauth'||call[0]==='setSession'),'delete flow must not replace the administrator session');
   const imageRemoval = deleteCalls.findIndex(call => call[0] === 'remove');
-  const databaseDeletion = deleteCalls.findIndex(call => call[0] === 'rpc' && call[1] === 'pastehot_delete_store');
+  const databaseDeletion = deleteCalls.findIndex(call => call[0] === 'invoke' && call[1] === 'pastehot-delete-store');
   assert(databaseDeletion >= 0 && imageRemoval > databaseDeletion, 'database deletion completes before best-effort Storage cleanup');
   assert(deleteCalls.some(call => call[0] === 'alert' && call[1].includes('se borró exitosamente')), 'successful deletion is confirmed in a popup');
   assert.equal(Array.from(deleteCalls[imageRemoval][2]).join(','), 'products/branch photo.jpg', 'Storage object paths are URL-decoded before removal');
