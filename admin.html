@@ -13,6 +13,7 @@
 <script src="admin-preview-demo.js?v=7"></script>
 <script src="admin-access.js?v=10"></script>
 <script src="admin-store-control.js?v=2"></script>
+<script src="admin-multistore.js?v=1"></script>
 <script src="admin-reports.js?v=2"></script>
 <script src="admin-image-maintenance.js?v=1"></script>
 <script src="admin-live-sync.js?v=1"></script>
@@ -407,6 +408,7 @@ async function logout(){stopAdminEnhancements();await db.auth.signOut();location
 async function checkSession(){try{const {data,error}=await db.auth.getSession();if(!error&&data.session)await enterAdmin(data.session);}catch{denyAdminAccess("No se pudo comprobar el acceso. Permite el almacenamiento del navegador y revisa tu conexión.");}showPreviewDemoEntry()}
 async function enterAdmin(session){
   if(!await setupAdminAccess(session))return;
+  if(window.PasteHotMultiStore&&!await window.PasteHotMultiStore.setupAdmin()){denyAdminAccess("Esta cuenta no tiene acceso a ninguna sucursal asignada.");return;}
   loginScreen.classList.add("hidden");adminScreen.classList.remove("hidden");
   await initAdmin();
 }
@@ -445,16 +447,16 @@ function startAdminRealtime(){
   if(adminRealtimeChannel)db.removeChannel(adminRealtimeChannel);
   setAdminLiveStatus("● Conectando actualización automática","");
   adminRealtimeChannel=db.channel("pastehot-admin-live")
-    .on("postgres_changes",{event:"*",schema:"public",table:"orders"},payload=>{
+    .on("postgres_changes",{event:"*",schema:"public",table:"orders",...(window.PasteHotStoreId?{filter:`store_id=eq.${window.PasteHotStoreId}`}:{})},payload=>{
       receiveRealtimeOrder(payload);
       handleOrderRealtimeChange(payload);
     })
-    .on("postgres_changes",{event:"*",schema:"public",table:"products"},()=>{
+    .on("postgres_changes",{event:"*",schema:"public",table:"products",...(window.PasteHotStoreId?{filter:`store_id=eq.${window.PasteHotStoreId}`}:{})},()=>{
       if(!adminCanToggleProduct())return;
       scheduleAdminViewRefresh("products","report");
     })
-    .on("postgres_changes",{event:"*",schema:"public",table:"settings"},payload=>scheduleAdminSettingsReload(payload))
-    .on("postgres_changes",{event:"*",schema:"public",table:"delivery_zones"},()=>{
+    .on("postgres_changes",{event:"*",schema:"public",table:"settings",...(window.PasteHotStoreId?{filter:`store_id=eq.${window.PasteHotStoreId}`}:{})},payload=>scheduleAdminSettingsReload(payload))
+    .on("postgres_changes",{event:"*",schema:"public",table:"delivery_zones",...(window.PasteHotStoreId?{filter:`store_id=eq.${window.PasteHotStoreId}`}:{})},()=>{
       if(adminRole!=="owner")return;
       scheduleAdminViewRefresh("delivery-zones");
     })
@@ -502,13 +504,19 @@ async function removeStoredImage(url){
   const path=storagePathFromPublicUrl(url);
   if(!path)return true;
   try{
-    // Never remove an image still used by a product or the menu design.
-    const [productRefs,designRefs]=await Promise.all([
-      db.from("products").select("id").eq("image_url",url).limit(1),
-      db.from("settings").select("key").in("key",["cover_image","profile_image","background_image"]).eq("value",url).limit(1)
-    ]);
-    if(productRefs.error||designRefs.error)throw productRefs.error||designRefs.error;
-    if(productRefs.data?.length||designRefs.data?.length){rememberImageCleanup(url,false);return true}
+    // Check every branch before removing a shared object from Storage.
+    let {data:stillUsed,error:referenceError}=await db.rpc("pastehot_image_reference_exists",{p_url:url});
+    if(referenceError?.code==="PGRST202"){
+      const [productRefs,designRefs]=await Promise.all([
+        db.from("products").select("id").eq("image_url",url).limit(1),
+        db.from("settings").select("key").in("key",["cover_image","profile_image","background_image"]).eq("value",url).limit(1)
+      ]);
+      if(productRefs.error||designRefs.error)throw productRefs.error||designRefs.error;
+      stillUsed=Boolean(productRefs.data?.length||designRefs.data?.length);
+      referenceError=null;
+    }
+    if(referenceError)throw referenceError;
+    if(stillUsed){rememberImageCleanup(url,false);return true}
     const {error}=await db.storage.from("product-images").remove([path]);
     if(error)throw error;
     const slash=path.lastIndexOf("/"),folder=slash<0?"":path.slice(0,slash),name=path.slice(slash+1);
