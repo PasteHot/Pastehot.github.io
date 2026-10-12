@@ -2,6 +2,7 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
 const {PGlite}=require('@electric-sql/pglite');
+const {JSDOM}=require('jsdom');
 (async()=>{
  const pg=new PGlite();
  await pg.exec(`create role anon;create role authenticated;create schema auth;create schema private;
@@ -27,5 +28,34 @@ const {PGlite}=require('@electric-sql/pglite');
  await pg.close();
  const html=fs.readFileSync(path.join(__dirname,'../admin.html'),'utf8'),pos=fs.readFileSync(path.join(__dirname,'../admin-pos.js'),'utf8');
  assert.match(html,/id="section-pos"/);assert.match(html,/id="posSalesSummary"/);assert.match(pos,/p_payment_method:method/);assert.match(pos,/pastehot_pos_create_sale/);
+ const posHtml='<form id="posOpenShiftForm"><input id="posOpeningCash" value="100"><button id="openShiftButton" type="submit">Abrir</button></form><div id="posShiftStatus"></div><form id="posCloseForm" class="hidden"><strong id="posCloseOpeningCash"></strong></form><section id="posSaleCard" class="hidden"><input id="posSearch"><div id="posProducts"></div><div id="posCart"></div><div id="posTotal"></div><select id="posPayment"><option value="cash">cash</option></select><input id="posCashReceived"><div id="posCashReceivedWrap"></div><div id="posChange"></div><form id="posSaleForm"></form><div id="posSaleResult" class="hidden"></div><span id="posSaleCode"></span><span id="posSaleTotal"></span><span id="posSaleChange"></span></section><div id="posMessage"></div><button id="posReportRefresh"></button><button id="posReportPrint"></button><input id="posReportDay"><select id="posReportPeriod"></select><div id="posSalesSummary"></div>';
+ const ui=new JSDOM(posHtml,{url:'https://www.pastehot.com/admin.html',runScripts:'outside-only'}),w=ui.window;
+ const testProduct={id:'product-1',name:'Paste de prueba',category:'Salados',price:25,available:true,track_stock:true,stock:4};
+ let currentShift=null;
+ w.PasteHotStoreId=store;
+ w.db={
+  from(){const q={select(){return q},order(){return q},then(resolve,reject){return Promise.resolve({data:[testProduct],error:null}).then(resolve,reject)}};return q},
+  rpc:async(name)=>{
+   if(name==='pastehot_pos_current_shift')return {data:currentShift,error:null};
+   if(name==='pastehot_pos_open_shift'){currentShift={id:'shift-ui',opened_by_name:'Ana',opening_cash:100,opened_at:new Date().toISOString()};return {data:currentShift,error:null}}
+   return {data:null,error:null};
+  }
+ };
+ w.eval(pos);
+ await new Promise(resolve=>w.addEventListener('DOMContentLoaded',resolve,{once:true}));
+ await w.loadPosWorkspace();
+ assert.equal(w.document.querySelector('#posOpenShiftForm').classList.contains('hidden'),false);
+ assert.equal(w.document.querySelector('#posSaleCard').classList.contains('hidden'),true);
+ const submit=new w.Event('submit',{bubbles:true,cancelable:true});Object.defineProperty(submit,'submitter',{value:w.document.querySelector('#openShiftButton')});
+ w.document.querySelector('#posOpenShiftForm').dispatchEvent(submit);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.match(w.document.querySelector('#posMessage').textContent,/Caja abierta/,'opening the till must not fail after the database saves the shift');
+ assert.equal(w.document.querySelector('#posSaleCard').classList.contains('hidden'),false,'opening the till reveals products and the sale form');
+ assert.equal(w.document.querySelectorAll('#posProducts .pos-product').length,1);
+ assert.equal(w.document.querySelector('#posCloseForm').classList.contains('hidden'),false,'an open till shows its close-shift form');
+ await w.loadPosWorkspace();
+ assert.equal(w.document.querySelector('#posOpenShiftForm').classList.contains('hidden'),true,'a previously opened shift is restored after refreshing POS');
+ assert.equal(w.document.querySelector('#posSaleCard').classList.contains('hidden'),false,'products remain available with the restored shift');
+ ui.window.close();
  console.log('POS cash, stock, shift, report, and interface checks passed.');
 })().catch(e=>{console.error(e);process.exitCode=1});

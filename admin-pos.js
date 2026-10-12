@@ -22,7 +22,7 @@
  async function loadProducts(){const {data,error}=await db.from('products').select('id,name,category,price,available,track_stock,stock').order('sort_order').order('name');if(error)throw error;products=data||[];renderProducts()}
  function updateShiftUi(){
    byId('posOpenShiftForm').classList.toggle('hidden',!!shift);
-   byId('posActiveShift').classList.toggle('hidden',!shift);
+   byId('posCloseForm').classList.toggle('hidden',!shift);
    byId('posSaleCard').classList.toggle('hidden',!shift);
    byId('posShiftStatus').innerHTML=shift?`<strong>Caja abierta</strong><br>Abrió: ${safe(shift.opened_by_name)} · ${stamp(shift.opened_at)}<br>Fondo inicial: ${money(shift.opening_cash)}`:'La caja está cerrada. Un empleado asignado puede abrir el turno.';
    if(shift)byId('posCloseOpeningCash').textContent=money(shift.opening_cash);
