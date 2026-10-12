@@ -79,6 +79,60 @@ const { JSDOM } = require('jsdom');
   assert.match(legacySql, /revoke all on function public\.create_pending_order_with_location\(/i);
   assert.match(legacySql, /revoke all on function public\.create_pending_order_with_location_v2\(/i);
 
+  const lifecycleSql = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261012140000_multistore_branch_lifecycle.sql'), 'utf8');
+  assert.match(lifecycleSql, /private\.pastehot_primary_owner_allowed\(\)/i, 'only the primary owner may change branch lifecycle');
+  assert.match(lifecycleSql, /DEBE_QUEDAR_UNA_SUCURSAL_ACTIVA/i, 'the database must retain an active branch');
+  assert.match(lifecycleSql, /NO_SE_PUEDE_ELIMINAR_LA_ULTIMA_SUCURSAL/i, 'the database must retain at least one branch');
+  assert.match(lifecycleSql, /auth\.jwt\(\)->>'auth_time'/i, 'permanent deletion must require a recent owner sign-in');
+  assert.match(lifecycleSql, /delete from public\.orders where store_id=p_store_id/i, 'orders must be removed before the RESTRICT store foreign key');
+  assert.match(lifecycleSql, /on delete cascade/i, 'remaining branch records use cascading foreign keys');
+  assert.doesNotMatch(lifecycleSql, /delete\s+from\s+storage\.objects/i, 'storage files must be deleted with the Storage API');
+
+  const deletionDom = new JSDOM(html, { url: 'https://deploy-preview-13--cheerful-daifuku-76579b.netlify.app/admin.html', runScripts: 'outside-only' });
+  const deleteWindow = deletionDom.window;
+  deleteWindow.Headers = global.Headers;
+  deleteWindow.localStorage.setItem('pastehot_admin_store_id', selected);
+  const branchToDelete = stores[1];
+  const deleteCalls = [];
+  deleteWindow.confirm = message => { deleteCalls.push(['confirm', message]); return true; };
+  deleteWindow.db = {
+    rpc: async (name, args) => {
+      deleteCalls.push(['rpc', name, args]);
+      if (name === 'pastehot_list_stores') return { data: stores, error: null };
+      if (name === 'pastehot_store_image_urls_for_delete') return { data: [{ image_url: 'https://example.supabase.co/storage/v1/object/public/product-images/products/branch%20photo.jpg' }], error: null };
+      if (name === 'pastehot_delete_store') return { data: { id: branchToDelete.id }, error: null };
+      return { data: { id: args?.p_store_id, slug: branchToDelete.slug, name: branchToDelete.name, area: branchToDelete.area, is_active: false }, error: null };
+    },
+    auth: {
+      getUser: async () => ({ data: { user: { id: 'owner-1', email: 'owner@example.com' } }, error: null }),
+      signInWithPassword: async ({ email, password }) => {
+        deleteCalls.push(['reauth', email, password]);
+        return { data: { user: { id: 'owner-1' } }, error: null };
+      }
+    },
+    storage: { from: bucket => ({ remove: async paths => { deleteCalls.push(['remove', bucket, paths]); return { error: null }; } }) },
+    from: () => builder()
+  };
+  deleteWindow.eval(fs.readFileSync(path.join(__dirname, '../admin-multistore.js'), 'utf8'));
+  assert.equal(await deleteWindow.PasteHotMultiStore.setupAdmin(), true);
+  deleteWindow.document.querySelector('#pastehotManageStores').click();
+  deleteWindow.document.querySelector(`[data-ph-delete="${branchToDelete.id}"]`).click();
+  assert.equal(deleteCalls.filter(call => call[0] === 'confirm').length, 2, 'deletion requires two explicit browser confirmations before password entry');
+  assert.match(deleteCalls.find(call => call[0] === 'confirm')[1], /imágenes de Supabase/);
+  const passwordModal = deleteWindow.document.querySelector('#phStoreDeletePasswordModal');
+  assert(passwordModal, 'third confirmation must request the primary owner password');
+  passwordModal.querySelector('input[type=password]').value = 'test-owner-password';
+  passwordModal.querySelector('form').dispatchEvent(new deleteWindow.Event('submit', { bubbles: true, cancelable: true }));
+  await new Promise(resolve => setImmediate(resolve));
+  await new Promise(resolve => setImmediate(resolve));
+  assert(deleteCalls.some(call => call[0] === 'reauth' && call[1] === 'owner@example.com'), 'password must be checked against the signed-in owner account');
+  const imageRemoval = deleteCalls.findIndex(call => call[0] === 'remove');
+  const databaseDeletion = deleteCalls.findIndex(call => call[0] === 'rpc' && call[1] === 'pastehot_delete_store');
+  assert(imageRemoval >= 0 && databaseDeletion > imageRemoval, 'exclusive images are removed through Storage before database deletion');
+  assert.equal(Array.from(deleteCalls[imageRemoval][2]).join(','), 'products/branch photo.jpg', 'Storage object paths are URL-decoded before removal');
+  assert.equal(deleteWindow.document.querySelector('[data-ph-delete="' + selected + '"]')?.disabled, true, 'the remaining selected branch is not offered for deletion after the branch count falls to one');
+  deletionDom.window.close();
+
   const publicStores = [
     { id: '44444444-4444-4444-8444-444444444444', slug: 'pastehot-centro', name: 'PasteHot Centro', area: 'Centro', is_active: true },
     { id: '55555555-5555-4555-8555-555555555555', slug: 'pastehot-norte', name: 'PasteHot Norte', area: 'Norte', is_active: true },
