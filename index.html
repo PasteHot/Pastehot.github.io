@@ -20,7 +20,7 @@
 <meta property="og:image" content="https://www.pastehot.com/favicon.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","url":"https://www.pastehot.com/","name":"PasteHot®","alternateName":"PasteHot"}</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="admin-multistore.js?v=2"></script>
+<script src="admin-multistore.js?v=3"></script>
 <style>
 *{box-sizing:border-box}
 :root{
@@ -688,16 +688,17 @@ async function reloadPublicSettings(){
 
 function startPublicRealtime(){
   if(publicRealtimeChannel)db.removeChannel(publicRealtimeChannel);
+  const branchFilter=window.PasteHotStoreId?`store_id=eq.${window.PasteHotStoreId}`:null;
   publicRealtimeChannel=db.channel("pastehot-public-live")
-    .on("postgres_changes",{event:"*",schema:"public",table:"products",...(window.PasteHotStoreId?{filter:`store_id=eq.${window.PasteHotStoreId}`}:{})},()=>{
+    .on("postgres_changes",{event:"*",schema:"public",table:"products",...(branchFilter?{filter:branchFilter}:{})},()=>{
       clearTimeout(publicProductsRefreshTimer);
       publicProductsRefreshTimer=setTimeout(()=>reloadProducts(),250);
     })
-    .on("postgres_changes",{event:"*",schema:"public",table:"settings",...(window.PasteHotStoreId?{filter:`store_id=eq.${window.PasteHotStoreId}`}:{})},()=>{
+    .on("postgres_changes",{event:"*",schema:"public",table:"settings",...(branchFilter?{filter:branchFilter}:{})},()=>{
       clearTimeout(publicSettingsRefreshTimer);
       publicSettingsRefreshTimer=setTimeout(()=>reloadPublicSettings(),250);
     })
-    .on("postgres_changes",{event:"*",schema:"public",table:"delivery_zones",...(window.PasteHotStoreId?{filter:`store_id=eq.${window.PasteHotStoreId}`}:{})},()=>{
+    .on("postgres_changes",{event:"*",schema:"public",table:"delivery_zones",...(branchFilter?{filter:branchFilter}:{})},()=>{
       clearTimeout(publicSettingsRefreshTimer);
       publicSettingsRefreshTimer=setTimeout(()=>revalidateCurrentDeliveryLocation(),250);
     })
@@ -711,7 +712,7 @@ window.addEventListener("online",refreshPublicAfterWake);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")refreshPublicAfterWake()});
 
 async function init(){
-  if(window.PasteHotMultiStore)await window.PasteHotMultiStore.setupPublic();
+  await window.PasteHotMultiStore?.setupPublic?.();
   const [pr,sr]=await Promise.all([
     db.from("products").select("*").order("sort_order",{ascending:true}).order("created_at",{ascending:true}),
     db.from("settings").select("key,value")

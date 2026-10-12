@@ -86,27 +86,104 @@
     if (document.getElementById('pastehotMultiStoreStyles')) return;
     const style = document.createElement('style');
     style.id = 'pastehotMultiStoreStyles';
-    style.textContent = `#pastehotStoreBar{position:sticky;top:0;z-index:1000;background:#171717;color:#fff;padding:10px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 3px 12px #0002}#pastehotStoreBar .ph-store-left{display:flex;gap:9px;align-items:center;flex-wrap:wrap}#pastehotStoreBar label{font-size:13px;font-weight:700}#pastehotStoreBar select{max-width:min(62vw,340px);padding:8px;border-radius:7px;border:1px solid #bbb;background:white;color:#171717}#pastehotStoreBar button,#pastehotStoreModal button,#pastehotPublicStorePicker button{border:0;border-radius:7px;padding:9px 12px;font-weight:700;background:#d71920;color:white;cursor:pointer}#pastehotStoreModal,#pastehotPublicStorePicker,#phStoreDeletePasswordModal{position:fixed;inset:0;z-index:2000;background:#0008;display:grid;place-items:center;padding:16px}#pastehotStoreModal[hidden],#pastehotPublicStorePicker[hidden]{display:none}#pastehotStoreModal .ph-modal-card,#pastehotPublicStorePicker .ph-modal-card,#phStoreDeletePasswordModal .ph-modal-card{background:white;color:#171717;border-radius:14px;padding:20px;width:min(600px,100%);max-height:88vh;overflow:auto;box-shadow:0 20px 60px #0004}#pastehotStoreModal .ph-modal-card{position:relative}#pastehotStoreModal #phStoreModalCloseX{position:absolute;top:9px;right:10px;background:transparent!important;color:#171717!important;border:0!important;border-radius:6px;padding:2px 9px;font-size:30px;line-height:1;cursor:pointer}#pastehotStoreModal #phStoreSaveMembers{background:#d71920!important;color:#fff!important}#pastehotStoreModal input,#pastehotStoreModal select,#pastehotPublicStorePicker select,#phStoreDeletePasswordModal input{width:100%;padding:10px;border:1px solid #ccd0d5;border-radius:7px;margin:5px 0 12px}#pastehotStoreModal .ph-modal-actions,#pastehotPublicStorePicker .ph-modal-actions,#phStoreDeletePasswordModal .ph-modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:18px}#pastehotStoreModal .ph-secondary,#phStoreDeletePasswordModal .ph-secondary{background:#eceef1;color:#171717}#pastehotStoreModal .ph-danger,#phStoreDeletePasswordModal .ph-danger{background:#b42318;color:white}#pastehotStoreModal button:disabled{opacity:.5;cursor:not-allowed}#pastehotStoreModal .ph-help,#pastehotPublicStorePicker .ph-help{font-size:13px;color:#555;line-height:1.45}#pastehotStoreModal .ph-member{display:flex;gap:10px;align-items:center;border-top:1px solid #eee;padding:9px 0}#pastehotStoreModal .ph-member input{width:auto;margin:0}#pastehotStoreModal .ph-notice{padding:10px;border-radius:8px;background:#fff4e5;margin-top:10px;font-size:13px}.ph-store-row{display:flex;gap:12px;align-items:center;justify-content:space-between;border-top:1px solid #eee;padding:12px 0}.ph-store-row-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.ph-store-row .ph-secondary{background:#eceef1!important;color:#171717!important}.ph-store-row .ph-danger{background:#b42318!important;color:white!important}@media(max-width:520px){#pastehotStoreBar{align-items:flex-start;flex-direction:column}#pastehotStoreBar select{max-width:100%;width:100%}.ph-store-row{align-items:flex-start;flex-direction:column}.ph-store-row-actions{justify-content:flex-start}}`;
+    style.textContent = `
+      #pastehotStoreBar{position:sticky;top:0;z-index:1000;padding:9px 18px;background:linear-gradient(110deg,#fffaf3,#f6e8d3 55%,#fff8ef);border-bottom:1px solid #ead8c1;box-shadow:0 5px 20px rgba(74,42,18,.09);display:flex;align-items:center;justify-content:center}
+      #pastehotStoreBar[data-public="false"]{background:#171717;color:#fff;padding:10px 14px;justify-content:space-between}
+      #pastehotStoreBar .ph-store-left{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+      #pastehotStoreBar label{font-size:13px;font-weight:700}
+      #pastehotStoreBar[data-public="false"] select{max-width:min(62vw,340px);padding:8px;border-radius:7px;border:1px solid #bbb;background:white;color:#171717}
+      #pastehotStoreBar .ph-store-trigger{display:flex;align-items:center;gap:11px;min-height:54px;padding:6px 15px 6px 7px;border:1px solid #ead7c0;border-radius:999px;background:rgba(255,255,255,.96);color:#392718;box-shadow:0 5px 16px rgba(88,49,18,.1);cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+      #pastehotStoreBar .ph-store-trigger:hover{transform:translateY(-1px);border-color:#d7a85f;box-shadow:0 8px 22px rgba(88,49,18,.16)}
+      #pastehotStoreBar .ph-store-trigger:focus-visible,#pastehotPublicStorePicker button:focus-visible{outline:3px solid rgba(215,25,32,.32);outline-offset:3px}
+      .ph-store-mark{width:40px;height:40px;display:grid;place-items:center;flex:0 0 40px;border-radius:50%;background:linear-gradient(145deg,#d71920,#a90f15);color:#fff;box-shadow:inset 0 0 0 3px rgba(255,255,255,.22)}
+      .ph-store-mark svg{width:21px;height:21px}
+      .ph-store-copy{display:grid;gap:1px;text-align:left}
+      .ph-store-copy small{font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:#946633;font-weight:900}
+      .ph-store-copy strong{font-size:15px;line-height:1.15;color:#351f12}
+      .ph-store-chevron{width:17px;height:17px;color:#9b6b36;margin-left:4px;transition:transform .18s ease}
+      .ph-store-trigger[aria-expanded="true"] .ph-store-chevron{transform:rotate(180deg)}
+      #pastehotStoreBar button:not(.ph-store-trigger),#pastehotStoreModal button{border:0;border-radius:7px;padding:9px 12px;font-weight:700;background:#d71920;color:white;cursor:pointer}
+      #pastehotStoreModal,#pastehotPublicStorePicker,#phStoreDeletePasswordModal{position:fixed;inset:0;z-index:2000;background:rgba(35,20,10,.58);backdrop-filter:blur(5px);display:grid;place-items:center;padding:16px}
+      #pastehotStoreModal[hidden],#pastehotPublicStorePicker[hidden]{display:none}
+      #pastehotStoreModal .ph-modal-card,#phStoreDeletePasswordModal .ph-modal-card{background:white;color:#171717;border-radius:14px;padding:20px;width:min(600px,100%);max-height:88vh;overflow:auto;box-shadow:0 20px 60px #0004}
+      #pastehotPublicStorePicker .ph-picker-card{position:relative;width:min(520px,100%);max-height:min(88vh,820px);overflow:auto;padding:0;border:1px solid #f0dfc8;border-radius:26px;background:#fffaf3;color:#2b1a10;box-shadow:0 28px 90px rgba(25,12,4,.38);animation:phPickerEnter .24s ease-out}
+      @keyframes phPickerEnter{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+      #pastehotPublicStorePicker .ph-picker-ribbon{height:10px;background:linear-gradient(90deg,#a90f15,#d71920 48%,#efbd57 48%,#efbd57 53%,#d71920 53%,#a90f15)}
+      #pastehotPublicStorePicker .ph-picker-head{padding:27px 28px 12px;text-align:center}
+      #pastehotPublicStorePicker .ph-picker-logo{width:70px;height:70px;object-fit:contain;padding:7px;margin-bottom:11px;border-radius:50%;background:#fff;box-shadow:0 7px 22px rgba(71,40,18,.13)}
+      #pastehotPublicStorePicker .ph-picker-eyebrow{margin:0 0 7px;color:#a46d2d;font-size:10px;font-weight:950;letter-spacing:.17em}
+      #pastehotPublicStorePicker h2{margin:0;color:#2b1a10;font-size:clamp(23px,5vw,29px);line-height:1.13;letter-spacing:-.03em}
+      #pastehotPublicStorePicker .ph-picker-intro{max-width:390px;margin:9px auto 0;color:#746250;font-size:14px;line-height:1.5}
+      #pastehotPublicStorePicker .ph-picker-form{padding:9px 22px 22px}
+      #pastehotPublicStorePicker .ph-picker-list{display:grid;gap:10px}
+      #pastehotPublicStorePicker .ph-store-choice{position:relative;display:grid;grid-template-columns:44px minmax(0,1fr) 23px;gap:12px;align-items:center;padding:12px 14px;border:1px solid #eadcc9;border-radius:17px;background:#fff;cursor:pointer;transition:border-color .16s ease,background .16s ease,transform .16s ease,box-shadow .16s ease}
+      #pastehotPublicStorePicker .ph-store-choice:hover{transform:translateY(-1px);border-color:#d9b879;box-shadow:0 6px 15px rgba(95,59,23,.08)}
+      #pastehotPublicStorePicker .ph-store-choice.is-selected{border:1.5px solid #c72523;background:linear-gradient(110deg,#fff8ef,#fff);box-shadow:0 0 0 3px rgba(215,25,32,.08)}
+      #pastehotPublicStorePicker .ph-choice-radio{position:absolute;width:1px;height:1px;opacity:0}
+      #pastehotPublicStorePicker .ph-choice-radio:focus-visible+.ph-choice-icon{outline:3px solid rgba(215,25,32,.3);outline-offset:3px}
+      #pastehotPublicStorePicker .ph-choice-icon{width:44px;height:44px;display:grid;place-items:center;border-radius:14px;background:#fff0dc;color:#b32320}
+      #pastehotPublicStorePicker .ph-choice-icon svg{width:22px;height:22px}
+      #pastehotPublicStorePicker .ph-choice-copy{display:grid;gap:3px;min-width:0}
+      #pastehotPublicStorePicker .ph-choice-copy small{color:#aa773b;font-size:9px;font-weight:950;letter-spacing:.13em;text-transform:uppercase}
+      #pastehotPublicStorePicker .ph-choice-copy strong{color:#322014;font-size:15px;overflow-wrap:anywhere}
+      #pastehotPublicStorePicker .ph-choice-copy span{color:#776654;font-size:12px}
+      #pastehotPublicStorePicker .ph-choice-check{width:21px;height:21px;border:1.5px solid #d9c9b4;border-radius:50%;display:grid;place-items:center;color:transparent}
+      #pastehotPublicStorePicker .is-selected .ph-choice-check{border-color:#c72523;background:#c72523;color:white}
+      #pastehotPublicStorePicker .ph-choice-check svg{width:13px;height:13px}
+      #pastehotPublicStorePicker .ph-picker-footer{display:grid;gap:10px;margin-top:16px}
+      #pastehotPublicStorePicker .ph-picker-note{margin:0;text-align:center;color:#897560;font-size:11px;line-height:1.4}
+      #pastehotPublicStorePicker .ph-explore-button{display:flex;justify-content:center;align-items:center;gap:9px;width:100%;min-height:51px;padding:13px 18px;border:0;border-radius:14px;background:linear-gradient(135deg,#d71920,#ac1017);color:#fff;font-size:15px;font-weight:950;box-shadow:0 8px 18px rgba(177,21,27,.23);transition:transform .16s ease,box-shadow .16s ease}
+      #pastehotPublicStorePicker .ph-explore-button:hover{transform:translateY(-1px);box-shadow:0 11px 22px rgba(177,21,27,.29)}
+      #pastehotPublicStorePicker .ph-explore-button svg{width:18px;height:18px}
+      #pastehotPublicStorePicker .ph-picker-close{position:absolute;top:18px;right:18px;z-index:1;width:36px;height:36px;border:1px solid #eadcc9;border-radius:50%;background:#fff;color:#533d2a;padding:0;font-size:22px;line-height:1;display:grid;place-items:center}
+      #pastehotStoreModal .ph-modal-card{position:relative}
+      #pastehotStoreModal #phStoreModalCloseX{position:absolute;top:9px;right:10px;background:transparent;color:#171717;border:0;border-radius:6px;padding:2px 9px;font-size:30px;line-height:1;cursor:pointer}
+      #pastehotStoreModal #phStoreSaveMembers{background:#d71920;color:#fff}
+      #pastehotStoreModal input,#pastehotStoreModal select,#phStoreDeletePasswordModal input{width:100%;padding:10px;border:1px solid #ccd0d5;border-radius:7px;margin:5px 0 12px}
+      #pastehotStoreModal .ph-modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:18px}
+      #pastehotStoreModal .ph-secondary,#phStoreDeletePasswordModal .ph-secondary{background:#eceef1;color:#171717}
+      #pastehotStoreModal .ph-danger,#phStoreDeletePasswordModal .ph-danger{background:#b42318;color:white}
+      #pastehotStoreModal button:disabled{opacity:.5;cursor:not-allowed}
+      #pastehotStoreModal .ph-help{font-size:13px;color:#555;line-height:1.45}
+      #pastehotStoreModal .ph-member{display:flex;gap:10px;align-items:center;border-top:1px solid #eee;padding:9px 0}
+      #pastehotStoreModal .ph-member input{width:auto;margin:0}
+      #pastehotStoreModal .ph-notice{padding:10px;border-radius:8px;background:#fff4e5;margin-top:10px;font-size:13px}
+      .ph-store-row{display:flex;gap:12px;align-items:center;justify-content:space-between;border-top:1px solid #eee;padding:12px 0}
+      .ph-store-row-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+      .ph-store-row .ph-secondary{background:#eceef1;color:#171717}
+      .ph-store-row .ph-danger{background:#b42318;color:white}
+      @media(max-width:520px){#pastehotStoreBar{padding:8px 10px}.ph-store-copy strong{font-size:14px}#pastehotPublicStorePicker{padding:12px}#pastehotPublicStorePicker .ph-picker-head{padding:25px 20px 10px}#pastehotPublicStorePicker .ph-picker-form{padding:8px 15px 17px}#pastehotPublicStorePicker .ph-picker-close{top:12px;right:12px}.ph-store-row{align-items:flex-start;flex-direction:column}.ph-store-row-actions{justify-content:flex-start}}
+    `;
     document.head.appendChild(style);
   }
-  function choosePublicStore(activeStores) {
+  function choosePublicStore(activeStores, selectedId = '', { changeStore = false } = {}) {
     addStyles();
     return new Promise(resolve => {
       const modal = document.createElement('div');
       modal.id = 'pastehotPublicStorePicker';
-      modal.innerHTML = `<section class="ph-modal-card" role="dialog" aria-modal="true" aria-labelledby="phPublicStoreTitle"><h2 id="phPublicStoreTitle">Selecciona la sucursal más cercana a ti</h2><p class="ph-help">Elige dónde quieres comprar para ver los productos y existencias de esa sucursal.</p><form id="phPublicStoreForm"><label for="phPublicStoreSelect">Sucursal</label><select id="phPublicStoreSelect" required><option value="">Elige una sucursal</option>${storeOptions('', activeStores)}</select><div class="ph-modal-actions"><button type="submit">Explorar tienda</button></div></form></section>`;
+      const pin = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="10" r="2.3" stroke="currentColor" stroke-width="1.8"/></svg>';
+      const check = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12 4 4L19 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      modal.innerHTML = `<section class="ph-picker-card" role="dialog" aria-modal="true" aria-labelledby="phPublicStoreTitle"><div class="ph-picker-ribbon"></div>${changeStore ? '<button type="button" class="ph-picker-close" aria-label="Cerrar selector">×</button>' : ''}<header class="ph-picker-head"><img class="ph-picker-logo" src="/favicon.png" alt="PasteHot"><p class="ph-picker-eyebrow">PASTEHOT · MÉRIDA</p><h2 id="phPublicStoreTitle">Selecciona la sucursal más cercana a ti</h2><p class="ph-picker-intro">Elige dónde quieres comprar. Cada tienda tiene su propio menú y existencias.</p></header><form id="phPublicStoreForm" class="ph-picker-form"><div class="ph-picker-list" role="radiogroup" aria-label="Sucursales disponibles">${activeStores.map((store,index)=>`<label class="ph-store-choice ${store.id===selectedId?'is-selected':''}"><input class="ph-choice-radio" type="radio" name="phPublicStore" value="${safe(store.id)}" ${store.id===selectedId?'checked':''} required><span class="ph-choice-icon">${pin}</span><span class="ph-choice-copy"><small>Sucursal ${String(index+1).padStart(2,'0')}</small><strong>${safe(store.name)}</strong><span>${store.area?`📍 ${safe(store.area)}`:'Pastes recién horneados, cerca de ti'}</span></span><span class="ph-choice-check">${check}</span></label>`).join('')}</div><div class="ph-picker-footer"><p class="ph-picker-note">Antes de explorar, confirma que elegiste la zona que te queda mejor.</p><button type="submit" class="ph-explore-button">Explorar tienda <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></form></section>`;
       document.body.prepend(modal);
-      const select = modal.querySelector('#phPublicStoreSelect');
-      select.focus();
-      modal.querySelector('#phPublicStoreForm').addEventListener('submit', event => {
+      const form = modal.querySelector('#phPublicStoreForm');
+      const trigger = document.getElementById('phPublicStoreTrigger');
+      if (trigger) trigger.setAttribute('aria-expanded', 'true');
+      const close = () => { modal.remove(); if (trigger) { trigger.setAttribute('aria-expanded', 'false'); trigger.focus(); } };
+      modal.querySelectorAll('input[name="phPublicStore"]').forEach(input => input.addEventListener('change', () => {
+        modal.querySelectorAll('.ph-store-choice').forEach(choice => choice.classList.toggle('is-selected', choice.contains(input) && input.checked));
+      }));
+      modal.querySelector('.ph-picker-close')?.addEventListener('click', close);
+      (modal.querySelector('input[name="phPublicStore"]:checked') || modal.querySelector('input[name="phPublicStore"]'))?.focus();
+      form.addEventListener('submit', event => {
         event.preventDefault();
-        const store = activeStores.find(item => item.id === select.value);
+        const store = activeStores.find(item => item.id === form.querySelector('input[name="phPublicStore"]:checked')?.value);
         if (!store) return;
         persistSelection(store);
         const url = new URL(location.href);
         url.searchParams.set('sucursal', store.slug);
-        history.replaceState(null, '', url);
-        modal.remove();
+        if (changeStore) location.assign(url.toString());
+        else history.replaceState(null, '', url);
+        close();
         resolve(store);
       });
     });
@@ -117,16 +194,19 @@
     addStyles();
     const bar = document.createElement('div');
     bar.id = 'pastehotStoreBar';
+    bar.dataset.public = String(isPublic);
     const canManage = !isPublic && selected.can_manage === true;
     const options = isPublic ? stores.filter(store => store.is_active) : stores;
-    bar.innerHTML = `<div class="ph-store-left"><label for="pastehotStoreSelect">${isPublic ? 'Sucursal' : 'Administras'}</label><select id="pastehotStoreSelect" aria-label="Seleccionar sucursal">${storeOptions(selected.id, options)}</select>${isDemo ? '<span aria-label="Modo demo">Vista de prueba</span>' : ''}</div>${canManage ? '<button type="button" id="pastehotManageStores">Sucursales</button>' : ''}`;
+    bar.innerHTML = isPublic
+      ? `<div class="ph-store-left"><button type="button" id="phPublicStoreTrigger" class="ph-store-trigger" aria-haspopup="dialog" aria-expanded="false" aria-label="Cambiar sucursal. Sucursal ${safe(selected.name)}"><span class="ph-store-mark"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="10" r="2.3" stroke="currentColor" stroke-width="1.8"/></svg></span><span class="ph-store-copy"><small>Sucursal</small><strong>${safe(selected.name)}</strong></span><svg class="ph-store-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>${isDemo ? '<span aria-label="Modo demo">Vista de prueba</span>' : ''}</div>`
+      : `<div class="ph-store-left"><label for="pastehotStoreSelect">Administras</label><select id="pastehotStoreSelect" aria-label="Seleccionar sucursal">${storeOptions(selected.id, options)}</select>${isDemo ? '<span aria-label="Modo demo">Vista de prueba</span>' : ''}</div>${canManage ? '<button type="button" id="pastehotManageStores">Sucursales</button>' : ''}`;
     if (isPublic) document.body.prepend(bar);
     else {
       const admin = document.getElementById('adminScreen');
       if (!admin) return;
       admin.prepend(bar);
     }
-    document.getElementById('pastehotStoreSelect').addEventListener('change', event => {
+    document.getElementById('pastehotStoreSelect')?.addEventListener('change', event => {
       const store = stores.find(item => item.id === event.target.value);
       if (!store) return;
       persistSelection(store);
@@ -136,6 +216,7 @@
         location.assign(url.toString());
       } else location.reload();
     });
+    document.getElementById('phPublicStoreTrigger')?.addEventListener('click', () => choosePublicStore(stores.filter(store => store.is_active), selected.id, { changeStore: true }));
     document.getElementById('pastehotManageStores')?.addEventListener('click', openManager);
   }
   function ensureModal() {
