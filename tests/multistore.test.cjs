@@ -31,8 +31,13 @@ const { PGlite } = require('@electric-sql/pglite');
     };
     return query;
   }
+  const teamMembers = [
+    { user_id: 'assigned-1', display_name: 'Ana', email: 'ana@example.com', role: 'empleada', assigned: true, enabled: true },
+    { user_id: 'other-store-1', display_name: 'Luis', email: 'luis@example.com', role: 'empleado', assigned: false, enabled: true },
+    { user_id: 'inactive-1', display_name: 'Marta', email: 'marta@example.com', role: 'empleada', assigned: true, enabled: false }
+  ];
   window.db = {
-    rpc: async name => name === 'pastehot_list_stores' ? { data: stores, error: null } : { data: true, error: null },
+    rpc: async name => name === 'pastehot_list_stores' ? { data: stores, error: null } : name === 'pastehot_list_store_members' ? { data: teamMembers, error: null } : { data: true, error: null },
     from: table => { calls.push(['from', table]); return builder(); }
   };
   window.adminRole = 'owner';
@@ -60,6 +65,15 @@ const { PGlite } = require('@electric-sql/pglite');
   assert.equal(settingsUpsert[2].onConflict, 'store_id,key');
   assert.equal(rpcArgs.p_store_id, selected);
   assert.equal(window.document.querySelector('#pastehotManageStores') !== null, true);
+  window.document.querySelector('#pastehotManageStores').click();
+  await new Promise(resolve => setImmediate(resolve));
+  const storeModal = window.document.querySelector('#pastehotStoreModal');
+  assert.equal(storeModal.querySelectorAll('#phStoreMembers [data-ph-user]').length, 1, 'access list only shows active staff assigned to the selected branch');
+  assert.equal(storeModal.querySelector('#phStoreMembers [data-ph-user]').dataset.phUser, 'assigned-1');
+  assert.match(storeModal.querySelector('#phStoreModalCloseX').textContent, /×/, 'branch modal includes a close X');
+  assert.equal(storeModal.querySelector('#phStoreSaveMembers').classList.contains('ph-secondary'), false, 'save access button uses the red primary styling');
+  storeModal.querySelector('#phStoreModalCloseX').click();
+  assert.equal(storeModal.hidden, true, 'X closes the branch modal');
   assert.match(foundationSql, /alter table public\.orders alter column store_id set not null/i);
   assert.match(foundationSql, /create policy order_items_branch_staff_recent/i);
   assert.doesNotMatch(foundationSql, /create policy orders_branch_insert/i, 'checkout must go through its validating RPC');
