@@ -344,29 +344,24 @@
     if (!password) return;
     let imageCleanupError = null;
     try {
-      const { data: current, error: currentError } = await db.auth.getUser();
-      if (currentError || !current?.user?.email || !current?.user?.id) throw new Error('No se pudo verificar la cuenta propietaria activa.');
-      const currentUserId = current.user.id;
-      const { data: verified, error: passwordError } = await db.auth.signInWithPassword({ email: current.user.email, password });
-      password = '';
-      if (passwordError || verified?.user?.id !== currentUserId) throw new Error('La contraseña no corresponde a la cuenta propietaria principal.');
-      if (verified?.session?.access_token && verified?.session?.refresh_token) {
-        const { error: sessionError } = await db.auth.setSession({ access_token: verified.session.access_token, refresh_token: verified.session.refresh_token });
-        if (sessionError) throw new Error('La contraseña se verificó, pero no se pudo actualizar la sesión segura. Intenta de nuevo.');
-      } else {
-        throw new Error('Supabase no devolvió una sesión nueva para confirmar la contraseña.');
-      }
       let deleted;
       if (isDemo) {
+        password = '';
         stores = stores.filter(item => item.id !== store.id);
         persistDemoStores();
         deleted = true;
       } else {
         let imagePaths = [];
         try { imagePaths = await storeImagePaths(store.id); } catch (storageError) { imageCleanupError = storageError; }
-        const { data, error } = await db.rpc('pastehot_delete_store', { p_store_id: store.id });
-        if (error) throw error;
-        if (!data || (data.id && data.id !== store.id)) throw new Error('La base de datos no confirmó la sucursal eliminada.');
+        const { data, error } = await db.functions.invoke('pastehot-delete-store', { body: { storeId: store.id, password } });
+        password = '';
+        if (error || data?.error || data?.ok !== true) {
+          let message = data?.error;
+          try { if (!message && error?.context?.json) message = (await error.context.json())?.error; } catch {}
+          throw new Error(message || 'La base de datos no confirmó la sucursal eliminada.');
+        }
+        const result = data.store;
+        if (!result || (result.id && result.id !== store.id)) throw new Error('La base de datos no confirmó la sucursal eliminada.');
         deleted = true;
         // Database deletion is authoritative. Storage cleanup errors must not
         // leave the store row and its sales behind.
@@ -484,6 +479,7 @@
   }
 
   window.PasteHotMultiStore = {
+    getCurrentStore() { return currentStore(); },
     async setupAdmin() {
       await fetchStores();
       if (!stores.length) return !storeListAvailable; // Keep compatibility before the migration; deny users with no branch after it.
