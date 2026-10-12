@@ -15,6 +15,7 @@ const {JSDOM}=require('jsdom');
   create table public.orders(id uuid primary key default gen_random_uuid(),store_id uuid not null references public.stores(id),order_code text,customer_name text not null,customer_phone text not null,delivery_type text not null,address text,notes text,payment_method text not null,payment_status text not null,order_status text not null,subtotal numeric not null,delivery_cost numeric not null,delivery_fee numeric,total numeric not null,items jsonb,inventory_applied boolean not null,inventory_restored boolean not null,created_at timestamptz not null default now());
  `);
  const migration=fs.readFileSync(path.join(__dirname,'../supabase/migrations/20261012175134_point_of_sale_cash_register.sql'),'utf8');await pg.exec(migration);
+ const cancellationMigration=fs.readFileSync(path.join(__dirname,'../supabase/migrations/20261012192332_pos_sale_cancellation.sql'),'utf8');await pg.exec(cancellationMigration);
  const store='22222222-2222-4222-8222-222222222222',user='99999999-9999-4999-8999-999999999999',product='33333333-3333-4333-8333-333333333333';
  await pg.query('insert into auth.users values($1)',[user]);await pg.query('insert into public.stores values($1,true)',[store]);await pg.query('insert into public.products(id,store_id,name,category,price,available,track_stock,stock) values($1,$2,$3,$4,25,true,true,5)',[product,store,'Paste de prueba','Salados']);
  await pg.query("select set_config('request.jwt',$1,false)",[JSON.stringify({sub:user,email:'ana@pastehot.com',user_metadata:{full_name:'Ana'}})]);
@@ -24,27 +25,43 @@ const {JSDOM}=require('jsdom');
  assert.equal((await pg.query('select stock from public.products where id=$1',[product])).rows[0].stock,3,'POS sale deducts the branch inventory atomically');
  await assert.rejects(pg.query("select public.pastehot_pos_create_sale($1,$2,'card',$3::jsonb,null)",[store,shift.id,JSON.stringify([{product_id:product,quantity:4}])]),/STOCK_INSUFICIENTE/);
  const closed=await pg.query('select public.pastehot_pos_close_shift($1,$2,550) as shift',[store,shift.id]);assert.equal(closed.rows[0].shift.expected_cash,550);assert.equal(closed.rows[0].shift.cash_difference,0);assert.equal(closed.rows[0].shift.opened_by_name,'Ana');assert.equal(closed.rows[0].shift.closed_by_name,'Ana');
- const report=await pg.query('select public.pastehot_pos_report($1,null,now()+interval \'1 day\') as report',[store]);assert.equal(report.rows[0].report.channels[0].channel,'Punto de venta');assert.equal(report.rows[0].report.payments[0].method,'Efectivo');assert.equal(report.rows[0].report.shifts[0].sales_count,1);
+ const report=await pg.query('select public.pastehot_pos_report($1,null,now()+interval \'1 day\') as report',[store]);assert.equal(report.rows[0].report.channels[0].channel,'Punto de venta');assert.equal(report.rows[0].report.payments[0].method,'Efectivo');assert.equal(report.rows[0].report.shifts[0].sales_count,1);assert.equal(report.rows[0].report.shifts[0].canceled_count,0);
+ await assert.rejects(pg.query('select public.pastehot_pos_cancel_sale($1,$2)', ['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',sale.rows[0].sale.id]),/VENTA_POS_NO_ENCONTRADA/,'cancellation cannot target a sale belonging to another branch');
+ const canceled=await pg.query('select public.pastehot_pos_cancel_sale($1,$2) as result',[store,sale.rows[0].sale.id]);assert.equal(canceled.rows[0].result.order_status,'cancelado');assert.equal(canceled.rows[0].result.inventory_restored,true);assert.equal(canceled.rows[0].result.canceled_by_name,'Ana');
+ assert.equal((await pg.query('select stock from public.products where id=$1',[product])).rows[0].stock,5,'cancelling a POS sale returns tracked stock to this branch');
+ const canceledAgain=await pg.query('select public.pastehot_pos_cancel_sale($1,$2) as result',[store,sale.rows[0].sale.id]);assert.equal(canceledAgain.rows[0].result.already_canceled,true);
+ assert.equal((await pg.query('select stock from public.products where id=$1',[product])).rows[0].stock,5,'repeating cancellation must not add the same stock twice');
+ const canceledReport=await pg.query('select public.pastehot_pos_report($1,null,now()+interval \'1 day\') as report',[store]);assert.equal(canceledReport.rows[0].report.channels.length,0,'canceled POS sales are excluded from active revenue');assert.equal(canceledReport.rows[0].report.shifts[0].sales_count,0);assert.equal(canceledReport.rows[0].report.shifts[0].canceled_count,1);assert.equal(canceledReport.rows[0].report.shifts[0].canceled_total,50);
  await pg.close();
  const html=fs.readFileSync(path.join(__dirname,'../admin.html'),'utf8'),pos=fs.readFileSync(path.join(__dirname,'../admin-pos.js'),'utf8');
- assert.match(html,/id="section-pos"/);assert.match(html,/id="posSalesSummary"/);assert.match(pos,/p_payment_method:method/);assert.match(pos,/pastehot_pos_create_sale/);
- const posHtml='<form id="posOpenShiftForm"><input id="posOpeningCash" value="100"><button id="openShiftButton" type="submit">Abrir</button></form><div id="posShiftStatus"></div><form id="posCloseForm" class="hidden"><strong id="posCloseOpeningCash"></strong></form><section id="posSaleCard" class="hidden"><input id="posSearch"><div id="posProducts"></div><div id="posCart"></div><div id="posTotal"></div><select id="posPayment"><option value="cash">cash</option><option value="transfer">transfer</option><option value="card">card</option></select><div id="posTransferDetails" class="hidden"></div><input id="posCashReceived"><div id="posCashReceivedWrap"></div><div id="posChange"></div><form id="posSaleForm"></form><div id="posSaleResult" class="hidden"></div><span id="posSaleCode"></span><span id="posSaleTotal"></span><span id="posSaleChange"></span></section><div id="posMessage"></div><button id="posReportRefresh"></button><button id="posReportPrint"></button><input id="posReportDay"><select id="posReportPeriod"></select><div id="posSalesSummary"></div>';
+ assert.match(html,/id="section-pos"/);assert.match(html,/id="posSalesSummary"/);assert.match(html,/id="posRecentSales"/);assert.match(pos,/p_payment_method:method/);assert.match(pos,/pastehot_pos_create_sale/);assert.match(pos,/pastehot_pos_cancel_sale/);
+ const posHtml='<form id="posOpenShiftForm"><input id="posOpeningCash" value="100"><button id="openShiftButton" type="submit">Abrir</button></form><div id="posShiftStatus"></div><form id="posCloseForm" class="hidden"><strong id="posCloseOpeningCash"></strong></form><section id="posSaleCard" class="hidden"><input id="posSearch"><div id="posProducts"></div><div id="posCart"></div><div id="posTotal"></div><select id="posPayment"><option value="cash">cash</option><option value="transfer">transfer</option><option value="card">card</option></select><div id="posTransferDetails" class="hidden"></div><input id="posCashReceived"><div id="posCashReceivedWrap"></div><div id="posChange"></div><form id="posSaleForm"></form><div id="posSaleResult" class="hidden"></div><span id="posSaleCode"></span><span id="posSaleTotal"></span><span id="posSaleChange"></span></section><div id="posRecentSales"></div><div id="posMessage"></div><button id="posReportRefresh"></button><button id="posReportPrint"></button><input id="posReportDay"><select id="posReportPeriod"></select><div id="posSalesSummary"></div>';
  const ui=new JSDOM(posHtml,{url:'https://www.pastehot.com/admin.html',runScripts:'outside-only'}),w=ui.window;
- const testProduct={id:'product-1',name:'Paste de prueba',category:'Salados',price:25,available:true,track_stock:true,stock:4};
+ const testProduct={id:'product-1',name:'Paste de prueba',category:'Salados',price:25,available:true,track_stock:true,stock:3};
+ const testPosSale={id:'sale-ui-1',order_code:'PV-UI-0001',created_at:new Date().toISOString(),total:25,payment_method:'transfer',order_status:'entregado',items:[{name:'Paste de prueba',quantity:1}],cashier_name:'Ana',canceled_by_name:null};
  let currentShift=null;
  w.PasteHotStoreId=store;
  const testBankSettings=[{key:'bank_name',value:'Banco Demo'},{key:'bank_holder',value:'PasteHot S.A.'},{key:'bank_clabe',value:'012345678901234567'}];
  w.db={
-  from(table){const q={select(){return q},order(){return q},in(){return q},then(resolve,reject){return Promise.resolve({data:table==='settings'?testBankSettings:[testProduct],error:null}).then(resolve,reject)}};return q},
-  rpc:async(name)=>{
+  from(table){const q={select(){return q},order(){return q},in(){return q},eq(){return q},limit(){return q},then(resolve,reject){return Promise.resolve({data:table==='settings'?testBankSettings:table==='orders'?[{...testPosSale}]:[testProduct],error:null}).then(resolve,reject)}};return q},
+  rpc:async(name,args)=>{
    if(name==='pastehot_pos_current_shift')return {data:currentShift,error:null};
    if(name==='pastehot_pos_open_shift'){currentShift={id:'shift-ui',opened_by_name:'Ana',opening_cash:100,opened_at:new Date().toISOString()};return {data:currentShift,error:null}}
+   if(name==='pastehot_pos_cancel_sale'){assert.equal(args.p_order_id,'sale-ui-1');testProduct.stock+=1;testPosSale.order_status='cancelado';testPosSale.canceled_by_name='Ana';return {data:{id:testPosSale.id,order_status:'cancelado',inventory_restored:true,already_canceled:false},error:null}}
    return {data:null,error:null};
   }
  };
+ w.confirm=()=>true;
  w.eval(pos);
  await new Promise(resolve=>w.addEventListener('DOMContentLoaded',resolve,{once:true}));
  await w.loadPosWorkspace();
+ assert.match(w.document.querySelector('#posRecentSales').textContent,/PV-UI-0001/,'the POS shows recent sales for cancellation review');
+ w.document.querySelector('#posRecentSales [data-pos-cancel]').click();
+ await new Promise(resolve=>setImmediate(resolve));
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.match(w.document.querySelector('#posMessage').textContent,/Venta PV-UI-0001 cancelada/);
+ assert.equal(testProduct.stock,4,'the UI refreshes stock after cancellation');
+ assert.match(w.document.querySelector('#posRecentSales').textContent,/Inventario devuelto/);
  assert.equal(w.document.querySelector('#posTransferDetails').classList.contains('hidden'),true,'bank details stay hidden for cash');
  const payment=w.document.querySelector('#posPayment');payment.value='transfer';payment.dispatchEvent(new w.Event('change',{bubbles:true}));
  assert.equal(w.document.querySelector('#posTransferDetails').classList.contains('hidden'),false,'transfer selection reveals bank details');
@@ -66,5 +83,5 @@ const {JSDOM}=require('jsdom');
  assert.equal(w.document.querySelector('#posOpenShiftForm').classList.contains('hidden'),true,'a previously opened shift is restored after refreshing POS');
  assert.equal(w.document.querySelector('#posSaleCard').classList.contains('hidden'),false,'products remain available with the restored shift');
  ui.window.close();
- console.log('POS cash, stock, shift, report, and interface checks passed.');
+ console.log('POS cash, transfer details, stock, cancellation, shift, report, and interface checks passed.');
 })().catch(e=>{console.error(e);process.exitCode=1});

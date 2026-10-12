@@ -81,6 +81,12 @@
       const n=state.posCounter++,sale={id:uuid(n),store_id:store,order_code:'PV-DEMO-'+String(n).padStart(4,'0'),customer_name:'Venta en punto de venta',customer_phone:'',delivery_type:'point_of_sale',payment_method:a.p_payment_method,payment_status:'paid',order_status:'entregado',created_at:new Date().toISOString(),items:saleItems,subtotal:total,total,delivery_fee:0,inventory_applied:true,inventory_restored:false,sale_channel:'point_of_sale',cashier_id:currentUser(),cashier_name:actor,register_shift_id:shift.id,cash_received:a.p_payment_method==='cash'?Number(a.p_cash_received):null,cash_change:a.p_payment_method==='cash'?Number(a.p_cash_received)-total:0};
       tables.orders.unshift(sale);emit('orders',sale);return {data:{...sale},error:null};
     }
+    if(name==='pastehot_pos_cancel_sale'){
+      const sale=tables.orders.find(o=>o.id===a.p_order_id&&o.store_id===store&&o.sale_channel==='point_of_sale');if(!sale)return {data:null,error:{message:'VENTA_POS_NO_ENCONTRADA'}};
+      if(sale.order_status==='cancelado')return {data:{id:sale.id,order_status:'cancelado',inventory_restored:sale.inventory_restored,already_canceled:true},error:null};
+      if(sale.inventory_applied&&!sale.inventory_restored){for(const item of sale.items||[]){if(!item.stock_tracked)continue;const product=tables.products.find(p=>p.id===item.product_id&&p.store_id===store);if(product){product.stock+=Number(item.quantity||0);product.updated_at=new Date().toISOString();emit('products',product,'UPDATE');}}}
+      Object.assign(sale,{order_status:'cancelado',inventory_restored:!!sale.inventory_applied,canceled_at:new Date().toISOString(),canceled_by_name:actor});emit('orders',sale,'UPDATE');return {data:{id:sale.id,order_status:sale.order_status,inventory_restored:sale.inventory_restored,canceled_at:sale.canceled_at,canceled_by_name:actor,already_canceled:false},error:null};
+    }
     if(name==='pastehot_pos_close_shift'){
       const shift=active();if(!shift||shift.id!==a.p_shift_id)return {data:null,error:{message:'CAJA_CERRADA'}};
       const sales=tables.orders.filter(o=>o.store_id===store&&o.register_shift_id===shift.id&&o.order_status!=='cancelado');const cash=sales.filter(o=>o.payment_method==='cash').reduce((sum,o)=>sum+Number(o.total||0),0);
@@ -119,7 +125,7 @@
       if(state.offline)return {data:null,error:{message:'Sin conexión de prueba'}};
       if(['pastehot_store_state','pastehot_store_history','pastehot_set_store_closed'].includes(name))return demoStoreRpc(name,args);
       if(['pastehot_order_page','pastehot_sales_summary'].includes(name))return demoReportRpc(name,args);
-      if(['pastehot_pos_current_shift','pastehot_pos_open_shift','pastehot_pos_close_shift','pastehot_pos_create_sale','pastehot_pos_report'].includes(name))return demoPosRpc(name,args);
+      if(['pastehot_pos_current_shift','pastehot_pos_open_shift','pastehot_pos_close_shift','pastehot_pos_create_sale','pastehot_pos_cancel_sale','pastehot_pos_report'].includes(name))return demoPosRpc(name,args);
       if(name==='pastehot_admin_state')return {data:access(),error:null};
       if(name==='pastehot_list_store_team'){if(!access().allowed)return {data:null,error:{message:'NO_AUTORIZADO'}};return {data:state.members.filter(m=>state.role!=='manager'||m.role==='staff'||m.user_id===currentUser()).map(m=>({...m,current:m.user_id===currentUser()})),error:null};}
       if(name==='pastehot_get_member_password'){if(state.role!=='owner'||state.delegated)return {data:null,error:{message:'NO_AUTORIZADO'}};const value=state.passwords[args.p_user_id];return value?{data:value,error:null}:{data:null,error:{message:'CONTRASENA_NO_DISPONIBLE'}};}
