@@ -246,7 +246,10 @@ create policy settings_branch_select on public.settings for select to anon,authe
 create policy settings_branch_owner_manage on public.settings for all to authenticated using (private.pastehot_store_owner_allowed(store_id)) with check (private.pastehot_store_owner_allowed(store_id));
 create policy settings_branch_manager_update on public.settings for update to authenticated using (
   private.pastehot_store_manager_allowed(store_id) and key=any(array['delivery_transfer_only','rain_surcharge_enabled','rain_surcharge_amount','rain_surcharge_message','batch_timer_enabled','batch_duration_minutes','batch_fresh_minutes','batch_label','batch_finished_message'])
-) with check (private.pastehot_store_manager_allowed(store_id));
+) with check (
+  private.pastehot_store_manager_allowed(store_id)
+  and key=any(array['delivery_transfer_only','rain_surcharge_enabled','rain_surcharge_amount','rain_surcharge_message','batch_timer_enabled','batch_duration_minutes','batch_fresh_minutes','batch_label','batch_finished_message'])
+);
 
 create or replace function public.pastehot_list_stores()
 returns table(id uuid,slug text,name text,area text,is_active boolean,can_manage boolean)
