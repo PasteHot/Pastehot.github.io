@@ -48,7 +48,7 @@
       return wrap(root);
     };
     const originalRpc = db.rpc.bind(db);
-    const branchRpc = new Set(['admin_list_delivery_zones','admin_save_delivery_zone','pastehot_store_state','pastehot_set_store_closed','pastehot_store_history','pastehot_add_category','validate_delivery_location','create_pending_order_with_location_v3','update_order_status_with_inventory_v2','pastehot_order_page','pastehot_sales_summary','pastehot_image_reference_exists']);
+    const branchRpc = new Set(['admin_list_delivery_zones','admin_save_delivery_zone','pastehot_store_state','pastehot_set_store_closed','pastehot_store_history','pastehot_add_category','validate_delivery_location','create_pending_order_with_location_v3','update_order_status_with_inventory_v2','pastehot_order_page','pastehot_sales_summary','pastehot_image_reference_exists','pastehot_pos_current_shift','pastehot_pos_open_shift','pastehot_pos_close_shift','pastehot_pos_create_sale','pastehot_pos_report']);
     db.rpc = (name, args = {}, options) => branchRpc.has(name) && idNow()
       ? originalRpc(name, { ...args, p_store_id: idNow() }, options)
       : originalRpc(name, args, options);
