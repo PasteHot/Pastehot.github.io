@@ -79,15 +79,37 @@
     try { localStorage.setItem(keyForPage(), store.id); } catch {}
   }
   function currentStore() { return stores.find(store => store.id === idNow()) || stores[0] || null; }
-  function storeOptions(selectedId) {
-    return stores.map(store => `<option value="${safe(store.id)}" ${store.id === selectedId ? 'selected' : ''}>${safe(store.name)}${store.area ? ` · ${safe(store.area)}` : ''}</option>`).join('');
+  function storeOptions(selectedId, candidates = stores) {
+    return candidates.map(store => `<option value="${safe(store.id)}" ${store.id === selectedId ? 'selected' : ''}>${safe(store.name)}${store.area ? ` · ${safe(store.area)}` : ''}</option>`).join('');
   }
   function addStyles() {
     if (document.getElementById('pastehotMultiStoreStyles')) return;
     const style = document.createElement('style');
     style.id = 'pastehotMultiStoreStyles';
-    style.textContent = `#pastehotStoreBar{position:sticky;top:0;z-index:1000;background:#171717;color:#fff;padding:10px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 3px 12px #0002}#pastehotStoreBar .ph-store-left{display:flex;gap:9px;align-items:center;flex-wrap:wrap}#pastehotStoreBar label{font-size:13px;font-weight:700}#pastehotStoreBar select{max-width:min(62vw,340px);padding:8px;border-radius:7px;border:1px solid #bbb;background:white;color:#171717}#pastehotStoreBar button,.ph-store-modal button{border:0;border-radius:7px;padding:9px 12px;font-weight:700;background:#d71920;color:white}#pastehotStoreModal{position:fixed;inset:0;z-index:2000;background:#0008;display:grid;place-items:center;padding:16px}#pastehotStoreModal[hidden]{display:none}#pastehotStoreModal .ph-modal-card{background:white;color:#171717;border-radius:14px;padding:20px;width:min(600px,100%);max-height:88vh;overflow:auto;box-shadow:0 20px 60px #0004}#pastehotStoreModal input,#pastehotStoreModal select{width:100%;padding:10px;border:1px solid #ccd0d5;border-radius:7px;margin:5px 0 12px}#pastehotStoreModal .ph-modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:18px}#pastehotStoreModal .ph-secondary{background:#eceef1;color:#171717}#pastehotStoreModal .ph-help{font-size:13px;color:#555;line-height:1.45}#pastehotStoreModal .ph-member{display:flex;gap:10px;align-items:center;border-top:1px solid #eee;padding:9px 0}#pastehotStoreModal .ph-member input{width:auto;margin:0}#pastehotStoreModal .ph-notice{padding:10px;border-radius:8px;background:#fff4e5;margin-top:10px;font-size:13px}@media(max-width:520px){#pastehotStoreBar{align-items:flex-start;flex-direction:column}#pastehotStoreBar select{max-width:100%;width:100%}}`;
+    style.textContent = `#pastehotStoreBar{position:sticky;top:0;z-index:1000;background:#171717;color:#fff;padding:10px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 3px 12px #0002}#pastehotStoreBar .ph-store-left{display:flex;gap:9px;align-items:center;flex-wrap:wrap}#pastehotStoreBar label{font-size:13px;font-weight:700}#pastehotStoreBar select{max-width:min(62vw,340px);padding:8px;border-radius:7px;border:1px solid #bbb;background:white;color:#171717}#pastehotStoreBar button,.ph-store-modal button,#pastehotPublicStorePicker button{border:0;border-radius:7px;padding:9px 12px;font-weight:700;background:#d71920;color:white}#pastehotStoreModal,#pastehotPublicStorePicker{position:fixed;inset:0;z-index:2000;background:#0008;display:grid;place-items:center;padding:16px}#pastehotStoreModal[hidden],#pastehotPublicStorePicker[hidden]{display:none}#pastehotStoreModal .ph-modal-card,#pastehotPublicStorePicker .ph-modal-card{background:white;color:#171717;border-radius:14px;padding:20px;width:min(600px,100%);max-height:88vh;overflow:auto;box-shadow:0 20px 60px #0004}#pastehotStoreModal input,#pastehotStoreModal select,#pastehotPublicStorePicker select{width:100%;padding:10px;border:1px solid #ccd0d5;border-radius:7px;margin:5px 0 12px}#pastehotStoreModal .ph-modal-actions,#pastehotPublicStorePicker .ph-modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:18px}#pastehotStoreModal .ph-secondary{background:#eceef1;color:#171717}#pastehotStoreModal .ph-help,#pastehotPublicStorePicker .ph-help{font-size:13px;color:#555;line-height:1.45}#pastehotStoreModal .ph-member{display:flex;gap:10px;align-items:center;border-top:1px solid #eee;padding:9px 0}#pastehotStoreModal .ph-member input{width:auto;margin:0}#pastehotStoreModal .ph-notice{padding:10px;border-radius:8px;background:#fff4e5;margin-top:10px;font-size:13px}@media(max-width:520px){#pastehotStoreBar{align-items:flex-start;flex-direction:column}#pastehotStoreBar select{max-width:100%;width:100%}}`;
     document.head.appendChild(style);
+  }
+  function choosePublicStore(activeStores) {
+    addStyles();
+    return new Promise(resolve => {
+      const modal = document.createElement('div');
+      modal.id = 'pastehotPublicStorePicker';
+      modal.innerHTML = `<section class="ph-modal-card" role="dialog" aria-modal="true" aria-labelledby="phPublicStoreTitle"><h2 id="phPublicStoreTitle">Selecciona la sucursal más cercana a ti</h2><p class="ph-help">Elige dónde quieres comprar para ver los productos y existencias de esa sucursal.</p><form id="phPublicStoreForm"><label for="phPublicStoreSelect">Sucursal</label><select id="phPublicStoreSelect" required><option value="">Elige una sucursal</option>${storeOptions('', activeStores)}</select><div class="ph-modal-actions"><button type="submit">Ver menú</button></div></form></section>`;
+      document.body.prepend(modal);
+      const select = modal.querySelector('#phPublicStoreSelect');
+      select.focus();
+      modal.querySelector('#phPublicStoreForm').addEventListener('submit', event => {
+        event.preventDefault();
+        const store = activeStores.find(item => item.id === select.value);
+        if (!store) return;
+        persistSelection(store);
+        const url = new URL(location.href);
+        url.searchParams.set('sucursal', store.slug);
+        history.replaceState(null, '', url);
+        modal.remove();
+        resolve(store);
+      });
+    });
   }
   function renderBar(isPublic) {
     const selected = currentStore();
@@ -96,7 +118,8 @@
     const bar = document.createElement('div');
     bar.id = 'pastehotStoreBar';
     const canManage = !isPublic && selected.can_manage === true;
-    bar.innerHTML = `<div class="ph-store-left"><label for="pastehotStoreSelect">${isPublic ? 'Sucursal' : 'Administras'}</label><select id="pastehotStoreSelect" aria-label="Seleccionar sucursal">${storeOptions(selected.id)}</select>${isDemo ? '<span aria-label="Modo demo">Vista de prueba</span>' : ''}</div>${canManage ? '<button type="button" id="pastehotManageStores">Sucursales</button>' : ''}`;
+    const options = isPublic ? stores.filter(store => store.is_active) : stores;
+    bar.innerHTML = `<div class="ph-store-left"><label for="pastehotStoreSelect">${isPublic ? 'Sucursal' : 'Administras'}</label><select id="pastehotStoreSelect" aria-label="Seleccionar sucursal">${storeOptions(selected.id, options)}</select>${isDemo ? '<span aria-label="Modo demo">Vista de prueba</span>' : ''}</div>${canManage ? '<button type="button" id="pastehotManageStores">Sucursales</button>' : ''}`;
     if (isPublic) document.body.prepend(bar);
     else {
       const admin = document.getElementById('adminScreen');
@@ -117,7 +140,7 @@
   }
   function ensureModal() {
     if (document.getElementById('pastehotStoreModal')) return;
-    document.body.insertAdjacentHTML('beforeend', `<div id="pastehotStoreModal" hidden><div class="ph-modal-card" role="dialog" aria-modal="true" aria-labelledby="phStoreTitle"><h2 id="phStoreTitle">Sucursales</h2><p class="ph-help">Crea sucursales con el mismo sistema. Al copiar el menú se copian productos, categorías, zonas y ajustes; pedidos, clientes e inventario comienzan separados.</p><form id="phStoreRenameForm"><label for="phStoreRenameName">Nombre de la sucursal actual</label><input id="phStoreRenameName" maxlength="80" required><div id="phStoreRenameFeedback" role="status" class="ph-help"></div><div class="ph-modal-actions"><button type="submit">Guardar nombre</button></div></form><hr><form id="phStoreCreateForm"><label for="phStoreName">Nombre de la sucursal</label><input id="phStoreName" maxlength="80" required placeholder="PasteHot Norte"><label for="phStoreArea">Zona o colonia</label><input id="phStoreArea" maxlength="120" placeholder="Norte de Mérida"><label class="ph-member"><input id="phStoreCopy" type="checkbox" checked> Copiar menú y configuración de la sucursal actual</label><div id="phStoreFeedback" role="status" class="ph-help"></div><div class="ph-modal-actions"><button type="button" class="ph-secondary" id="phStoreClose">Cerrar</button><button type="submit">Crear sucursal</button></div></form><hr><label for="phStoreAccessSelect">Asignar acceso a una sucursal</label><select id="phStoreAccessSelect"></select><div id="phStoreMembers" class="ph-help">Cargando cuentas…</div><div class="ph-modal-actions"><button type="button" class="ph-secondary" id="phStoreSaveMembers">Guardar accesos</button></div><p class="ph-help">Cada persona conserva su propia cuenta. Solo podrá entrar a las sucursales que le asignes.</p></div></div>`);
+    document.body.insertAdjacentHTML('beforeend', `<div id="pastehotStoreModal" hidden><div class="ph-modal-card" role="dialog" aria-modal="true" aria-labelledby="phStoreTitle"><h2 id="phStoreTitle">Sucursales</h2><p class="ph-help">Crea sucursales con el mismo sistema. Al copiar el menú se copian productos, categorías, zonas y ajustes; pedidos, clientes e inventario comienzan separados.</p><form id="phStoreRenameForm"><label for="phStoreRenameName">Nombre de la sucursal seleccionada</label><input id="phStoreRenameName" maxlength="80" required><div id="phStoreRenameFeedback" role="status" class="ph-help"></div><div class="ph-modal-actions"><button type="submit">Guardar nombre</button></div></form><hr><form id="phStoreCreateForm"><label for="phStoreName">Nombre de la nueva sucursal</label><input id="phStoreName" maxlength="80" required placeholder="PasteHot Norte"><label for="phStoreArea">Zona o colonia</label><input id="phStoreArea" maxlength="120" placeholder="Norte de Mérida"><label class="ph-member"><input id="phStoreCopy" type="checkbox" checked> Copiar menú y configuración de la sucursal actual</label><div id="phStoreFeedback" role="status" class="ph-help"></div><div class="ph-modal-actions"><button type="button" class="ph-secondary" id="phStoreClose">Cerrar</button><button type="submit">Crear sucursal</button></div></form><hr><label for="phStoreAccessSelect">Asignar acceso a una sucursal</label><select id="phStoreAccessSelect"></select><div id="phStoreMembers" class="ph-help">Cargando cuentas…</div><div class="ph-modal-actions"><button type="button" class="ph-secondary" id="phStoreSaveMembers">Guardar accesos</button></div><p class="ph-help">Cada persona conserva su propia cuenta. Solo podrá entrar a las sucursales que le asignes.</p></div></div>`);
     const modal = document.getElementById('pastehotStoreModal');
     document.getElementById('phStoreClose').addEventListener('click', () => { modal.hidden = true; });
     document.getElementById('phStoreCreateForm').addEventListener('submit', createStore);
@@ -233,8 +256,12 @@
     async setupPublic() {
       await fetchStores();
       if (!stores.length) return false;
+      const activeStores = stores.filter(store => store.is_active);
+      if (!activeStores.length) return false;
       const slug = new URLSearchParams(location.search).get('sucursal');
-      let selected = stores.find(store => store.slug === slug && store.is_active) || stores.find(store => store.id === idNow() && store.is_active) || stores.find(store => store.is_active);
+      let selected = activeStores.find(store => store.slug === slug);
+      if (!selected && activeStores.length > 1) selected = await choosePublicStore(activeStores);
+      if (!selected) selected = activeStores.find(store => store.id === idNow()) || activeStores[0];
       if (!selected) return false;
       persistSelection(selected);
       window.PasteHotStoreId = selected.id;
