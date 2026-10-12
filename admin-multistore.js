@@ -117,10 +117,11 @@
   }
   function ensureModal() {
     if (document.getElementById('pastehotStoreModal')) return;
-    document.body.insertAdjacentHTML('beforeend', `<div id="pastehotStoreModal" hidden><div class="ph-modal-card" role="dialog" aria-modal="true" aria-labelledby="phStoreTitle"><h2 id="phStoreTitle">Sucursales</h2><p class="ph-help">Crea sucursales con el mismo sistema. Al copiar el menú se copian productos, categorías, zonas y ajustes; pedidos, clientes e inventario comienzan separados.</p><form id="phStoreCreateForm"><label for="phStoreName">Nombre de la sucursal</label><input id="phStoreName" maxlength="80" required placeholder="PasteHot Norte"><label for="phStoreArea">Zona o colonia</label><input id="phStoreArea" maxlength="120" placeholder="Norte de Mérida"><label class="ph-member"><input id="phStoreCopy" type="checkbox" checked> Copiar menú y configuración de la sucursal actual</label><div id="phStoreFeedback" role="status" class="ph-help"></div><div class="ph-modal-actions"><button type="button" class="ph-secondary" id="phStoreClose">Cerrar</button><button type="submit">Crear sucursal</button></div></form><hr><label for="phStoreAccessSelect">Asignar acceso a una sucursal</label><select id="phStoreAccessSelect"></select><div id="phStoreMembers" class="ph-help">Cargando cuentas…</div><div class="ph-modal-actions"><button type="button" class="ph-secondary" id="phStoreSaveMembers">Guardar accesos</button></div><p class="ph-help">Cada persona conserva su propia cuenta. Solo podrá entrar a las sucursales que le asignes.</p></div></div>`);
+    document.body.insertAdjacentHTML('beforeend', `<div id="pastehotStoreModal" hidden><div class="ph-modal-card" role="dialog" aria-modal="true" aria-labelledby="phStoreTitle"><h2 id="phStoreTitle">Sucursales</h2><p class="ph-help">Crea sucursales con el mismo sistema. Al copiar el menú se copian productos, categorías, zonas y ajustes; pedidos, clientes e inventario comienzan separados.</p><form id="phStoreRenameForm"><label for="phStoreRenameName">Nombre de la sucursal actual</label><input id="phStoreRenameName" maxlength="80" required><div id="phStoreRenameFeedback" role="status" class="ph-help"></div><div class="ph-modal-actions"><button type="submit">Guardar nombre</button></div></form><hr><form id="phStoreCreateForm"><label for="phStoreName">Nombre de la sucursal</label><input id="phStoreName" maxlength="80" required placeholder="PasteHot Norte"><label for="phStoreArea">Zona o colonia</label><input id="phStoreArea" maxlength="120" placeholder="Norte de Mérida"><label class="ph-member"><input id="phStoreCopy" type="checkbox" checked> Copiar menú y configuración de la sucursal actual</label><div id="phStoreFeedback" role="status" class="ph-help"></div><div class="ph-modal-actions"><button type="button" class="ph-secondary" id="phStoreClose">Cerrar</button><button type="submit">Crear sucursal</button></div></form><hr><label for="phStoreAccessSelect">Asignar acceso a una sucursal</label><select id="phStoreAccessSelect"></select><div id="phStoreMembers" class="ph-help">Cargando cuentas…</div><div class="ph-modal-actions"><button type="button" class="ph-secondary" id="phStoreSaveMembers">Guardar accesos</button></div><p class="ph-help">Cada persona conserva su propia cuenta. Solo podrá entrar a las sucursales que le asignes.</p></div></div>`);
     const modal = document.getElementById('pastehotStoreModal');
     document.getElementById('phStoreClose').addEventListener('click', () => { modal.hidden = true; });
     document.getElementById('phStoreCreateForm').addEventListener('submit', createStore);
+    document.getElementById('phStoreRenameForm').addEventListener('submit', renameStore);
     document.getElementById('phStoreAccessSelect').addEventListener('change', loadMembers);
     document.getElementById('phStoreSaveMembers').addEventListener('click', saveMembers);
   }
@@ -129,9 +130,38 @@
     const modal = document.getElementById('pastehotStoreModal');
     const accessSelect = document.getElementById('phStoreAccessSelect');
     accessSelect.innerHTML = storeOptions(currentStore()?.id);
+    document.getElementById('phStoreRenameName').value = currentStore()?.name || '';
+    document.getElementById('phStoreRenameFeedback').textContent = '';
     document.getElementById('phStoreFeedback').textContent = isDemo ? 'Los cambios de esta vista de prueba se guardan solo en este navegador.' : '';
     modal.hidden = false;
     loadMembers();
+  }
+  async function renameStore(event) {
+    event.preventDefault();
+    const store = currentStore();
+    const name = document.getElementById('phStoreRenameName').value.trim();
+    const feedback = document.getElementById('phStoreRenameFeedback');
+    const submit = event.currentTarget.querySelector('button[type="submit"]');
+    if (!store) return;
+    submit.disabled = true;
+    try {
+      if (!name || name.length > 80) throw new Error('El nombre debe tener entre 1 y 80 caracteres.');
+      if (isDemo) {
+        store.name = name;
+        persistDemoStores();
+      } else {
+        const { data, error } = await db.rpc('pastehot_rename_store', { p_store_id: store.id, p_name: name });
+        if (error) throw error;
+        const renamed = Array.isArray(data) ? data[0] : data;
+        if (!renamed?.id) throw new Error('No se recibió la sucursal actualizada.');
+        Object.assign(store, renamed);
+      }
+      document.getElementById('pastehotStoreSelect').innerHTML = storeOptions(store.id);
+      document.getElementById('phStoreAccessSelect').innerHTML = storeOptions(store.id);
+      feedback.textContent = 'Nombre actualizado. Los datos y accesos de la sucursal se conservaron.';
+    } catch (error) {
+      feedback.textContent = `No se pudo cambiar el nombre: ${error.message || 'revisa la conexión'}.`;
+    } finally { submit.disabled = false; }
   }
   async function createStore(event) {
     event.preventDefault();
