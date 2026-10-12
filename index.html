@@ -20,6 +20,7 @@
 <meta property="og:image" content="https://www.pastehot.com/favicon.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","url":"https://www.pastehot.com/","name":"PasteHot®","alternateName":"PasteHot"}</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="admin-multistore.js?v=1"></script>
 <style>
 *{box-sizing:border-box}
 :root{
@@ -688,15 +689,15 @@ async function reloadPublicSettings(){
 function startPublicRealtime(){
   if(publicRealtimeChannel)db.removeChannel(publicRealtimeChannel);
   publicRealtimeChannel=db.channel("pastehot-public-live")
-    .on("postgres_changes",{event:"*",schema:"public",table:"products"},()=>{
+    .on("postgres_changes",{event:"*",schema:"public",table:"products",...(window.PasteHotStoreId?{filter:`store_id=eq.${window.PasteHotStoreId}`}:{})},()=>{
       clearTimeout(publicProductsRefreshTimer);
       publicProductsRefreshTimer=setTimeout(()=>reloadProducts(),250);
     })
-    .on("postgres_changes",{event:"*",schema:"public",table:"settings"},()=>{
+    .on("postgres_changes",{event:"*",schema:"public",table:"settings",...(window.PasteHotStoreId?{filter:`store_id=eq.${window.PasteHotStoreId}`}:{})},()=>{
       clearTimeout(publicSettingsRefreshTimer);
       publicSettingsRefreshTimer=setTimeout(()=>reloadPublicSettings(),250);
     })
-    .on("postgres_changes",{event:"*",schema:"public",table:"delivery_zones"},()=>{
+    .on("postgres_changes",{event:"*",schema:"public",table:"delivery_zones",...(window.PasteHotStoreId?{filter:`store_id=eq.${window.PasteHotStoreId}`}:{})},()=>{
       clearTimeout(publicSettingsRefreshTimer);
       publicSettingsRefreshTimer=setTimeout(()=>revalidateCurrentDeliveryLocation(),250);
     })
@@ -710,6 +711,7 @@ window.addEventListener("online",refreshPublicAfterWake);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")refreshPublicAfterWake()});
 
 async function init(){
+  if(window.PasteHotMultiStore)await window.PasteHotMultiStore.setupPublic();
   const [pr,sr]=await Promise.all([
     db.from("products").select("*").order("sort_order",{ascending:true}).order("created_at",{ascending:true}),
     db.from("settings").select("key,value")
