@@ -144,7 +144,7 @@
     try {
       let store;
       if (isDemo) {
-        store = { id: crypto.randomUUID(), slug: `demo-${Date.now()}`, name, area, is_active: true };
+        store = { id: crypto.randomUUID(), slug: `demo-${Date.now()}`, name, area, is_active: true, can_manage: true };
         stores.push(store); persistDemoStores();
       } else {
         const { data, error } = await db.rpc('pastehot_create_store', { p_name: name, p_area: area, p_copy_from_store_id: copy ? currentStore()?.id : null });
