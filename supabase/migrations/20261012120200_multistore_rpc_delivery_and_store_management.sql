@@ -95,7 +95,7 @@ begin
     'fee',v_effective_fee
   );
 end;
-$function$
+$function$;
 
 
 

@@ -33,7 +33,7 @@ begin
 
   return v_result;
 end;
-$function$
+$function$;
 
 
 DROP FUNCTION IF EXISTS public.admin_save_delivery_zone(uuid,numeric,boolean,jsonb);
@@ -85,7 +85,7 @@ begin
     'geojson',case when v_zone.geom is null then null else extensions.st_asgeojson(v_zone.geom)::jsonb end
   );
 end;
-$function$
+$function$;
 
 
 DROP FUNCTION IF EXISTS public.pastehot_add_category(text);
@@ -116,7 +116,7 @@ begin
   update public.settings set value=v_categories::text,updated_at=now() where store_id=p_store_id and key='categories';
   return v_categories;
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION private.pastehot_reject_closed_store_order()

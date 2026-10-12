@@ -190,4 +190,4 @@ begin
     'delivery_verification_code',case when p_delivery_type='delivery' then v_delivery_code else null end
   );
 end;
-$function$
+$function$;
