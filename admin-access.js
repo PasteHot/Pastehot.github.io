@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 12431)
+Total output lines: 481
+
 /* UI convenience checks complement database authorization; they never grant permissions. */
 let adminRole=null,adminAccessAllowed=false,adminSession=null,adminAccessState=null;
 let adminSecurityInstalled=false,adminRealtimeOnline=false,adminAccessTimer=null,adminRecoveryTimer=null;
@@ -86,7 +89,7 @@ async function setupAdminAccess(session){
   renderAdminAccess();return true;
 }
 function denyAdminAccess(message){
-  hideAccountToast();resetPasswordVisibility();maskAccountPasswords?.();
+  hideAccountToast();resetPasswordVisibility();
   const accountPassword=document.getElementById('staffAccountPassword');if(accountPassword)accountPassword.value='';
   clearStaffInvitation();
   adminAccessAllowed=false;stopAdminEnhancements();
@@ -127,19 +130,6 @@ async function completeOwnerPasswordRecovery(event){
  const {error}=await db.auth.updateUser({password});if(error){showMessage('ownerRecoveryMessage','No se pudo cambiar la contraseña. Abre de nuevo el enlace recibido.',false);return;}
  document.getElementById('ownerRecoveryPassword').value='';showMessage('ownerRecoveryMessage','Contraseña actualizada. Vuelve a iniciar sesión con ella.');await db.auth.signOut();
 }
-async function toggleAccountPassword(userId){
- if(!isPrimaryOwner()||!adminAccessAllowed)return;
- const row=adminAccessState?.members?.find(m=>m.user_id===userId);
- if(!row||row.primary_owner||!['staff','manager'].includes(row.role))return;
- const password=visibleAccountPasswords.get(userId);
- if(password){visibleAccountPasswords.delete(userId);renderAdminAccess();return;}
- const {data,error}=await db.rpc('pastehot_get_member_password',{p_user_id:userId});
- if(error||typeof data!=='string'){showMessage('accessMessage','La contraseña protegida no está disponible. Las cuentas de prueba anteriores pueden no tener una copia recuperable.',false);return;}
- if(!isPrimaryOwner()||!adminAccessAllowed)return;
- visibleAccountPasswords.set(userId,data);renderAdminAccess();
-}
-function maskAccountPasswords(){visibleAccountPasswords.clear();if(adminAccessAllowed&&document.getElementById('accessMembers'))renderAdminAccess();}
-document.addEventListener('visibilitychange',()=>{if(document.hidden)maskAccountPasswords();});
 function adminCanEditProducts(){return adminAccessAllowed&&adminRole==='owner';}
 function adminCanToggleProduct(){return adminAccessAllowed&&['owner','manager'].includes(adminRole);}
 function adminCanOpenTab(name){
@@ -225,15 +215,7 @@ function renderAdminAccess(){
     const username=m.email?.startsWith('staff+')&&m.email.endsWith('@accounts.pastehot.com')?m.email.split('@')[0].slice(6):m.email||'';
     const protectedAccount=m.primary_owner||m.current;
     const credentialActions=!m.primary_owner&&(!m.current||adminRole==='owner')&&(!manager||m.role==='staff');
-    return `<div class="access-row"><div><strong>${escapeHtml(m.display_name)}</strong><div class="credential-line"><span>Usuario: <code>${escapeHtml(username)}</code> · ${adminRoleName(m.role)}</span><button class="btn btn-light btn-small" onclick="copyTextValue('${escapeAttr(username)}','Usuario copiado.')">Copiar usuario</button></div>${m.primary_owner?'<small>Cuenta principal protegida</small>':m.role==='owner'?'<small>Segundo propietario · acceso a todos los apartados excepto Negocio</small>':''}${isPrimaryOwner()&&!m.primary_owner&&['staff','manager'].includes(m.role)?`<div class="credential-line"><span>Contraseña: <code>${escapeHtml(visibleAccountPasswords.get(m.user_id)||'••••••••••••')}</code></span><button class="btn btn-light btn-small" onclick="toggleAccountPassword('${m.user_id}')">${visibleAccountPasswords.has(m.user_id)?'Ocultar':'Mostrar'}</button>${visibleAccountPasswords.has(m.user_id)?`<button class="btn btn-light btn-small" onclick="copyTextValue(visibleAccountPasswords.get('${m.user_id}'),'Contraseña copiada.')">Copiar contraseña</button>`:''}</div>`:''}<div class="credential-line"><span>${isPrimaryOwner()?'Puedes cambiar la contraseña y compartir la nueva.':'La contraseña no se puede recuperar; puedes asignar una nueva.'}</span>${credentialActions?`<button class="btn btn-light btn-small" onclick="openResetAccountPassword('${m.user_id}')">Asignar nueva contraseña</button>`:''}</div><span class="state-tag">${m.enabled?'Acceso habilitado':'Acceso desactivado'}</span></div><div class="access-row-actions">${protectedAccount?'<small>Cuenta protegida</small>':`${!manager?`<label>Permisos<select id="account-role-${m.user_id}" aria-label="Permisos de ${escapeAttr(m.display_name)}" ${adminAccessBusy?'disabled':''} onchange="changeAdminMemberRole('${m.user_id}',this.value)"><option value="owner" ${m.role==='owner'?'selected':''}>Segundo propietario</option><option value="staff" ${m.role==='staff'?'selected':''}>Empleado</option><option value="manager" ${m.role==='manager'?'selected':''}>Encargado</option></select></label>`:''}<button class="btn ${m.enabled?'btn-danger':'btn-dark'}" ${adminAccessBusy?'disabled':''} onclick="changeAdminMember('${m.user_id}',${!m.enabled})">${m.enabled?'Desactivar acceso':'Habilitar acceso'}</button>${direct?`<button class="btn btn-danger" ${adminAccessBusy?'disabled':''} onclick="deleteAdminMember('${m.user_id}')">Borrar cuenta</button>`:''}`}</div></div>`
-  }).join('')+(storeMembers.filter(m=>!m.enabled).length&&!showInactiveStoreMembers?'<p class="media-note">Las cuentas desactivadas de esta sucursal están ocultas.</p>':'')||'<p class="media-note">No hay personal activo asignado a esta sucursal.</p>';
-  document.getElementById('toggleInactiveStoreMembers')?.addEventListener('click',()=>{showInactiveStoreMembers=!showInactiveStoreMembers;renderAdminAccess();});
-  const banner=document.getElementById('adminAccessBanner');
-  banner.classList.toggle('hidden',installed||adminRole!=='owner');
-  banner.textContent=!installed?'Preview de mejoras: las alertas y categorías pueden probarse aquí. Los nuevos permisos de empleados aún no están activados en el negocio.':'';
-}
-async function refreshAdminAccess(){
-  if(!adminSecurityInstalled)return adminAccessAllowed;
+    return `<div class="access-row"><div><strong>${escapeHtml(m.display_name)}</strong><div class="credential-line"><span>Usuario: <code>${escapeHtml(username)}</code> · ${adminRoleName(m.role)}</span><button class="btn btn-light btn-small" onclick="copyTextValue('${escapeAttr(username)}','Usuario copiado.')">Copiar usuario</button></div>${m.primary_owner?'<small>Cuenta principal protegida</small>':m.role==='owner'?'<small>Segundo propietario · acceso a todos los apartados excepto Negocio</small>':''}<div class="credential-line"><span>${m.primary_owner?'La contraseña de la cuenta principal no se muestra.':'La contraseña no se puede recuperar; puedes asignar una nueva.'}</span>${credentialActions?`<button class="btn btn-light btn-small" onclick="openResetAccountPassword('${m.user_id}')">Asignar nueva contraseña</button>`:''}</div><span class="state-tag">${m.enabled?'Acceso habilitado':'Acceso desactivado'}</span></div><div class="acc…431 tokens truncated…owed;
   if(adminAccessRefreshPromise)return adminAccessRefreshPromise;
   adminAccessRefreshPromise=(async()=>{
     const {data,error}=await db.rpc('pastehot_admin_state',{p_label:null,p_visible:document.visibilityState==='visible',p_device_token:adminDeviceToken()});
