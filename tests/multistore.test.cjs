@@ -88,7 +88,7 @@ const { PGlite } = require('@electric-sql/pglite');
   assert.match(lifecycleSql, /delete from public\.orders where store_id=p_store_id/i, 'orders must be removed before the RESTRICT store foreign key');
   assert.match(lifecycleSql, /on delete cascade/i, 'remaining branch records use cascading foreign keys');
   assert.doesNotMatch(lifecycleSql, /delete\s+from\s+storage\.objects/i, 'storage files must be deleted with the Storage API');
-  const deletionFixSql = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261012150000_multistore_delete_reauth_fix.sql'), 'utf8');
+  const deletionFixSql = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261012175130_multistore_delete_reauth_fix.sql'), 'utf8');
   assert.match(deletionFixSql, /auth\.jwt\(\)->'amr'/i, 'deletion must recognize Supabase recent password auth in amr');
 
   const pg = new PGlite();
