@@ -75,7 +75,7 @@ const { JSDOM } = require('jsdom');
   assert.match(rpcSql, /where id = p_order_id and store_id=p_store_id/i);
   assert.match(rpcSql, /create function public\.pastehot_sales_summary\(p_store_id uuid/i);
   assert.match(rpcSql, /from public\.orders where store_id=p_store_id and order_status/i);
-  assert.doesNotMatch(rpcSql, /^[$]function[$]$/m, 'function definitions must end with statement delimiters');
+  assert.doesNotMatch(rpcSql, /[$]function[$](?!;)\\s*(?:DROP|CREATE|REVOKE|GRANT|COMMIT)\\b/i, 'function definitions must end with statement delimiters');
   const renameSql = fs.readFileSync(path.join(__dirname, '../supabase/migrations/20261012130000_multistore_rename_store.sql'), 'utf8');
   assert.match(renameSql, /if not private\.pastehot_primary_owner_allowed\(\) then raise exception 'NO_AUTORIZADO'/i);
   assert.match(renameSql, /update public\.stores\s+set name=v_name\s+where id=p_store_id/i);

@@ -131,7 +131,7 @@ begin
    raise exception 'TIENDA_CERRADA: la tienda está cerrada temporalmente. Intenta cuando vuelva a abrir.';
  end if;
  return new;
-end;$function$
+end;$function$;
 
 
 CREATE OR REPLACE FUNCTION private.pastehot_staff_schedule_allowed()
@@ -173,7 +173,7 @@ begin
     end if;
   end loop;
   return false;
-end $function$
+end $function$;
 
 
 DROP FUNCTION IF EXISTS public.pastehot_store_state();
@@ -232,7 +232,7 @@ begin
    return jsonb_build_object('events',case when jsonb_array_length(v_rows)>50 then v_rows-50 else v_rows end,'has_more',jsonb_array_length(v_rows)>50);
  elsif p_action<>'state' then raise exception 'ACCION_INVALIDA';end if;
  return v_state||jsonb_build_object('history_allowed',private.pastehot_store_owner_allowed(p_store_id) or private.pastehot_store_manager_allowed(p_store_id),'last_event_id',(select coalesce(max(id),0) from private.pastehot_store_events where store_id=p_store_id));
-end;$function$
+end;$function$;
 
 
 DROP FUNCTION IF EXISTS private.pastehot_store_snapshot();
@@ -261,4 +261,4 @@ begin
  end if;
  v_closed:=coalesce(v_settings->>'store_manual_closed','false')='true';
  return jsonb_build_object('manual_closed',v_closed,'scheduled_open',v_scheduled,'open',not v_closed and v_scheduled,'schedule',jsonb_build_object('timezone','America/Merida','day',v_day,'hours',v_today));
-end;$function$
+end;$function$;
