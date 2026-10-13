@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 40223)
-Total output lines: 1546
-
 <!DOCTYPE html>
 <html lang="es-MX">
 <head>
@@ -14,7 +11,7 @@ Total output lines: 1546
 <link rel="stylesheet" href="admin-enhancements.css?v=3">
 <script src="admin-orders.js?v=1"></script>
 <script src="admin-preview-demo.js?v=8"></script>
-<script src="admin-access.js?v=10"></script>
+<script src="admin-access.js?v=11"></script>
 <script src="admin-store-control.js?v=2"></script>
 <script src="admin-reports.js?v=2"></script>
 <script src="admin-image-maintenance.js?v=1"></script>
@@ -90,7 +87,1198 @@ Total output lines: 1546
 <div id="ownerRecoveryScreen" class="login-screen hidden"><form class="login-card" onsubmit="completeOwnerPasswordRecovery(event)"><h1>Restablecer contraseña</h1><p>Escribe una contraseña nueva para el propietario.</p><label for="ownerRecoveryPassword">Nueva contraseña</label><div class="password-field"><input id="ownerRecoveryPassword" type="password" minlength="12" autocomplete="new-password" required><button class="password-toggle" type="button" aria-controls="ownerRecoveryPassword" aria-label="Mostrar contraseña" aria-pressed="false" onclick="togglePassword('ownerRecoveryPassword',this)">◉</button></div><button class="btn btn-primary" type="submit">Guardar contraseña</button><div id="ownerRecoveryMessage" role="status"></div></form></div>
 <div id="staffPasswordScreen" class="login-screen hidden"><form class="login-card" onsubmit="setStaffPassword(event)"><h1>Tu acceso a PasteHot</h1><p>Establece una contraseña personal. El propietario autorizará después el navegador del negocio.</p><div class="form-group"><label for="staffNewPassword">Nueva contraseña</label><div class="password-field"><input id="staffNewPassword" type="password" autocomplete="new-password" minlength="12" required><button class="password-toggle" type="button" aria-controls="staffNewPassword" aria-label="Mostrar contraseña" aria-pressed="false" onclick="togglePassword('staffNewPassword',this)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path class="eye-slash" d="M3 3 21 21" stroke="currentColor" stroke-width="2"/></svg></button></div></div><div class="form-group"><label for="staffRepeatPassword">Repetir contraseña</label><div class="password-field"><input id="staffRepeatPassword" type="password" autocomplete="new-password" minlength="12" required><button class="password-toggle" type="button" aria-controls="staffRepeatPassword" aria-label="Mostrar contraseña" aria-pressed="false" onclick="togglePassword('staffRepeatPassword',this)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path class="eye-slash" d="M3 3 21 21" stroke="currentColor" stroke-width="2"/></svg></button></div></div><button class="btn btn-primary" type="submit">Guardar contraseña</button><div id="staffPasswordMessage" role="status"></div></form></div>
 <div id="adminScreen" class="hidden">
-<div id="previewDemoBar" class="preview…28223 tokens truncated…ync function loadOrders(){
+<div id="previewDemoBar" class="preview-demo-bar hidden"><strong>Prueba con datos ficticios.</strong> Ninguna acción modifica el negocio ni envía WhatsApp.<div class="preview-demo-controls"><button class="btn btn-light btn-small" onclick="demoNewOrder()">Simular pedido nuevo</button><button class="btn btn-light btn-small" onclick="demoBurstOrders()">Simular 3 pedidos</button><button class="btn btn-light btn-small" onclick="demoConnection()">Simular desconexión</button><label>Ver como <select id="demoRoleSelect" aria-label="Vista de prueba" onchange="demoRole(this.value)"><option value="owner">Propietario principal</option><option value="delegated">Segundo propietario</option><option value="staff">Empleado</option><option value="manager">Encargado</option></select></label><a class="btn btn-light btn-small" href="admin.html">Salir de la prueba</a></div></div>
+<header class="topbar"><div class="topbar-identity"><div class="topbar-brand"><div class="topbar-title">PasteHot · Administrador</div><div id="adminSessionIdentity" class="admin-session-identity" aria-live="polite">Comprobando sesión</div></div><button id="adminPresence" class="presence-button" onclick="openAdminAccess()" aria-label="Ver accesos y conexiones"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><span id="adminPresenceDots"></span><span id="adminPresenceText" class="presence-label">Comprobando accesos</span></button></div><div class="topbar-actions"><button class="btn btn-light" onclick="logout()">Salir</button></div></header>
+<nav class="tabs"><button class="tab active" onclick="showTab('products',this)">Productos</button><button class="tab" onclick="showTab('design',this)">Diseño</button><button class="tab" onclick="showTab('business',this)">Negocio</button><button class="tab" onclick="showTab('delivery-zones',this)">Zonas de entrega</button><button class="tab" onclick="showTab('operation',this)">Operación</button><button class="tab" onclick="showTab('batch',this)">Hornada</button><button class="tab" onclick="showTab('orders',this)">Pedidos</button><button class="tab" onclick="showTab('pos',this)">Punto de venta</button><button class="tab" onclick="showTab('customers',this)">Clientes</button><button class="tab" onclick="showTab('paste-sales',this)">Ventas de pastes</button><button class="tab" onclick="showTab('store-history',this)">Historial de tienda</button><button class="tab" data-access-manage onclick="showTab('access',this)">Accesos</button></nav>
+<main class="content">
+<div class="order-sound-controls" aria-label="Sonido de pedidos"><span>Avisos de pedidos</span><button id="adminSoundButton" class="btn btn-light sound-button" onclick="toggleOrderSound()">Sonido listo</button></div>
+<div id="adminAccessBanner" class="access-note hidden"></div>
+<aside id="storeEmergencyCard" class="store-emergency-card hidden"><div><strong id="storeEmergencyStatus">Comprobando estado de la tienda</strong><p id="storeEmergencyNotice"></p></div><div class="store-emergency-actions"><button id="storeEmergencyButton" class="btn btn-danger" disabled onclick="openEmergencyStoreModal()">Cerrar tienda por emergencia</button><button id="storeHistoryQuick" class="btn btn-light hidden" onclick="showTab('store-history')">Ver historial de tienda</button></div><div id="storeEmergencyMessage" role="status" aria-live="polite"></div></aside>
+<aside id="newOrdersInbox" class="alert-inbox hidden" aria-labelledby="newOrdersHeading"><div class="alert-inbox-header"><h2 id="newOrdersHeading">Pedidos sin revisar</h2><span id="newOrdersCount" class="pending-badge"></span></div><p id="orderSoundNote" class="sound-note">Los avisos están activados por defecto.</p><div id="newOrdersList" aria-live="polite" aria-relevant="additions text"></div></aside>
+<section id="section-products" class="section active"><div class="section-title"><div><h2>Productos</h2><p>Precios, fotografías, categorías y disponibilidad.</p></div><button id="newProductButton" class="btn btn-primary" onclick="openProductModal()">+ Nuevo producto</button></div><div class="card"><div id="productsList"></div></div><div id="categoryAdminCard" class="card"><div class="section-title" style="margin-bottom:12px"><div><h3 style="margin:0">Categorías</h3><p id="categoryHelpText">Mantén presionado el botón ⠿ y desliza la categoría a su nueva posición. Al soltar, se guarda con sus productos.</p></div><button class="btn btn-dark" onclick="newCategory()">+ Nueva categoría</button></div><div id="categoriesList"></div><div id="categoriesMessage" role="status" aria-live="polite"></div></div></section>
+
+<section id="section-design" class="section"><div class="design-intro"><h2>Diseño del menú</h2><p>Portada, perfil, fondo y títulos de categorías se administran por separado. Los cambios de tipografía se aplican automáticamente a todas las categorías actuales y futuras.</p></div><div class="design-layout"><div class="editor-panel"><div class="design-tabs"><button id="tabCover" class="design-tab active" onclick="selectDesignPanel('cover')">Portada</button><button id="tabProfile" class="design-tab" onclick="selectDesignPanel('profile')">Perfil</button><button id="tabBackground" class="design-tab" onclick="selectDesignPanel('background')">Fondo</button><button id="tabCategory" class="design-tab" onclick="selectDesignPanel('category')">Títulos</button></div>
+<div id="panelCover" class="design-panel active"><h3>Portada</h3><div class="image-stage"><img id="coverEditorImage" class="hidden"><div id="coverEmpty" class="stage-empty">Selecciona una portada</div></div>
+<div class="recommended"><strong>Archivo ideal para portada</strong><div class="spec-line"><span class="spec-pill">1920 × 540 px</span><span class="spec-pill">32:9</span><span class="spec-pill">WebP o JPG</span><span class="spec-pill">≤ 400 KB ideal</span></div><div class="media-note">Diseña el contenido importante dentro de la zona central. El administrador optimiza la imagen antes de subirla, pero partir de estas medidas evita recortes y archivos innecesariamente pesados.</div></div><div class="image-actions"><input id="coverFile" class="file-input" type="file" accept="image/jpeg,image/png,image/webp" onchange="selectImageFile(event,'cover')"><button class="btn btn-primary" onclick="coverFile.click()">Seleccionar portada</button><button class="btn btn-danger" onclick="removeDesignImage('cover')">Eliminar</button></div><div class="control-grid"><div class="range-row"><label>Horizontal <span id="coverXValue">0</span></label><input id="coverX" type="range" min="-40" max="40" step="1" value="0"></div><div class="range-row"><label>Vertical <span id="coverYValue">0</span></label><input id="coverY" type="range" min="-40" max="40" step="1" value="0"></div><div class="range-row"><label>Zoom <span id="coverScaleValue">1.00</span></label><input id="coverScale" type="range" min="1" max="2.8" step=".05" value="1"></div></div></div>
+<div id="panelProfile" class="design-panel"><h3>Foto de perfil</h3><div class="image-stage profile-stage"><img id="profileEditorImage" class="hidden"><div id="profileEmpty" class="stage-empty">Selecciona una foto</div></div>
+<div class="recommended"><strong>Archivo ideal para perfil</strong><div class="spec-line"><span class="spec-pill">800 × 800 px</span><span class="spec-pill">1:1</span><span class="spec-pill">WebP o JPG</span><span class="spec-pill">≤ 250 KB ideal</span></div><div class="media-note">Usa una imagen cuadrada con el logotipo o sujeto centrado. El recorte final es circular, así que evita texto o elementos importantes cerca de las esquinas.</div></div><div class="image-actions"><input id="profileFile" class="file-input" type="file" accept="image/jpeg,image/png,image/webp" onchange="selectImageFile(event,'profile')"><button class="btn btn-primary" onclick="profileFile.click()">Seleccionar foto</button><button class="btn btn-danger" onclick="removeDesignImage('profile')">Eliminar</button></div><div class="control-grid"><div class="range-row"><label>Horizontal <span id="profileXValue">0</span></label><input id="profileX" type="range" min="-40" max="40" step="1" value="0"></div><div class="range-row"><label>Vertical <span id="profileYValue">0</span></label><input id="profileY" type="range" min="-40" max="40" step="1" value="0"></div><div class="range-row"><label>Zoom <span id="profileScaleValue">1.00</span></label><input id="profileScale" type="range" min=".7" max="2.8" step=".05" value="1"></div></div></div>
+<div id="panelBackground" class="design-panel"><h3>Fondo general</h3><p style="color:var(--muted)">Este fondo empieza debajo de la portada; no modifica ni cubre la imagen de portada.</p>
+<div class="recommended"><strong>Archivo ideal para fondo</strong><div class="spec-line"><span class="spec-pill">1600 × 1600 px</span><span class="spec-pill">1:1 adaptable</span><span class="spec-pill">WebP o JPG</span><span class="spec-pill">≤ 600 KB ideal</span></div><div class="media-note">Para que funcione bien tanto en celular como en computadora, conviene usar una textura, patrón o composición con información importante al centro. El fondo usa recorte tipo “cover”, por lo que los bordes pueden variar según la pantalla.</div></div><div class="grid grid-2"><div class="form-group"><label>Tipo</label><select id="backgroundType"><option value="color">Color liso</option><option value="image">Imagen</option></select></div><div class="form-group"><label>Color base</label><div class="color-row"><input id="backgroundColor" type="color" value="#f4f4f4"><span id="backgroundColorText">#f4f4f4</span></div></div></div><div class="form-group"><label>Oscurecimiento sobre la imagen <span id="backgroundOverlayValue">0%</span></label><input id="backgroundOverlay" type="range" min="0" max="60" value="0"></div><div class="image-actions"><input id="backgroundFile" class="file-input" type="file" accept="image/jpeg,image/png,image/webp" onchange="selectImageFile(event,'background')"><button class="btn btn-primary" onclick="backgroundFile.click()">Seleccionar imagen de fondo</button><button class="btn btn-danger" onclick="removeDesignImage('background')">Eliminar imagen</button></div><img id="backgroundPreview" class="current-image hidden"></div>
+<div id="panelCategory" class="design-panel"><h3>Títulos de categorías</h3><p style="color:var(--muted)">Un solo ajuste controla “Pastes salados”, “Pastes dulces”, “Bebidas” y cualquier categoría que agregues después.</p><div class="grid grid-3"><div class="form-group"><label>Tipografía</label><select id="categoryTitleFont"><option>Arial</option><option>Georgia</option><option>Trebuchet</option><option>Verdana</option><option>Times</option><option>Courier</option></select></div><div class="form-group"><label>Tamaño</label><input id="categoryTitleSize" type="range" min="18" max="52" value="28"><small><span id="categoryTitleSizeValue">28</span> px</small></div><div class="form-group"><label>Color</label><div class="color-row"><input id="categoryTitleColor" type="color" value="#171717"><span id="categoryTitleColorText">#171717</span></div></div></div><div id="categoryStylePreview" class="style-preview"><h2>Pastes salados</h2></div></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px"><button class="btn btn-light" onclick="resetDesignPosition()">Restablecer posición</button><button class="btn btn-primary" onclick="saveDesign()">Guardar diseño</button></div><div id="designMessage"></div></div>
+<div class="editor-panel"><div class="section-title" style="margin-bottom:8px"><div><h3 style="margin:0">Vista previa</h3><p>Comprueba el contraste antes de guardar.</p></div><div><button class="btn btn-light btn-small" onclick="setPreviewDevice('desktop')">PC</button> <button class="btn btn-light btn-small" onclick="setPreviewDevice('mobile')">Celular</button></div></div><div class="device-preview"><div id="previewDevice" class="device"><div class="device-screen"><div id="previewBackground" class="preview-background"></div><div id="previewOverlay" class="preview-overlay"></div><div class="preview-header"><img id="previewCover" class="hidden"><img id="previewProfile" class="preview-profile hidden"></div><div class="preview-body"><h2 id="previewCategoryTitle" class="preview-category-title">Pastes salados</h2><div class="preview-card-row"><div class="preview-mini-card"></div><div class="preview-mini-card"></div><div class="preview-mini-card"></div></div></div></div></div></div></div></div><div class="card" style="margin-top:20px"><h3>Optimizar fotografías existentes</h3><p>Prepara versiones ligeras para revisar su calidad. Esta revisión conserva las fotos actuales y no modifica la tienda.</p><button class="btn btn-light" onclick="prepareImageMaintenance()">Revisar y preparar fotografías</button><div id="imageMaintenanceResults" aria-live="polite"></div></div></section>
+
+<section id="section-business" class="section"><div class="section-title"><div><h2>Negocio</h2><p>Datos visibles y operativos del menú.</p></div></div><div class="card"><div class="grid grid-2"><div class="form-group"><label>Nombre del negocio</label><input id="business_name"></div><div class="form-group"><label>Slogan</label><input id="slogan"></div><div class="form-group"><label>WhatsApp</label><input id="whatsapp" placeholder="5219990000000"></div><div class="form-group"><label>Dirección</label><input id="business_address"></div><div class="form-group"><label>Hora de apertura</label><input id="opening_time" type="time"></div><div class="form-group"><label>Hora de cierre</label><input id="closing_time" type="time"></div><div class="form-group"><label>Costo de entrega</label><div class="hint">Se calcula automáticamente según la ubicación GPS del cliente y la tarifa de la zona configurada en <strong>Zonas de entrega</strong>.</div></div><div class="form-group"><label>Google Maps para recoger</label><input id="pickup_maps_url" placeholder="Enlace exacto de Google Maps"></div></div><button class="btn btn-primary" onclick="saveBusinessSettings()">Guardar configuración</button><div id="businessMessage"></div></div><div class="card"><h3>Métodos de pago</h3><div class="grid grid-2"><div class="form-group"><label>Banco</label><input id="bank_name"></div><div class="form-group"><label>Beneficiario</label><input id="bank_holder"></div><div class="form-group"><label>CLABE</label><input id="bank_clabe"></div><div class="form-group"><label>Número de tarjeta</label><input id="bank_card"></div></div><button class="btn btn-primary" onclick="savePaymentSettings()">Guardar datos de transferencia</button><div id="paymentMessage"></div></div></section>
+
+<section id="section-delivery-zones" class="section">
+  <div class="section-title">
+    <div>
+      <h2>Zonas de entrega</h2>
+      <p>Dibuja visualmente las áreas de cobertura y modifica sus tarifas cuando lo necesites.</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="createDeliveryZone()">+ Nueva zona</button>
+      <button class="btn btn-light" onclick="loadDeliveryZones()">Actualizar</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="hint"><strong>Cómo funciona:</strong> el cliente comparte su ubicación exacta, el sistema identifica automáticamente la zona y aplica la tarifa guardada. Si su punto no cae dentro de ninguna zona activa, el envío se bloquea y se ofrece la opción de recoger.</div>
+  </div>
+  <div class="delivery-zones-layout">
+    <div class="card">
+      <div id="deliveryZonesMap" class="delivery-zones-map"></div>
+      <div id="zoneMapStatus" class="zone-map-note">Selecciona “Dibujar / reemplazar área” en una zona. Después marca varios puntos alrededor del área y cierra el polígono tocando el primer punto.</div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Tarifas y áreas</h3>
+      <div id="deliveryZonesList"></div>
+    </div>
+  </div>
+</section>
+
+<section id="section-operation" class="section">
+  <div class="section-title">
+    <div>
+      <h2>Operación de la tienda</h2>
+      <p>Horarios, cierre temporal y mensajes comerciales del encabezado.</p>
+    </div>
+    <button class="btn btn-light" onclick="loadOperationSettings()">Actualizar</button>
+  </div>
+
+  <div class="operation-grid">
+    <div class="operation-card" data-owner-operation>
+      <h3>Estado inmediato</h3>
+      <p>El cierre manual tiene prioridad sobre cualquier horario semanal.</p>
+      <div id="operationLiveStatus" class="store-live-status open"><span class="status-dot"></span><span>Tienda disponible según horario</span></div>
+
+      <div class="switch-row">
+        <div>
+          <strong>Cerrar tienda manualmente</strong>
+          <div style="color:var(--muted);font-size:13px;margin-top:3px">Úsalo por emergencia, descanso, falta de producto o mantenimiento.</div>
+        </div>
+        <label class="switch">
+          <input id="manualStoreClosed" type="checkbox" onchange="previewOperationStatus()">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+
+      <div class="form-group" style="margin-top:16px">
+        <label for="manualCloseReason">Mensaje público para cualquier cierre manual</label>
+        <input id="manualCloseReason" value="En unos instantes volveremos a recibir pedidos." readonly aria-readonly="true">
+        <div class="hint">Este mismo mensaje se muestra sin importar quién cierre la tienda. Solo un propietario puede cambiarlo.</div>
+        <div class="operation-actions" style="margin-top:8px">
+          <button id="editStorePublicMessage" class="btn btn-light" type="button" onclick="editStorePublicMessage()">Editar mensaje</button>
+          <button id="saveStorePublicMessage" class="btn btn-primary hidden" type="button" onclick="saveStorePublicMessage()">Guardar mensaje</button>
+          <button id="cancelStorePublicMessageEdit" class="btn btn-light hidden" type="button" onclick="cancelStorePublicMessageEdit()">Cancelar</button>
+        </div>
+        <div id="storePublicMessageStatus" aria-live="polite"></div>
+      </div>
+
+      <div class="operation-actions">
+        <button class="btn btn-danger" onclick="closeStoreNow()">Cerrar tienda ahora</button>
+        <button class="btn btn-success" onclick="openStoreNow()">Reabrir tienda</button>
+        <button class="btn btn-primary" onclick="saveOperationSettings()">Guardar operación</button>
+      </div>
+      <div id="operationMessage"></div>
+    </div>
+
+    <div class="operation-card" data-owner-operation>
+      <h3>Mensajes comerciales</h3>
+      <p>Se muestran en el bloque superior del menú. Mantén promesas reales para reforzar confianza.</p>
+
+      <div class="switch-row">
+        <div><strong>Mostrar tiempo de entrega</strong></div>
+        <label class="switch">
+          <input id="deliveryBadgeEnabled" type="checkbox" checked>
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+      <div class="form-group" style="margin-top:14px">
+        <label>Texto de entrega</label>
+        <input id="deliveryBadgeText" value="Envío en menos de 20 min">
+      </div>
+      <div class="preview-badge">🚚 <span id="deliveryBadgePreview">Envío en menos de 20 min</span></div>
+
+      <div class="switch-row" style="margin-top:18px">
+        <div><strong>Mostrar prueba social</strong></div>
+        <label class="switch">
+          <input id="socialProofEnabled" type="checkbox" checked>
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+      <div class="grid grid-2" style="margin-top:14px">
+        <div class="form-group">
+          <label>Número</label>
+          <input id="socialProofCount" type="number" min="0" step="1" value="230">
+        </div>
+        <div class="form-group">
+          <label>Texto después del número</label>
+          <input id="socialProofSuffix" value="pedidos esta semana">
+        </div>
+      </div>
+      <div class="social-preview"><span id="socialProofPreviewCount">230</span>+ <span id="socialProofPreviewSuffix" style="font-size:14px;font-weight:800">pedidos esta semana</span></div>
+      <div class="operation-actions">
+        <button class="btn btn-light" onclick="syncSocialProofFromOrders()">Usar pedidos reales de últimos 7 días</button>
+        <button class="btn btn-primary" onclick="saveMarketingSettings()">Guardar mensajes</button>
+      </div>
+      <div id="marketingMessage"></div>
+    </div>
+
+    <div class="operation-card" data-manager-operation>
+      <h3>💳 Métodos de pago</h3>
+      <p>Controla si los pedidos con envío a domicilio deben pagarse únicamente por transferencia.</p>
+
+      <div class="switch-row">
+        <div>
+          <strong>Solo transferencia en envíos</strong>
+          <div style="color:var(--muted);font-size:13px;margin-top:3px">Activado: envío a domicilio = solo transferencia. Pasar a recoger = efectivo o transferencia.</div>
+        </div>
+        <label class="switch">
+          <input id="deliveryTransferOnly" type="checkbox" onchange="previewPaymentRestriction()">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+
+      <div id="paymentRestrictionPreview" class="hint" style="margin-top:14px"></div>
+      <div class="operation-actions">
+        <button class="btn btn-primary" onclick="savePaymentRestriction()">Guardar configuración de pago</button>
+      </div>
+      <div id="paymentRestrictionMessage"></div>
+    </div>
+
+    <div class="operation-card" data-manager-operation>
+      <h3>🌧️ Recargo por lluvia</h3>
+      <p>Actívalo únicamente cuando las condiciones de lluvia hagan más exigente el reparto. El recargo se suma automáticamente a todas las zonas de entrega.</p>
+
+      <div class="switch-row">
+        <div>
+          <strong>Aplicar recargo temporal por lluvia</strong>
+          <div style="color:var(--muted);font-size:13px;margin-top:3px">Cuando está apagado no se cobra ni se muestra el aviso al cliente.</div>
+        </div>
+        <label class="switch">
+          <input id="rainSurchargeEnabled" type="checkbox" onchange="previewRainSurcharge()">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+
+      <div class="form-group" style="margin-top:14px">
+        <label>Recargo adicional por envío</label>
+        <input id="rainSurchargeAmount" type="number" min="0" step="1" value="10" oninput="previewRainSurcharge()">
+      </div>
+
+      <div class="form-group">
+        <label>Mensaje que verá el cliente</label>
+        <textarea id="rainSurchargeMessage" oninput="previewRainSurcharge()">Debido a la lluvia, se aplica temporalmente un cargo adicional al envío. Este ajuste reconoce las condiciones adicionales de reparto y el mayor cuidado requerido durante el traslado. Gracias por tu comprensión.</textarea>
+      </div>
+
+      <div id="rainSurchargePreview" class="hint">El aviso está desactivado.</div>
+      <div class="operation-actions">
+        <button class="btn btn-primary" onclick="saveRainSurchargeSettings()">Guardar y aplicar</button>
+      </div>
+      <div id="rainSurchargeAdminMessage"></div>
+    </div>
+  </div>
+
+  <div id="weeklyScheduleCard" class="card" style="margin-top:20px">
+    <div class="section-title" style="margin-bottom:14px">
+      <div>
+        <h3 style="margin:0">Horario semanal</h3>
+        <p>Activa solo los días en que atiendes y define el horario de cada día.</p>
+      </div>
+    </div>
+    <div id="weeklySchedule" class="weekly-schedule"></div>
+    <div class="operation-actions">
+      <button class="btn btn-light" onclick="copyMondaySchedule()">Copiar lunes a los días activos</button>
+      <button class="btn btn-primary" onclick="saveWeeklySchedule()">Guardar horario semanal</button>
+    </div>
+    <div id="scheduleMessage"></div>
+  </div>
+</section>
+
+<section id="section-batch" class="section">
+  <div class="section-title">
+    <div>
+      <h2>Próxima hornada</h2>
+      <p>Controla el contador real que verá el cliente en el menú.</p>
+    </div>
+    <button class="btn btn-light" onclick="loadBatchSettings()">Actualizar</button>
+  </div>
+
+  <div class="batch-layout">
+    <div class="card">
+      <div class="switch-row">
+        <div>
+          <strong>Mostrar hornada en el menú</strong>
+          <div style="color:var(--muted);font-size:13px;margin-top:3px">Puedes ocultarla sin borrar la configuración.</div>
+        </div>
+        <label class="switch">
+          <input id="batchEnabled" type="checkbox">
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+
+      <div class="grid grid-2" style="margin-top:18px">
+        <div class="form-group">
+          <label>Duración estimada de la hornada</label>
+          <div style="display:flex;align-items:center;gap:9px">
+            <input id="batchDuration" type="number" min="5" max="180" step="1" value="30">
+            <span style="white-space:nowrap;color:var(--muted)">minutos</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Tiempo mostrando “¡Recién horneados!”</label>
+          <div style="display:flex;align-items:center;gap:9px">
+            <input id="batchFreshMinutes" type="number" min="1" max="60" step="1" value="5">
+            <span style="white-space:nowrap;color:var(--muted)">minutos</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Texto del contador</label>
+        <input id="batchLabel" value="Próxima hornada estimada">
+      </div>
+
+      <div class="form-group">
+        <label>Mensaje cuando termina</label>
+        <input id="batchFinishedMessage" value="¡Recién horneados!">
+      </div>
+
+      <div class="batch-actions">
+        <button class="btn btn-primary" onclick="startBatch()">🔥 Iniciar nueva hornada</button>
+        <button class="btn btn-success" onclick="markBatchFresh()">✓ Marcar recién horneados</button>
+        <button class="btn btn-light" onclick="saveBatchPreferences()">Guardar preferencias</button>
+        <button class="btn btn-danger" onclick="disableBatch()">Desactivar</button>
+      </div>
+
+      <div class="batch-note">
+        <strong>Cómo funciona:</strong> al iniciar una hornada se guarda la hora de finalización en el sistema. El cliente verá la misma cuenta regresiva aunque cierre y vuelva a abrir el menú. Al llegar a cero, aparecerá “¡Recién horneados!” durante el tiempo que indiques. Después, el aviso se ocultará hasta que inicies otra hornada.
+      </div>
+
+      <div id="batchMessage"></div>
+    </div>
+
+    <div class="batch-status-card">
+      <div class="batch-status-label">Estado en el menú</div>
+      <div id="batchAdminTime" class="batch-status-time">--:--</div>
+      <div id="batchAdminText" class="batch-status-text">Sin hornada activa.</div>
+      <div style="margin-top:18px;font-size:12px;color:#bfbfbf">Vista administrativa en tiempo real</div>
+    </div>
+  </div>
+</section>
+
+<section id="section-orders" class="section"><div class="section-title"><div><h2>Pedidos y ventas</h2><p>Resumen calculado a partir de los pedidos registrados.</p></div><div class="order-filter" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><a class="btn btn-light" href="printer-test.html" target="_blank" rel="noopener">Probar impresora</a><button class="btn btn-dark" onclick="printLatestOrder()">⚡ Imprimir último pedido</button><select id="ordersPeriod" aria-label="Periodo de pedidos" onchange="loadOrderPage(false);renderOrderAnalytics()"><option value="7">Últimos 7 días</option><option value="30" selected>Últimos 30 días</option><option value="all">Todo</option></select><button class="btn btn-light" onclick="loadOrders()">Actualizar</button></div></div><div id="ordersMetrics" class="metric-grid"></div><div class="card sales-report-card" data-owner-only><h3>Métodos de pago y ticket promedio</h3><p>El método se cuenta según lo elegido en cada pedido válido; no confirma por sí solo que el pago se haya recibido.</p><div class="report-controls"><label>Periodo<select id="ordersReportPeriod" onchange="renderOrderPeriodSummary()"><option value="week">Semana calendario</option><option value="month" selected>Mes calendario</option><option value="all">Todo el historial</option></select></label><label>Fecha de referencia<input id="ordersReportDay" type="date" onchange="renderOrderPeriodSummary()"></label><button class="btn btn-light" onclick="renderOrderPeriodSummary()">Actualizar análisis</button><button class="btn btn-light" onclick="exportOrdersPeriod('csv')">Descargar pedidos CSV</button><button class="btn btn-light" onclick="exportOrdersPeriod('pdf')">Imprimir pedidos / guardar PDF</button></div><div id="ordersPeriodExportMessage" role="status" aria-live="polite"></div><div id="orderPeriodMetrics" class="metric-grid"></div><div id="paymentMethodMetrics" class="metric-grid"></div><div class="table-wrap"><table><thead><tr><th>Método elegido</th><th>Pedidos</th><th>Total registrado</th></tr></thead><tbody id="paymentMethodTable"></tbody></table></div></div><div class="analytics-grid"><div class="card"><h3>Productos más vendidos</h3><div id="productSalesChart"></div></div><div class="card"><h3>Ventas por día</h3><div id="dailySalesChart"></div></div></div><div id="ordersLoadMessage" role="status"></div><div id="ordersMessage" role="status"></div><div class="card"><label class="order-search" for="orderSearch"><span aria-hidden="true">🔍</span><input type="search" id="orderSearch" placeholder="Buscar número de pedido o folio" oninput="searchOrdersRemote()" maxlength="80" autocomplete="off"></label><p class="media-note">La búsqueda por folio revisa todo el historial, sin limitarse al periodo seleccionado.</p><p id="ordersSearchCount" class="media-note" aria-live="polite"></p><div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Pedido</th><th>Cliente</th><th>Tipo</th><th>Total</th><th>Pago</th><th>Estado</th><th></th></tr></thead><tbody id="ordersTable"></tbody></table></div><button id="ordersMore" class="btn btn-light hidden" onclick="loadOrderPage(true)">Cargar más pedidos</button><button id="ordersBackup" data-owner-only class="btn btn-light" onclick="exportOrdersBackup()">Descargar respaldo de pedidos CSV</button></div></section>
+
+<section id="section-pos" class="section"><div class="section-title"><div><h2>Punto de venta</h2><p>Venta presencial con los productos y existencias de la sucursal seleccionada.</p></div><button class="btn btn-light" onclick="loadPosWorkspace()">Actualizar</button></div><div id="posMessage" class="message" role="status" aria-live="polite"></div><div class="card"><div id="posShiftStatus" class="pos-shift-status">Cargando estado de caja…</div><form id="posOpenShiftForm" class="pos-cash-form hidden"><label>Fondo inicial en efectivo<input id="posOpeningCash" type="number" min="0" step="0.01" value="0" required></label><button class="btn btn-primary" type="submit">Abrir caja y turno</button></form><form id="posCloseForm" class="pos-cash-form hidden"><p>Fondo inicial: <strong id="posCloseOpeningCash"></strong>. Cuenta el efectivo disponible antes de cerrar.</p><label>Efectivo contado al cierre<input id="posClosingCash" type="number" min="0" step="0.01" required></label><button class="btn btn-dark" type="submit">Cerrar caja y generar corte</button></form></div><div id="posSaleCard" class="pos-layout card hidden"><div><h3>Productos</h3><input id="posSearch" type="search" placeholder="Buscar paste o producto"><div id="posProducts" class="pos-products"></div></div><div><h3>Venta actual</h3><div id="posCart"></div><div class="pos-total">Total <strong id="posTotal">$0.00</strong></div><form id="posSaleForm"><label>Método de pago<select id="posPayment"><option value="cash">Efectivo</option><option value="transfer">Transferencia</option><option value="card">Tarjeta</option></select></label><div id="posTransferDetails" class="pos-transfer-details hidden" aria-live="polite"></div><label id="posCashReceivedWrap">Efectivo recibido<input id="posCashReceived" type="number" min="0" step="0.01" inputmode="decimal"></label><p>Cambio: <strong id="posChange">$0.00</strong></p><button class="btn btn-primary" type="submit">Registrar venta</button></form><div id="posSaleResult" class="message ok hidden" role="status">Venta <strong id="posSaleCode"></strong> registrada · <strong id="posSaleTotal"></strong> <span id="posSaleChange"></span><br><button type="button" class="btn btn-dark btn-small" onclick="printPosSaleTicket()">Imprimir ticket</button></div></div></div></section>
+<div class="card"><h3>Ventas recientes del punto de venta</h3><p class="media-note">Consulta las ventas de esta sucursal. Al cancelar, el sistema devuelve una sola vez el stock controlado. Si ya se cobró, el reembolso al cliente debe hacerse por separado; el POS no devuelve dinero a la tarjeta ni al banco automáticamente.</p><div id="posRecentSales" aria-live="polite">Cargando ventas…</div></div>
+
+<section id="section-paste-sales" class="section"><div class="section-title"><div><h2>Ventas de pastes</h2><p>Unidades compradas, del paste más vendido al menos vendido. Excluye pedidos cancelados y pendientes de confirmación.</p></div><div class="order-filter"><select id="pasteSalesPeriod" aria-label="Periodo de ventas de pastes" onchange="renderPasteSales()"><option value="week">Semana calendario</option><option value="month" selected>Mes calendario</option><option value="all">Todo el historial</option></select><label>Fecha de referencia<input id="pasteSalesDay" type="date" onchange="renderPasteSales()"></label><button class="btn btn-light" onclick="loadOrders()">Actualizar</button></div></div><div id="pasteSalesMetrics" class="metric-grid"></div><div class="card table-wrap"><table><thead><tr><th>Posición</th><th>Paste</th><th>Unidades compradas</th></tr></thead><tbody id="pasteSalesTable"></tbody></table></div><div class="card sales-report-card"><h3>Zonas de entrega con más ventas</h3><p>Ordenadas por pastes enviados; se muestran también pedidos y venta total. Los pedidos antiguos sin zona guardada se identifican como “Sin zona asignada”.</p><div id="deliveryZoneMetrics" class="metric-grid"></div><div class="table-wrap"><table><thead><tr><th>Posición</th><th>Zona</th><th>Pastes</th><th>Pedidos</th><th>Venta registrada</th></tr></thead><tbody id="deliveryZoneTable"></tbody></table></div><button class="btn btn-light" onclick="printDeliveryZoneReport()">Imprimir zonas / guardar PDF</button></div><div class="card sales-report-card"><h3>Comparación: venta digital y punto de venta</h3><p>Incluye efectivo, transferencia y tarjeta; registra quién abrió/cerró caja, ventas del turno, efectivo esperado, contado y diferencia.</p><div class="report-controls"><label>Periodo<select id="posReportPeriod"><option value="week">Semana</option><option value="month" selected>Mes</option><option value="all">Todo el historial</option></select></label><label>Fecha de referencia<input id="posReportDay" type="date"></label><button id="posReportRefresh" class="btn btn-light" type="button">Actualizar comparación</button><button id="posReportPrint" class="btn btn-light" type="button">Imprimir comparación / guardar PDF</button></div><div id="posSalesSummary" aria-live="polite">Genera el reporte para consultar ventas por canal y cortes de caja.</div></div><div class="card sales-report-card"><h3>Descargar reporte de ventas</h3><p>Elige la semana o el mes que quieres comparar. La semana va de lunes a domingo y el mes es calendario.</p><div class="report-controls"><label>Periodo del reporte<select id="reportPeriod" onchange="salesReportRequest++;document.getElementById('salesReportContent').textContent='Genera el reporte del nuevo periodo.';salesReportData=null;document.querySelectorAll('[data-report-export]').forEach(b=>b.disabled=true)"><option value="week">Semana</option><option value="month" selected>Mes</option><option value="all">Todo el historial</option></select></label><label>Fecha de referencia<input id="reportDay" type="date" onchange="salesReportRequest++;document.getElementById('salesReportContent').textContent='Genera el reporte del nuevo periodo.';salesReportData=null;document.querySelectorAll('[data-report-export]').forEach(b=>b.disabled=true)"></label><button class="btn btn-dark" onclick="prepareSalesReport()">Generar reporte</button></div><div class="report-actions"><button class="btn btn-light" data-report-export disabled onclick="printSalesReport()">Ver para imprimir / PDF</button><button class="btn btn-light" data-report-export disabled onclick="downloadSalesWord()">Descargar Word</button><button class="btn btn-light" data-report-export disabled onclick="exportSalesCsv()">Descargar CSV</button></div><div id="salesReportContent" aria-live="polite"><p>Genera un reporte para consultar o descargar sus resultados.</p></div></div></section>
+<section id="section-store-history" class="section"><div class="section-title"><div><h2>Historial de tienda</h2><p>Cierres y restablecimientos manuales. Fecha y hora de Mérida. El equipo no puede modificar ni borrar estos registros.</p></div><div><div><button class="btn btn-light" onclick="loadStoreHistory()">Actualizar historial</button><button data-owner-only class="btn btn-light" onclick="exportStoreBackup()">Descargar historial CSV</button></div><button data-owner-only class="btn btn-light" onclick="exportStoreBackup()">Descargar historial CSV</button></div></div><div class="card"><div class="store-history-filters"><label for="storeHistoryDay">Día<input id="storeHistoryDay" type="date" onchange="loadStoreHistory()"></label><button class="btn btn-light" onclick="showAllStoreHistory()">Ver todo</button><label class="store-hours-filter"><input id="storeHistoryHoursOnly" type="checkbox" onchange="loadStoreHistory()">Solo dentro del horario laboral</label></div><div id="storeHistoryMessage" role="status"></div><div class="table-wrap"><table><thead><tr><th>Fecha y hora</th><th>Movimiento</th><th>Quién lo hizo</th><th>Motivo interno</th><th>Horario laboral</th></tr></thead><tbody id="storeHistoryRows"></tbody></table></div><button id="storeHistoryMore" class="btn btn-light hidden" onclick="loadStoreHistory(true)">Cargar más movimientos</button></div></section>
+<section id="section-access" class="section"><div class="section-title"><div><h2>Accesos</h2><p id="accessSectionDescription">El propietario administra los accesos. Asigna a cada persona los permisos que necesita.</p></div><button class="btn btn-light" onclick="refreshAdminAccess()">Actualizar accesos</button></div><div id="accessSetupNote" class="access-note"></div><div id="accessMessage" role="status" aria-live="polite"></div><div id="ownerRecoverySettings" data-primary-owner class="card"><h3>Correo de acceso y recuperación</h3><p class="media-note">Para recuperar la cuenta se usa su correo de acceso de Supabase. Si lo cambias aquí, el correo nuevo también será el que usarás para iniciar sesión. Debes confirmar el cambio desde la bandeja de ese correo.</p><label for="ownerRecoveryEmail">Correo personal</label><div class="credential-input-row"><input id="ownerRecoveryEmail" type="email" autocomplete="email" maxlength="254" placeholder="tu-correo-personal@ejemplo.com"><button type="button" class="btn btn-light" onclick="updateOwnerRecoveryEmail()">Guardar correo</button></div><div id="ownerRecoveryEmailMessage" role="status" aria-live="polite"></div></div><div class="card"><h3>Dispositivos y sesiones</h3><p class="media-note">Renombra cada dispositivo para identificarlo. En el acceso directo, desactiva la cuenta de la persona para bloquear todos sus dispositivos. Esta lista solo muestra dispositivos conectados y se actualiza automáticamente. Los que pierden actividad desaparecen y vuelven a aparecer al conectarse. Las cuentas se administran en Equipo y permisos. El rol pertenece a la cuenta: usa tu cuenta en el celular y otra cuenta de encargado o empleado en la tablet. El indicador verde y el número muestran navegadores con actividad reciente. Al cerrar la página o perder conexión, pueden tardar hasta 80 segundos en desaparecer.</p><div id="accessSessions" class="access-list"></div></div><div class="card"><h3>Equipo y permisos</h3><p class="media-note"><strong>Empleado:</strong> atiende pedidos de las últimas 48 horas, imprime tickets y puede cerrar/restablecer la tienda por emergencia con registro obligatorio. <strong>Encargado:</strong> puede activar o agotar productos, agregar categorías, ajustar métodos de pago y recargo por lluvia, administrar la hornada y consultar el historial. También puede crear cuentas de empleados, administrar solo cuentas de empleados y asignarles nuevas contraseñas para copiarlas; no puede modificar cuentas de propietarios, encargados ni la suya. No puede borrar productos ni categorías. Los propietarios pueden administrar las cuentas no protegidas. El segundo propietario no puede borrar, desactivar ni cambiar la cuenta principal. Solo puede existir un segundo propietario. Desactivar conserva la cuenta hasta que se borre manualmente. Borrar la desactiva primero; si el borrado falla, queda desactivada.</p><p class="media-note">Las contraseñas no se pueden recuperar después de crear la cuenta. Cópiala al crear o restablece una nueva y cópiala en ese momento. El encargado puede cambiar contraseñas solo a empleados. Cada cambio cierra las sesiones anteriores.</p><div id="accessMembers" class="access-list"></div><form id="staffInviteForm" class="access-form" novalidate onsubmit="createAdminStaff(event)"><h3>Crear cuenta</h3><div id="staffAccountMessage" role="status" aria-live="polite"></div><label for="staffInviteName">Nombre de la persona</label><input id="staffInviteName" maxlength="80" required autocomplete="off"><label for="staffAccountUsername">Usuario para entrar</label><div class="credential-input-row"><input id="staffAccountUsername" minlength="3" maxlength="32" pattern="[a-zA-Z0-9][a-zA-Z0-9._-]{2,31}" required autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Ejemplo: ana.turno"><button class="btn btn-light" type="button" onclick="copyInputValue('staffAccountUsername','Usuario copiado.')">Copiar</button></div><small>Letras sin acentos, números, punto, guion o guion bajo. No necesita correo.</small><label for="staffAccountPassword">Contraseña que tú asignas</label><div class="credential-input-row"><div class="password-field"><input id="staffAccountPassword" type="password" minlength="12" maxlength="128" required autocomplete="new-password"><button class="password-toggle" type="button" aria-controls="staffAccountPassword" aria-label="Mostrar contraseña" aria-pressed="false" onclick="togglePassword('staffAccountPassword',this)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path class="eye-slash" d="M3 3 21 21" stroke="currentColor" stroke-width="2"/></svg></button></div><button class="btn btn-light" type="button" onclick="copyInputValue('staffAccountPassword','Contraseña copiada.')">Copiar</button></div><small>Mínimo 12 caracteres, con letras y números. Copia la contraseña aquí antes de crear la cuenta; después no se podrá consultar y tendrás que asignar una nueva.</small><label for="staffInviteRole">Función</label><select id="staffInviteRole"><option value="staff">Empleado · pedidos y cierre de emergencia</option><option value="manager">Encargado · pedidos, productos y hornada</option><option value="owner">Segundo propietario · control completo excepto Negocio</option></select><button id="staffInviteButton" class="btn btn-dark" type="submit">Crear cuenta activa</button><p class="media-note">Entra directamente con el usuario y contraseña asignados. Al desactivar, la cuenta se conserva; al borrar, primero se desactiva y luego se elimina junto con su historial asociado.</p></form><div id="createdAccountCredential" class="card hidden" aria-live="polite"><h3>Credenciales de la cuenta creada</h3><p>Esta contraseña se muestra solo al crear la cuenta. Cópiala ahora y compártela en privado; después no se podrá recuperar.</p><div class="credential-line"><span>Usuario: <code id="createdAccountUsername"></code></span><button class="btn btn-light btn-small" onclick="copyTextValue(document.getElementById('createdAccountUsername').textContent,'Usuario copiado.')">Copiar usuario</button></div><div class="credential-line"><span>Contraseña: <code id="createdAccountPassword"></code></span><button class="btn btn-light btn-small" onclick="copyTextValue(document.getElementById('createdAccountPassword').textContent,'Contraseña copiada.')">Copiar contraseña</button></div></div><div id="staffInvitationResult" class="hidden"><input id="staffInvitationLink" class="hidden" readonly></div></div><div id="deviceProtectionCard" class="card"><h3>Protección de dispositivos</h3><p id="accessProtectionText"></p><div class="access-protection-options"><button id="enableAdminSecurity" class="btn btn-primary" onclick="activateAdminProtection()">Autorizar este navegador y activar protección</button><button class="btn btn-light" onclick="renameAdminSession()">Nombrar este navegador</button></div><p class="media-note">Con la protección activa, cada navegador nuevo queda en espera hasta que lo autorices desde uno ya aprobado. Conserva acceso a tu teléfono antes de revocar la tablet.</p></div></section>
+<section id="section-customers" class="section"><div class="section-title"><div><h2>Clientes</h2><p>Compras del periodo por cliente, identificado por su número telefónico.</p></div><div class="order-filter"><select id="customersPeriod" aria-label="Periodo de clientes" onchange="renderCustomers()"><option value="week">Semana calendario</option><option value="month" selected>Mes calendario</option><option value="all">Todo el historial</option></select><label>Fecha de referencia<input id="customersDay" type="date" onchange="renderCustomers()"></label><button class="btn btn-light" onclick="loadOrders()">Actualizar</button></div></div><div id="customersMetrics" class="metric-grid"></div><div class="card"><h3>Top 3 clientes recurrentes</h3><p>Ordenados por número de pedidos del periodo; incluye solo clientes con compras repetidas en este periodo o en su historial.</p><div class="table-wrap"><table><thead><tr><th>Posición</th><th>Cliente</th><th>Teléfono</th><th>Pedidos</th><th>Gastado</th></tr></thead><tbody id="topCustomersTable"></tbody></table></div></div><div class="card table-wrap"><table><thead><tr><th>Cliente</th><th>Teléfono</th><th>Pedidos</th><th>Gastado</th><th>Primera compra del periodo</th><th>Última compra del periodo</th><th>Tipo</th></tr></thead><tbody id="customersTable"></tbody></table><button id="customersMore" class="btn btn-light hidden" onclick="renderCustomers(true)">Cargar más clientes</button></div></section>
+</main></div>
+
+<div id="storeChangeModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="storeChangeTitle"><form class="modal-card" onsubmit="submitEmergencyStoreChange(event)"><div class="modal-head"><h3 id="storeChangeTitle">Cerrar tienda por emergencia</h3><button class="close" type="button" onclick="closeEmergencyStoreModal()">×</button></div><p id="storeChangeDescription"></p><p class="store-audit-warning">Esta acción quedará registrada con fecha, hora, tu cuenta y motivo. El propietario y el encargado podrán consultarla.</p><div class="form-group"><label for="storeChangeReason">Motivo interno obligatorio</label><textarea id="storeChangeReason" minlength="5" maxlength="240" required placeholder="Explica qué ocurrió. Este motivo no se muestra a los clientes."></textarea></div><div class="store-emergency-actions"><button class="btn btn-light" type="button" onclick="closeEmergencyStoreModal()">Cancelar</button><button id="storeChangeSubmit" class="btn btn-primary" type="submit">Confirmar cierre</button></div><div id="storeChangeMessage" role="status" aria-live="polite"></div></form></div>
+<div id="accountPasswordModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="accountPasswordTitle"><form class="modal-card" onsubmit="submitAccountPasswordReset(event)"><div class="modal-head"><h3 id="accountPasswordTitle">Asignar contraseña nueva</h3><button class="close" type="button" onclick="closeAccountPasswordModal()">×</button></div><p id="accountPasswordPerson"></p><p class="media-note">La contraseña actual no se puede consultar. Al guardar, la nueva sustituirá a la anterior y se cerrarán las sesiones abiertas de esa cuenta.</p><label for="accountNewPassword">Nueva contraseña</label><div class="credential-input-row"><div class="password-field"><input id="accountNewPassword" type="password" minlength="12" maxlength="128" autocomplete="new-password" required><button class="password-toggle" type="button" aria-controls="accountNewPassword" aria-label="Mostrar contraseña" aria-pressed="false" onclick="togglePassword('accountNewPassword',this)"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path class="eye-slash" d="M3 3 21 21" stroke="currentColor" stroke-width="2"/></svg></button></div><button type="button" class="btn btn-light" onclick="copyInputValue('accountNewPassword','Contraseña copiada.')">Copiar</button></div><div id="accountPasswordResetMessage" role="status" aria-live="polite"></div><div class="operation-actions"><button type="button" class="btn btn-light" onclick="closeAccountPasswordModal()">Cerrar</button><button id="accountPasswordResetButton" type="submit" class="btn btn-primary">Guardar contraseña nueva</button></div></form></div>
+<div id="productModal" class="modal"><div class="modal-card"><div class="modal-head"><h3 id="productModalTitle">Nuevo producto</h3><button class="close" onclick="closeProductModal()">×</button></div><input type="hidden" id="productId"><div class="form-group"><label>Nombre</label><input id="productName"></div><div class="form-group"><label>Descripción</label><textarea id="productDescription"></textarea></div><div class="grid grid-2"><div class="form-group"><label>Precio</label><input id="productPrice" type="number" min="0" step="0.01"></div><div class="form-group"><label>Categoría</label><select id="productCategory"></select></div></div><div class="form-group"><label>Foto</label><input id="productImageFile" type="file" accept="image/jpeg,image/png,image/webp" onchange="previewProductImage(event)"><div class="media-note"><strong>Ideal:</strong> 1000 × 1000 px, formato WebP/JPG y ≤ 300 KB. La imagen se mostrará cuadrada.</div><img id="productImagePreview" class="current-image hidden"></div><div class="form-group"><label>Disponibilidad manual</label><select id="productAvailable"><option value="true">Disponible</option><option value="false">Agotado</option></select></div><div class="inventory-box"><strong>Inventario por producto</strong><div class="inventory-note">Actívalo únicamente en los productos cuyo número de piezas quieras controlar. Si está desactivado, el menú funcionará como hasta ahora.</div><div class="form-group" style="margin-top:12px"><label>Controlar inventario</label><select id="productTrackStock" onchange="syncInventoryFields()"><option value="false">No</option><option value="true">Sí</option></select></div><div class="grid grid-2"><div class="form-group"><label>Disponibles</label><input id="productStock" type="number" min="0" step="1" value="0"></div><div class="form-group"><label>Avisar cuando queden</label><input id="productLowStockThreshold" type="number" min="0" step="1" value="3"></div></div><div id="inventoryFieldNote" class="inventory-note"></div></div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px"><button class="btn btn-light" onclick="closeProductModal()">Cancelar</button><button class="btn btn-primary" onclick="saveProduct()">Guardar producto</button></div><div id="productMessage"></div></div></div>
+<div id="orderModal" class="modal"><div class="modal-card"><div class="modal-head"><h3 id="orderModalTitle">Detalle del pedido</h3><button class="close" onclick="closeOrderModal()">×</button></div><div id="orderDetail"></div></div></div>
+
+<script>
+const SUPABASE_URL="https://cqlywpemisknrxswlmea.supabase.co";
+const SUPABASE_ANON_KEY="sb_publishable_wDu6p-CtnQtYu7KWH1YS1A_h7LeL0SX";
+const db=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+let products=[],orders=[],categories=["Pastes salados","Pastes dulces","Pastes de temporada","Bebidas","Promociones"],editingProductId=null;
+let deliveryZones=[],deliveryZonesMap=null,deliveryZoneLayers=new Map(),pendingZoneId=null,activePolygonDrawer=null;
+let adminRealtimeChannel=null,adminOrdersTimer=null,adminProductsTimer=null,adminSettingsTimer=null,adminZonesTimer=null;
+let localFiles={cover:null,profile:null,background:null};
+let objectUrls={cover:null,profile:null,background:null};
+let design={cover:{url:"",x:0,y:0,scale:1},profile:{url:"",x:0,y:0,scale:1},background:{type:"color",color:"#f4f4f4",url:"",overlay:0},category:{font:"Arial",size:28,color:"#171717"}};
+const FONT_MAP={Arial:"Arial,Helvetica,sans-serif",Georgia:"Georgia,'Times New Roman',serif",Trebuchet:"'Trebuchet MS',Arial,sans-serif",Verdana:"Verdana,Geneva,sans-serif",Times:"'Times New Roman',Times,serif",Courier:"'Courier New',Courier,monospace"};
+function escapeHtml(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}
+function escapeAttr(v){return escapeHtml(v)}
+function formatMoney(n){return "$"+Number(n||0).toFixed(2)}
+function formatDate(v){if(!v)return"";return new Intl.DateTimeFormat("es-MX",{dateStyle:"medium",timeStyle:"short"}).format(new Date(v))}
+function dateOnly(v){if(!v)return"";return new Intl.DateTimeFormat("es-MX",{dateStyle:"medium"}).format(new Date(v))}
+function normalizePhone(v){return String(v??"").replace(/\D/g,"")}
+function safeItems(v){try{const x=typeof v==="string"?JSON.parse(v):v;return Array.isArray(x)?x:[]}catch{return[]}}
+function showMessage(id,text,ok=true){document.getElementById(id).innerHTML=`<div class="message ${ok?"ok":"error"}">${escapeHtml(text)}</div>`}
+async function login(){
+  const username=loginEmail.value.trim().toLowerCase(),email=username.includes('@')?username:`staff+${username}@accounts.pastehot.com`,password=loginPassword.value;loginMessage.innerHTML="";
+  if(!username||!password){showMessage("loginMessage","Escribe usuario y contraseña.",false);return}
+  const button=loginScreen.querySelector('button');button.disabled=true;
+  try{const {data,error}=await db.auth.signInWithPassword({email,password});if(error)throw error;loginPassword.value="";await enterAdmin(data.session)}catch(error){showMessage("loginMessage","No se pudo entrar. Revisa tus datos o la conexión.",false)}finally{button.disabled=false}
+}
+async function logout(){stopAdminEnhancements();await db.auth.signOut();location.reload()}
+async function checkSession(){try{const {data,error}=await db.auth.getSession();if(!error&&data.session)await enterAdmin(data.session);}catch{denyAdminAccess("No se pudo comprobar el acceso. Permite el almacenamiento del navegador y revisa tu conexión.");}showPreviewDemoEntry()}
+async function enterAdmin(session){
+  if(!await setupAdminAccess(session))return;
+  await window.PasteHotMultiStore?.setupAdmin?.();
+  loginScreen.classList.add("hidden");adminScreen.classList.remove("hidden");
+  await initAdmin();
+}
+async function initAdmin(){
+  setupOrderInbox();initializeOrderSound();startAdminRealtime();
+  if(adminRole==='owner'){
+    await loadCategories();
+    await Promise.all([loadProducts(),loadDesign(),loadBusinessSettings(),loadOrders(),loadBatchSettings(),loadOperationSettings(),loadDeliveryZones()]);
+    await retryImageCleanup();
+  }else if(adminRole==='manager'){await loadCategories();await Promise.all([loadProducts(),loadOrders()]);await retryImageCleanup();showTab('orders');}
+  else{await loadOrders();showTab('orders');}
+  applyAdminPermissions();if(!storeHistoryDay.value)storeHistoryDay.value=storeLocalDay();await loadStoreControl();startAdminAccessHeartbeat();startOrderRecovery();
+}
+function showTab(name,button){
+  if(!adminCanOpenTab(name))return;
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+  document.getElementById("section-"+name)?.classList.add("active");
+  (button||Array.from(document.querySelectorAll('.tab')).find(b=>b.getAttribute('onclick')?.includes("'"+name+"'")))?.classList.add("active");
+  scheduleAdminViewRefresh();
+  if(name==="orders"||name==="customers"||name==="paste-sales")loadOrders();
+  if(name==="pos")loadPosWorkspace();
+  if(name==="paste-sales")loadPosSalesSummary();
+  if(name==="paste-sales")scheduleAdminViewRefresh("report");
+  if(name==="access")refreshAdminAccess();if(name==="store-history")loadStoreHistory();
+  if(name==="business")loadBusinessSettings();
+  if(name==="design")loadDesign();if(name==="batch")loadBatchSettings();if(name==="operation")loadOperationSettings();
+  if(name==="delivery-zones"){loadDeliveryZones();setTimeout(()=>deliveryZonesMap?.invalidateSize(),80)}
+}
+
+function setAdminLiveStatus(text,state=""){
+  const el=document.getElementById("adminLiveStatus");
+  if(!el)return;
+  el.textContent=text;
+  el.className="live-sync-pill"+(state?" "+state:"");
+}
+function startAdminRealtime(){
+  if(adminRealtimeChannel)db.removeChannel(adminRealtimeChannel);
+  setAdminLiveStatus("● Conectando actualización automática","");
+  const branchFilter=window.PasteHotStoreId?`store_id=eq.${window.PasteHotStoreId}`:null;
+  adminRealtimeChannel=db.channel("pastehot-admin-live")
+    .on("postgres_changes",{event:"*",schema:"public",table:"orders",...(branchFilter?{filter:branchFilter}:{})},payload=>{
+      receiveRealtimeOrder(payload);
+      handleOrderRealtimeChange(payload);
+    })
+    .on("postgres_changes",{event:"*",schema:"public",table:"products",...(branchFilter?{filter:branchFilter}:{})},()=>{
+      if(!adminCanToggleProduct())return;
+      scheduleAdminViewRefresh("products","report");
+    })
+    .on("postgres_changes",{event:"*",schema:"public",table:"settings",...(branchFilter?{filter:branchFilter}:{})},payload=>scheduleAdminSettingsReload(payload))
+    .on("postgres_changes",{event:"*",schema:"public",table:"delivery_zones",...(branchFilter?{filter:branchFilter}:{})},()=>{
+      if(adminRole!=="owner")return;
+      scheduleAdminViewRefresh("delivery-zones");
+    })
+    .subscribe(status=>{
+      if(status==="SUBSCRIBED"){adminRealtimeOnline=true;setAdminLiveStatus("● Actualización automática activa","online");refreshAdminAfterWake();}
+      else adminRealtimeOnline=false;
+      if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED")setAdminLiveStatus("● Reconectando…","warn");
+    });
+}
+async function refreshAdminAfterWake(){
+  if(adminWakeRefreshPromise)return adminWakeRefreshPromise;
+  adminWakeRefreshPromise=(async()=>{
+    const {data}=await db.auth.getSession();if(!data?.session||!await refreshAdminAccess())return;
+    if(adminCanEditProducts()){await loadCategories();await loadProducts();}
+    await loadOrders();await loadStoreControl();
+    const active=[...document.querySelectorAll('.section')].find(el=>el.classList.contains('active'))?.id.replace('section-','');
+    const loader={design:loadDesign,business:loadBusinessSettings,batch:loadBatchSettings,operation:loadOperationSettings,'delivery-zones':loadDeliveryZones,'store-history':loadStoreHistory}[active];
+    if(loader&&adminCanOpenTab(active))await loader();
+    scheduleAdminViewRefresh('report');resumeOrderAudio();
+  })();try{return await adminWakeRefreshPromise}catch{setAdminLiveStatus("● Recuperando conexión…","warn");}finally{adminWakeRefreshPromise=null;}
+}
+window.addEventListener("online",refreshAdminAfterWake);
+window.addEventListener("offline",()=>{adminRealtimeOnline=false;setAdminLiveStatus("● Sin internet · esperando conexión","warn")});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")refreshAdminAfterWake()});
+
+async function loadProducts(){const {data,error}=await db.from("products").select("*").order("sort_order",{ascending:true}).order("created_at",{ascending:true});if(error){productsList.innerHTML='<div class="message error">No se pudieron cargar los productos.</div>';return}products=data||[];renderProducts();invalidateSalesReports();if(reportOwner()&&document.getElementById("section-paste-sales").classList.contains("active"))renderPasteSales()}
+function renderProducts(){
+  if(!products.length){productsList.innerHTML='<p style="color:#777">No hay productos.</p>';return}
+  const groups=PasteHotOrders.groupProducts(products,categories);
+  productsList.innerHTML=groups.map(group=>`<div class="product-group"><h3 class="product-group-heading">${escapeHtml(group.name)}<span class="group-count">${group.products.length} producto${group.products.length===1?'':'s'}</span></h3>${group.products.map(p=>{const tracked=!!p.track_stock,stock=Math.max(0,Number(p.stock)||0),threshold=Math.max(0,Number(p.low_stock_threshold)||0);const stockClass=!tracked?"off":stock===0?"zero":stock<=threshold?"low":"ok";const stockText=!tracked?"Inventario: no controlado":stock===0?"Inventario: AGOTADO":stock<=threshold?`Inventario: ${stock} · pocas unidades`:`Inventario: ${stock} disponibles`;return `<div class="product-admin-card"><img class="product-admin-image" src="${escapeAttr(p.image_url||"")}" alt=""><div class="product-admin-info"><h3>${escapeHtml(p.name)}</h3><p>${escapeHtml(p.category||"")}</p><p>${formatMoney(p.price)}</p><p class="stock-line ${stockClass}">${escapeHtml(stockText)}</p></div><div class="product-admin-actions"><button class="status-toggle ${p.available?"status-on":"status-off"}" onclick="toggleProduct('${p.id}',${!p.available})">${p.available?"● Disponible":"● Agotado"}</button>${adminRole==='owner'?`<button class="btn btn-light btn-small" data-owner-product-edit onclick="editProduct('${p.id}')">Editar</button><button class="btn btn-danger btn-small" onclick="deleteProduct('${p.id}')">Borrar</button>`:''}</div></div>`}).join("")}</div>`).join("");
+}
+async function toggleProduct(id,value){if(!adminCanToggleProduct())return;const {error}=await db.from("products").update({available:value,updated_at:new Date().toISOString()}).eq("id",id).select("id").single();if(error){alert("No se pudo actualizar.");return}const p=products.find(x=>String(x.id)===String(id));if(p)p.available=value;renderProducts()}
+function storagePathFromPublicUrl(url){
+  try{
+    const marker="/storage/v1/object/public/product-images/";
+    const i=String(url||"").indexOf(marker);
+    if(i<0)return null;
+    return decodeURIComponent(String(url).slice(i+marker.length).split("?")[0]);
+  }catch{return null}
+}
+const IMAGE_CLEANUP_KEY="pastehot_image_cleanup_v1";
+function pendingImageCleanup(){try{return JSON.parse(localStorage.getItem(IMAGE_CLEANUP_KEY)||"[]").filter(u=>typeof u==="string"&&storagePathFromPublicUrl(u))}catch{return []}}
+function rememberImageCleanup(url,pending){try{const urls=new Set(pendingImageCleanup());if(pending)urls.add(url);else urls.delete(url);localStorage.setItem(IMAGE_CLEANUP_KEY,JSON.stringify([...urls]))}catch(e){console.warn("No se pudo guardar el reintento de limpieza.",e)}}
+async function removeStoredImage(url){
+  const path=storagePathFromPublicUrl(url);
+  if(!path)return true;
+  try{
+    // Image URLs can be shared between stores after a menu copy.
+    let {data:referenced,error:referenceError}=await db.rpc("pastehot_image_reference_exists",{p_url:url});
+    if(referenceError?.code==="PGRST202"){
+      const [productRefs,designRefs]=await Promise.all([
+        db.from("products").select("id").eq("image_url",url).limit(1),
+        db.from("settings").select("key").in("key",["cover_image","profile_image","background_image"]).eq("value",url).limit(1)
+      ]);
+      if(productRefs.error||designRefs.error)throw productRefs.error||designRefs.error;
+      referenced=Boolean(productRefs.data?.length||designRefs.data?.length);
+      referenceError=null;
+    }
+    if(referenceError)throw referenceError;
+    if(referenced){rememberImageCleanup(url,false);return true}
+    const {error}=await db.storage.from("product-images").remove([path]);
+    if(error)throw error;
+    const slash=path.lastIndexOf("/"),folder=slash<0?"":path.slice(0,slash),name=path.slice(slash+1);
+    const check=await db.storage.from("product-images").list(folder,{search:name,limit:100});
+    if(check.error)throw check.error;
+    if((check.data||[]).some(item=>item.name===name))throw new Error("La foto anterior sigue almacenada.");
+    rememberImageCleanup(url,false);
+    return true;
+  }catch(error){rememberImageCleanup(url,true);console.warn("Limpieza de imagen pendiente.",error);return false}
+}
+async function retryImageCleanup(){for(const url of pendingImageCleanup())await removeStoredImage(url)}
+async function deleteProduct(id){
+  if(!adminAccessAllowed||adminRole!=='owner')return;
+  const p=products.find(x=>String(x.id)===String(id));
+  if(!p||!confirm(`¿Borrar "${p.name}"?`))return;
+  const oldImage=p.image_url||"";
+  const {error}=await db.from("products").delete().eq("id",id);
+  if(error){alert("No se pudo borrar.");return}
+  await removeStoredImage(oldImage);
+  await loadProducts();
+}
+function populateCategorySelect(selected=""){productCategory.innerHTML=categories.map(c=>`<option value="${escapeAttr(c)}" ${c===selected?"selected":""}>${escapeHtml(c)}</option>`).join("")}
+function openProductModal(product=null){if(!adminCanEditProducts())return;editingProductId=product?.id||null;productModalTitle.textContent=product?"Editar producto":"Nuevo producto";productName.value=product?.name||"";productDescription.value=product?.description||"";productPrice.value=product?.price??"";productAvailable.value=product?String(product.available):"true";productTrackStock.value=product?String(!!product.track_stock):"false";productStock.value=product?.stock??0;productLowStockThreshold.value=product?.low_stock_threshold??3;populateCategorySelect(product?.category||"");productImageFile.value="";if(product?.image_url){productImagePreview.src=product.image_url;productImagePreview.classList.remove("hidden")}else productImagePreview.classList.add("hidden");syncInventoryFields();productMessage.innerHTML="";productModal.classList.add("show")}
+function syncInventoryFields(){const tracked=productTrackStock.value==="true";productStock.disabled=!tracked;productLowStockThreshold.disabled=!tracked;inventoryFieldNote.textContent=tracked?"El menú limitará las compras a las piezas disponibles y mostrará aviso de pocas unidades según el umbral.":"Sin control de inventario: este producto seguirá vendiéndose mientras su disponibilidad manual esté en Disponible."}
+function editProduct(id){const p=products.find(x=>String(x.id)===String(id));if(p)openProductModal(p)}function closeProductModal(){productModal.classList.remove("show");scheduleAdminViewRefresh()}
+function previewProductImage(e){const f=e.target.files[0];if(!f)return;productImagePreview.src=URL.createObjectURL(f);productImagePreview.classList.remove("hidden")}
+async function saveProduct(){
+  if(!adminCanEditProducts())return;
+  const name=productName.value.trim(),description=productDescription.value.trim(),price=Number(productPrice.value),category=productCategory.value,available=productAvailable.value==="true",trackStock=productTrackStock.value==="true",stock=Number(productStock.value),lowStockThreshold=Number(productLowStockThreshold.value),file=productImageFile.files[0];
+  productMessage.innerHTML="";
+  if(!name){showMessage("productMessage","Escribe el nombre.",false);return}
+  if(!Number.isFinite(price)||price<0){showMessage("productMessage","Escribe un precio válido.",false);return}
+  if(trackStock&&(!Number.isInteger(stock)||stock<0)){showMessage("productMessage","Disponibles debe ser un número entero de 0 o más.",false);return}
+  if(trackStock&&(!Number.isInteger(lowStockThreshold)||lowStockThreshold<0)){showMessage("productMessage","El aviso de pocas unidades debe ser un número entero de 0 o más.",false);return}
+
+  const previous=editingProductId?products.find(p=>String(p.id)===String(editingProductId)):null;
+  const oldImage=previous?.image_url||"";
+  let imageUrl=oldImage;
+
+  try{
+    if(file)imageUrl=await uploadFile(file,"products","product");
+  }catch(e){showMessage("productMessage",e.message,false);return}
+
+  const payload={name,description,price,category,available,track_stock:trackStock,stock:Number.isFinite(stock)&&stock>=0?Math.floor(stock):0,low_stock_threshold:Number.isFinite(lowStockThreshold)&&lowStockThreshold>=0?Math.floor(lowStockThreshold):3,image_url:imageUrl,updated_at:new Date().toISOString()};
+  let error;
+  if(editingProductId)({error}=await db.from("products").update(payload).eq("id",editingProductId).select("id").single());
+  else{payload.sort_order=products.length+1;({error}=await db.from("products").insert(payload).select("id").single())}
+
+  if(error){
+    if(file&&imageUrl&&imageUrl!==oldImage)await removeStoredImage(imageUrl);
+    showMessage("productMessage",error.message,false);
+    return;
+  }
+
+  const cleaned=!(file&&oldImage&&oldImage!==imageUrl)||await removeStoredImage(oldImage);
+  showMessage("productMessage",cleaned?"Producto guardado. Foto anterior eliminada si ya no estaba en uso.":"Producto guardado. No se pudo eliminar la foto anterior; se reintentará al entrar al administrador.",cleaned);
+  await loadProducts();
+  if(cleaned)setTimeout(closeProductModal,450);
+}
+
+async function loadCategories(){if(categoryOrderSaving||categoryDragState||productModal.classList.contains("show"))return;const {data}=await db.from("settings").select("value").eq("key","categories").maybeSingle();if(data?.value){try{const p=JSON.parse(data.value);if(Array.isArray(p)&&p.length)categories=p}catch{}}populateCategorySelect();renderCategories();renderProducts()}
+let categoryOrderSaving=false,categoryDragState=null;
+function renderCategories(){categoriesList.innerHTML=categories.map((c,i)=>`<div class="category-row" data-category-index="${i}"><strong>${i+1}. ${escapeHtml(c)}</strong><div class="category-actions">${adminRole==='owner'?`<button type="button" class="category-drag" aria-label="Mover ${escapeAttr(c)}" title="Mantén presionado y desliza para mover" onpointerdown="startCategoryDrag(event,${i})" onkeydown="categoryDragKeyboard(event,${i})" ${categoryOrderSaving?"disabled":""}>⠿</button><button class="btn btn-danger btn-small" onclick="deleteCategory(${i})" ${categoryOrderSaving?"disabled":""}>Eliminar</button>`:''}</div></div>`).join("");document.getElementById('categoryHelpText').textContent=adminRole==='manager'?'Puedes agregar categorías. El encargado no puede borrar ni reordenar categorías.':'Mantén presionado el botón ⠿ y desliza la categoría a su nueva posición. Al soltar, se guarda con sus productos.'}
+function startCategoryDrag(event,index){
+  if(adminRole!=='owner'||categoryOrderSaving||categoryDragState||event.button!==0)return;
+  event.preventDefault();
+  const surface=categoriesList,handle=event.currentTarget,row=handle.closest(".category-row"),rect=row.getBoundingClientRect();
+  const state={handle,row,pointerId:event.pointerId,original:[...categories],y:event.clientY,offset:event.clientY-rect.top,active:false,timer:null,frame:null,ghost:null};
+  categoryDragState=state;
+  // Capture on the stable list: moving the row must not cancel the touch.
+  surface.setPointerCapture(event.pointerId);
+  const move=e=>{if(e.pointerId===state.pointerId){e.preventDefault();state.y=e.clientY}};
+  const finish=async e=>{
+    if(e.pointerId!==state.pointerId||categoryDragState!==state)return;
+    clearTimeout(state.timer);cancelAnimationFrame(state.frame);
+    surface.removeEventListener("pointermove",move);surface.removeEventListener("pointerup",finish);surface.removeEventListener("pointercancel",cancel);surface.removeEventListener("lostpointercapture",cancel);
+    const next=[...categoriesList.querySelectorAll(".category-row")].map(r=>state.original[Number(r.dataset.categoryIndex)]);
+    state.ghost?.remove();row.classList.remove("dragging");categoryDragState=null;
+    if(surface.hasPointerCapture(state.pointerId))surface.releasePointerCapture(state.pointerId);
+    if(state.active&&e.type!=="pointercancel"&&JSON.stringify(next)!==JSON.stringify(state.original)){
+      await applyCategoryOrder(next);
+      const position=categories.indexOf(state.original[index]);categoriesList.querySelectorAll(".category-drag")[position]?.focus();
+    }else renderCategories();
+  };
+  const cancel=e=>{if(e.type==="lostpointercapture"&&e.target!==surface)return;return finish({pointerId:e.pointerId,type:"pointercancel"})};
+  const tick=()=>{
+    if(categoryDragState!==state)return;
+    if(state.y<85)window.scrollBy(0,-12);else if(state.y>window.innerHeight-70)window.scrollBy(0,12);
+    state.ghost.style.top=(state.y-state.offset)+"px";
+    const siblings=[...categoriesList.querySelectorAll(".category-row")].filter(r=>r!==row);
+    const before=siblings.find(r=>{const box=r.getBoundingClientRect();return state.y<box.top+box.height/2});
+    if(before){if(row.nextElementSibling!==before)categoriesList.insertBefore(row,before)}else if(categoriesList.lastElementChild!==row)categoriesList.appendChild(row);
+    state.frame=requestAnimationFrame(tick);
+  };
+  surface.addEventListener("pointermove",move);surface.addEventListener("pointerup",finish);surface.addEventListener("pointercancel",cancel);surface.addEventListener("lostpointercapture",cancel);
+  state.timer=setTimeout(()=>{
+    if(categoryDragState!==state)return;
+    state.active=true;state.ghost=row.cloneNode(true);state.ghost.classList.add("category-drag-ghost");state.ghost.setAttribute("aria-hidden","true");state.ghost.style.width=rect.width+"px";state.ghost.style.left=rect.left+"px";document.body.appendChild(state.ghost);row.classList.add("dragging");showMessage("categoriesMessage","Desliza la categoría y suelta para guardar.");state.frame=requestAnimationFrame(tick);
+  },180);
+}
+async function categoryDragKeyboard(event,index){
+  if(!["ArrowUp","ArrowDown"].includes(event.key)||categoryDragState)return;
+  event.preventDefault();await moveCategory(index,event.key==="ArrowUp"?-1:1);
+}
+async function applyCategoryOrder(next){if(!adminAccessAllowed||adminRole!=='owner')return;
+  if(categoryOrderSaving)return false;
+  const previous=[...categories];
+  categoryOrderSaving=true;categories=[...next];renderCategories();
+  showMessage("categoriesMessage","Guardando orden…");
+  try{
+    await saveSetting("categories",JSON.stringify(categories));
+    populateCategorySelect();
+    showMessage("categoriesMessage","Orden guardado. El menú mostrará las categorías con sus productos en esta posición.");
+    return true;
+  }catch(error){
+    categories=previous;populateCategorySelect();
+    showMessage("categoriesMessage","No se pudo guardar el orden. Se conservó la posición anterior; vuelve a intentarlo.",false);
+    return false;
+  }finally{categoryOrderSaving=false;renderCategories();renderProducts()}
+}
+async function moveCategory(index,direction){
+  if(categoryOrderSaving||categoryDragState||!Number.isInteger(index)||![-1,1].includes(direction))return;
+  const target=index+direction;
+  if(index<0||index>=categories.length||target<0||target>=categories.length)return;
+  const next=[...categories];[next[index],next[target]]=[next[target],next[index]];
+  if(await applyCategoryOrder(next))document.querySelectorAll(".category-row")[target]?.querySelector(".category-drag")?.focus();
+}
+async function newCategory(){if(!adminAccessAllowed||!['owner','manager'].includes(adminRole)||categoryOrderSaving||categoryDragState||productModal.classList.contains("show"))return;const v=prompt("Nombre de la nueva categoría:")?.trim();if(!v)return;if(v.length>80){alert("Usa un nombre de máximo 80 caracteres.");return}if(categories.some(c=>c.toLowerCase()===v.toLowerCase())){alert("Esa categoría ya existe.");return}if(adminRole==='owner'){await applyCategoryOrder([...categories,v]);return}const {error}=await db.rpc('pastehot_add_category',{p_name:v});if(error){showMessage('categoriesMessage',error.message||'No se pudo agregar la categoría.',false);return}await loadCategories();showMessage('categoriesMessage',`Categoría “${v}” agregada.`)}
+async function deleteCategory(i){if(adminRole!=='owner'||categoryOrderSaving||categoryDragState||productModal.classList.contains("show"))return;const name=categories[i];if(products.some(p=>p.category===name)){alert("No puedes eliminar esta categoría mientras tenga productos asignados.");return}if(categories.length<=1||!confirm(`¿Eliminar la categoría "${name}"?`))return;await applyCategoryOrder(categories.filter((_,index)=>index!==i))}
+
+function selectDesignPanel(name){document.querySelectorAll(".design-panel").forEach(p=>p.classList.remove("active"));document.querySelectorAll(".design-tab").forEach(p=>p.classList.remove("active"));document.getElementById("panel"+name[0].toUpperCase()+name.slice(1)).classList.add("active");document.getElementById("tab"+name[0].toUpperCase()+name.slice(1)).classList.add("active")}
+async function loadDesign(){const liveGuard=adminFormLoadGuard('design');if(!liveGuard)return;const keys=["cover_image","cover_x","cover_y","cover_scale","profile_image","profile_x","profile_y","profile_scale","background_type","background_color","background_image","background_overlay","category_title_font","category_title_size","category_title_color"];const {data,error}=await db.from("settings").select("key,value").in("key",keys);if(error)return;if(!liveGuard())return;const s={};(data||[]).forEach(r=>s[r.key]=r.value);design.cover={url:s.cover_image||"",x:Number(s.cover_x)||0,y:Number(s.cover_y)||0,scale:Number(s.cover_scale)||1};design.profile={url:s.profile_image||"",x:Number(s.profile_x)||0,y:Number(s.profile_y)||0,scale:Number(s.profile_scale)||1};design.background={type:s.background_type||"color",color:s.background_color||"#f4f4f4",url:s.background_image||"",overlay:Number(s.background_overlay)||0};design.category={font:s.category_title_font||"Arial",size:Number(s.category_title_size)||28,color:s.category_title_color||"#171717"};syncDesignControls();updateDesignPreview();adminFormLoaded('design',liveGuard.version);}
+function syncDesignControls(){[["coverX",design.cover.x],["coverY",design.cover.y],["coverScale",design.cover.scale],["profileX",design.profile.x],["profileY",design.profile.y],["profileScale",design.profile.scale]].forEach(([id,v])=>document.getElementById(id).value=v);backgroundType.value=design.background.type;backgroundColor.value=design.background.color;backgroundColorText.textContent=design.background.color;backgroundOverlay.value=Math.round(design.background.overlay*100);backgroundOverlayValue.textContent=Math.round(design.background.overlay*100)+"%";categoryTitleFont.value=design.category.font;categoryTitleSize.value=design.category.size;categoryTitleSizeValue.textContent=design.category.size;categoryTitleColor.value=design.category.color;categoryTitleColorText.textContent=design.category.color;updateEditorImages();updateControlLabels();updateCategoryStylePreview()}
+function updateEditorImages(){[["cover",coverEditorImage,coverEmpty],["profile",profileEditorImage,profileEmpty]].forEach(([k,img,empty])=>{const d=design[k];if(d.url){img.src=d.url;img.classList.remove("hidden");empty.classList.add("hidden");img.style.left=`calc(50% + ${d.x}%)`;img.style.top=`calc(50% + ${d.y}%)`;img.style.transform=`translate(-50%,-50%) scale(${d.scale})`}else{img.classList.add("hidden");empty.classList.remove("hidden")}});if(design.background.url){backgroundPreview.src=design.background.url;backgroundPreview.classList.remove("hidden")}else backgroundPreview.classList.add("hidden")}
+function updateControlLabels(){coverXValue.textContent=design.cover.x;coverYValue.textContent=design.cover.y;coverScaleValue.textContent=design.cover.scale.toFixed(2);profileXValue.textContent=design.profile.x;profileYValue.textContent=design.profile.y;profileScaleValue.textContent=design.profile.scale.toFixed(2)}
+function bindRange(id,target,key){document.getElementById(id).addEventListener("input",e=>{design[target][key]=Number(e.target.value);updateEditorImages();updateControlLabels();updateDesignPreview()})}bindRange("coverX","cover","x");bindRange("coverY","cover","y");bindRange("coverScale","cover","scale");bindRange("profileX","profile","x");bindRange("profileY","profile","y");bindRange("profileScale","profile","scale");
+backgroundType.addEventListener("change",e=>{design.background.type=e.target.value;updateDesignPreview()});backgroundColor.addEventListener("input",e=>{design.background.color=e.target.value;backgroundColorText.textContent=e.target.value;updateDesignPreview()});backgroundOverlay.addEventListener("input",e=>{design.background.overlay=Number(e.target.value)/100;backgroundOverlayValue.textContent=e.target.value+"%";updateDesignPreview()});categoryTitleFont.addEventListener("change",e=>{design.category.font=e.target.value;updateCategoryStylePreview();updateDesignPreview()});categoryTitleSize.addEventListener("input",e=>{design.category.size=Number(e.target.value);categoryTitleSizeValue.textContent=e.target.value;updateCategoryStylePreview();updateDesignPreview()});categoryTitleColor.addEventListener("input",e=>{design.category.color=e.target.value;categoryTitleColorText.textContent=e.target.value;updateCategoryStylePreview();updateDesignPreview()});
+function updateCategoryStylePreview(){categoryStylePreview.querySelector("h2").style.cssText=`font-family:${FONT_MAP[design.category.font]||FONT_MAP.Arial};font-size:${design.category.size}px;color:${design.category.color};font-weight:800`}
+function selectImageFile(event,type){const f=event.target.files[0];if(!f)return;if(f.size>8*1024*1024){alert("La imagen original supera 8 MB. Redúcela antes de subirla.");event.target.value="";return}localFiles[type]=f;if(objectUrls[type])URL.revokeObjectURL(objectUrls[type]);objectUrls[type]=URL.createObjectURL(f);if(type==="background"){design.background.url=objectUrls[type];design.background.type="image";backgroundType.value="image"}else design[type].url=objectUrls[type];updateEditorImages();updateDesignPreview()}
+function removeDesignImage(type){localFiles[type]=null;if(type==="background")design.background.url="";else design[type].url="";updateEditorImages();updateDesignPreview()}
+function resetDesignPosition(){design.cover.x=design.cover.y=0;design.cover.scale=1;design.profile.x=design.profile.y=0;design.profile.scale=1;syncDesignControls();updateDesignPreview()}
+function updateDesignPreview(){previewBackground.style.backgroundColor=design.background.color;previewBackground.style.backgroundImage=design.background.type==="image"&&design.background.url?`url(${JSON.stringify(design.background.url)})`:"none";previewOverlay.style.background=`rgba(0,0,0,${design.background.overlay})`;if(design.cover.url){previewCover.src=design.cover.url;previewCover.classList.remove("hidden");previewCover.style.left=`calc(50% + ${design.cover.x}%)`;previewCover.style.top=`calc(50% + ${design.cover.y}%)`;previewCover.style.transform=`translate(-50%,-50%) scale(${design.cover.scale})`}else previewCover.classList.add("hidden");if(design.profile.url){previewProfile.src=design.profile.url;previewProfile.classList.remove("hidden");previewProfile.style.left=`calc(50% + ${design.profile.x}%)`;previewProfile.style.top=`calc(50% + ${design.profile.y}%)`;previewProfile.style.transform=`translate(-50%,-50%) scale(${design.profile.scale})`}else previewProfile.classList.add("hidden");previewCategoryTitle.style.cssText=`font-family:${FONT_MAP[design.category.font]||FONT_MAP.Arial};font-size:${Math.min(design.category.size,previewDevice.classList.contains("mobile")?34:48)}px;color:${design.category.color};font-weight:800`}
+function setPreviewDevice(t){previewDevice.classList.toggle("mobile",t==="mobile");updateDesignPreview()}
+async function saveDesign(){
+  designMessage.innerHTML="";
+  const oldUrls={cover:design.cover.url||"",profile:design.profile.url||"",background:design.background.url||""};
+  const uploaded={};
+  try{
+    for(const type of ["cover","profile","background"]){
+      if(localFiles[type]){
+        const url=await uploadFile(localFiles[type],"design",type);
+        uploaded[type]=url;
+        if(type==="background")design.background.url=url;else design[type].url=url;
+        localFiles[type]=null;
+      }
+    }
+
+    const pairs={
+      cover_image:design.cover.url,cover_x:design.cover.x,cover_y:design.cover.y,cover_scale:design.cover.scale,
+      profile_image:design.profile.url,profile_x:design.profile.x,profile_y:design.profile.y,profile_scale:design.profile.scale,
+      background_type:design.background.type,background_color:design.background.color,background_image:design.background.url,
+      background_overlay:design.background.overlay,category_title_font:design.category.font,category_title_size:design.category.size,
+      category_title_color:design.category.color
+    };
+    const savedDesignDraft=[...adminFormSnapshot("design")].map(([field,value])=>({view:"design",field,value}));
+    await Promise.all(Object.entries(pairs).map(([k,v])=>saveSetting(k,v)));
+    commitAdminSavedDraft(savedDesignDraft);
+
+    for(const type of ["cover","profile","background"]){
+      const current=type==="background"?design.background.url:design[type].url;
+      if(oldUrls[type]&&oldUrls[type]!==current)await removeStoredImage(oldUrls[type]);
+    }
+
+    showMessage("designMessage","Diseño guardado correctamente.");
+    await loadDesign();
+  }catch(e){
+    for(const url of Object.values(uploaded)){
+      if(url)await removeStoredImage(url);
+    }
+    showMessage("designMessage",e.message,false);
+  }
+}
+
+async function loadBusinessSettings(){const liveGuard=adminFormLoadGuard('business');if(!liveGuard)return;const keys=["business_name","slogan","whatsapp","business_address","opening_time","closing_time","pickup_maps_url","bank_name","bank_holder","bank_clabe","bank_card"];const {data}=await db.from("settings").select("key,value").in("key",keys);if(!liveGuard())return;const s={};(data||[]).forEach(r=>s[r.key]=r.value);keys.forEach(k=>{const el=document.getElementById(k);if(el)el.value=s[k]||""});adminFormLoaded('business',liveGuard.version);}
+async function saveBusinessSettings(){for(const k of ["business_name","slogan","whatsapp","business_address","opening_time","closing_time","pickup_maps_url"])await saveSetting(k,document.getElementById(k).value);showMessage("businessMessage","Configuración guardada correctamente.")}
+
+function ensureDeliveryZonesMap(){
+  if(deliveryZonesMap||!window.L)return;
+  deliveryZonesMap=L.map("deliveryZonesMap",{zoomControl:true}).setView([21.035,-89.635],12);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+    maxZoom:19,
+    attribution:"© OpenStreetMap"
+  }).addTo(deliveryZonesMap);
+  deliveryZonesMap.on(L.Draw.Event.CREATED,async e=>{
+    if(!pendingZoneId)return;
+    const zone=deliveryZones.find(z=>String(z.id)===String(pendingZoneId));
+    if(!zone)return;
+    zone.geojson=e.layer.toGeoJSON().geometry;
+    renderDeliveryZoneLayers();
+    zoneMapStatus.textContent=`Área dibujada para ${zone.name}. Guardando…`;
+    try{
+      await saveDeliveryZone(zone.id,true);
+      zoneMapStatus.textContent=`✓ Área y tarifa de ${zone.name} guardadas.`;
+    }catch(err){
+      console.error(err);
+      zoneMapStatus.textContent="No se pudo guardar el área. Inténtalo nuevamente.";
+    }finally{
+      pendingZoneId=null;
+      activePolygonDrawer=null;
+    }
+  });
+}
+
+function renderDeliveryZoneLayers(){
+  if(!deliveryZonesMap)return;
+  deliveryZoneLayers.forEach(layer=>deliveryZonesMap.removeLayer(layer));
+  deliveryZoneLayers.clear();
+  deliveryZones.forEach(zone=>{
+    if(!zone.geojson)return;
+    const layer=L.geoJSON(zone.geojson,{style:{weight:3,fillOpacity:zone.enabled?.18:.05,opacity:zone.enabled?1:.45}})
+      .addTo(deliveryZonesMap)
+      .bindTooltip(`${zone.name} · ${formatMoney(zone.fee)}`);
+    deliveryZoneLayers.set(String(zone.id),layer);
+  });
+}
+
+function renderDeliveryZones(){
+  const host=document.getElementById("deliveryZonesList");
+  if(!host)return;
+  if(!deliveryZones.length){host.innerHTML='<div class="message error">No hay zonas configuradas.</div>';return}
+  host.innerHTML=deliveryZones.map(zone=>`
+    <div class="delivery-zone-card">
+      <h3>${escapeHtml(zone.name)}</h3>
+      <div class="delivery-zone-row">
+        <div class="form-group" style="margin:0">
+          <label>Tarifa de envío</label>
+          <input id="zoneFee_${zone.id}" type="number" min="0" step="1" value="${Number(zone.fee)||0}">
+        </div>
+        <label class="zone-switch"><input id="zoneEnabled_${zone.id}" type="checkbox" ${zone.enabled?"checked":""}> Activa</label>
+      </div>
+      <div class="delivery-zone-meta ${zone.geojson?"delivery-zone-ready":"delivery-zone-pending"}">${zone.geojson?"✓ Área dibujada":"⚠ Falta dibujar el área"}</div>
+      <div class="delivery-zone-actions">
+        <button class="btn btn-dark btn-small" onclick="drawDeliveryZone('${zone.id}')">✏ Dibujar / reemplazar área</button>
+        <button class="btn btn-primary btn-small" onclick="saveDeliveryZone('${zone.id}')">Guardar tarifa</button>
+        ${zone.geojson?`<button class="btn btn-light btn-small" onclick="focusDeliveryZone('${zone.id}')">Ver área</button>`:""}
+      </div>
+    </div>`).join("");
+}
+
+async function loadDeliveryZones(){const liveGuard=adminFormLoadGuard('delivery-zones');if(!liveGuard)return;
+  const {data,error}=await db.rpc("admin_list_delivery_zones");
+  if(error){
+    console.error(error);
+    const host=document.getElementById("deliveryZonesList");
+    if(host)host.innerHTML='<div class="message error">No se pudieron cargar las zonas de entrega.</div>';
+    return;
+  }
+  if(!liveGuard())return;deliveryZones=Array.isArray(data)?data:[];
+  ensureDeliveryZonesMap();
+  renderDeliveryZones();
+  renderDeliveryZoneLayers();
+adminFormLoaded('delivery-zones',liveGuard.version);}
+
+function drawDeliveryZone(id){
+  ensureDeliveryZonesMap();
+  if(!deliveryZonesMap||!window.L?.Draw?.Polygon){alert("El editor del mapa no terminó de cargar. Actualiza la página.");return}
+  pendingZoneId=id;
+  const zone=deliveryZones.find(z=>String(z.id)===String(id));
+  if(!zone)return;
+  if(activePolygonDrawer){try{activePolygonDrawer.disable()}catch{}}
+  activePolygonDrawer=new L.Draw.Polygon(deliveryZonesMap,{allowIntersection:false,showArea:true,shapeOptions:{weight:3,fillOpacity:.16}});
+  activePolygonDrawer.enable();
+  zoneMapStatus.textContent=`Dibujando ${zone.name}: toca varios puntos alrededor de la zona y cierra el polígono tocando el primer punto.`;
+}
+
+async function saveDeliveryZone(id,fromDraw=false){
+  const zone=deliveryZones.find(z=>String(z.id)===String(id));
+  if(!zone)return;
+  const feeEl=document.getElementById("zoneFee_"+id);
+  const enabledEl=document.getElementById("zoneEnabled_"+id);
+  const fee=feeEl?Number(feeEl.value):Number(zone.fee);
+  const enabled=enabledEl?enabledEl.checked:!!zone.enabled;
+  if(!Number.isFinite(fee)||fee<0){alert("Escribe una tarifa válida.");return}
+  const {data,error}=await db.rpc("admin_save_delivery_zone",{
+    p_id:zone.id,
+    p_fee:fee,
+    p_enabled:enabled,
+    p_geojson:zone.geojson||null
+  });
+  if(error){console.error(error);if(!fromDraw)alert("No se pudo guardar la zona.");throw error}
+  Object.assign(zone,data||{fee,enabled});
+  renderDeliveryZones();
+  renderDeliveryZoneLayers();
+  if(!fromDraw)alert(`Tarifa de ${zone.name} guardada en ${formatMoney(zone.fee)}.`);
+}
+
+function focusDeliveryZone(id){
+  const layer=deliveryZoneLayers.get(String(id));
+  if(layer&&deliveryZonesMap){deliveryZonesMap.fitBounds(layer.getBounds(),{padding:[24,24]});}
+}
+
+async function createDeliveryZone(){
+  const name=prompt("Nombre de la nueva zona de entrega:");
+  if(name===null)return;
+  const cleanName=name.trim();
+  if(!cleanName){alert("Escribe un nombre para la zona.");return}
+
+  const feeText=prompt("Costo de envío para esta zona:", "50");
+  if(feeText===null)return;
+  const fee=Number(String(feeText).replace(",","."));
+  if(!Number.isFinite(fee)||fee<0){alert("Escribe un costo de envío válido.");return}
+
+  const nextPriority=deliveryZones.length
+    ? Math.max(...deliveryZones.map(z=>Number(z.priority)||0))+10
+    : 10;
+
+  const {data,error}=await db.from("delivery_zones")
+    .insert({name:cleanName,fee,priority:nextPriority,enabled:true})
+    .select("id,name,fee,priority,enabled")
+    .single();
+
+  if(error){
+    console.error(error);
+    alert(error.code==="23505"?"Ya existe una zona con ese nombre.":"No se pudo crear la zona.");
+    return;
+  }
+
+  await loadDeliveryZones();
+  zoneMapStatus.textContent=`Zona “${cleanName}” creada con tarifa de ${formatMoney(fee)}. Ahora dibuja su área en el mapa.`;
+  setTimeout(()=>drawDeliveryZone(data.id),120);
+}
+async function savePaymentSettings(){for(const k of ["bank_name","bank_holder","bank_clabe","bank_card"])await saveSetting(k,document.getElementById(k).value);showMessage("paymentMessage","Datos de transferencia guardados.")}
+
+
+
+const DAY_CONFIG=[
+  ["mon","Lunes"],["tue","Martes"],["wed","Miércoles"],["thu","Jueves"],
+  ["fri","Viernes"],["sat","Sábado"],["sun","Domingo"]
+];
+let operationSettings={
+  manualClosed:false,
+  manualReason:"",
+  deliveryEnabled:true,
+  deliveryText:"Envío en menos de 20 min",
+  socialEnabled:true,
+  socialCount:230,
+  socialSuffix:"pedidos esta semana",
+  deliveryTransferOnly:false,
+  rainEnabled:false,
+  rainAmount:10,
+  rainMessage:"Debido a la lluvia, se aplica temporalmente un cargo adicional al envío. Este ajuste reconoce las condiciones adicionales de reparto y el mayor cuidado requerido durante el traslado. Gracias por tu comprensión.",
+  weekly:null
+};
+
+function defaultWeeklySchedule(){
+  const open=document.getElementById("opening_time")?.value||"12:00";
+  const close=document.getElementById("closing_time")?.value||"21:00";
+  return {
+    mon:{enabled:true,open,close},tue:{enabled:true,open,close},
+    wed:{enabled:true,open,close},thu:{enabled:true,open,close},
+    fri:{enabled:true,open,close},sat:{enabled:true,open,close},
+    sun:{enabled:false,open,close}
+  };
+}
+
+function parseSettingBool(v,defaultValue=false){
+  if(v===undefined||v===null||v==="")return defaultValue;
+  return String(v)==="true";
+}
+
+async function loadOperationSettings(){const liveGuard=adminFormLoadGuard('operation');if(!liveGuard)return;
+  const keys=[
+    "store_manual_closed","store_manual_close_reason","weekly_schedule",
+    "delivery_badge_enabled","delivery_badge_text",
+    "social_proof_enabled","social_proof_count","social_proof_suffix",
+    "delivery_transfer_only",
+    "rain_surcharge_enabled","rain_surcharge_amount","rain_surcharge_message"
+  ];
+  const {data,error}=await db.from("settings").select("key,value").in("key",keys);
+  if(error){console.error(error);return}
+  if(!liveGuard())return;const s={};(data||[]).forEach(r=>s[r.key]=r.value);
+
+  operationSettings.manualClosed=parseSettingBool(s.store_manual_closed,false);
+  operationSettings.manualReason=s.store_manual_close_reason||"En unos instantes volveremos a recibir pedidos.";
+  operationSettings.deliveryEnabled=parseSettingBool(s.delivery_badge_enabled,true);
+  operationSettings.deliveryText=s.delivery_badge_text||"Envío en menos de 20 min";
+  operationSettings.socialEnabled=parseSettingBool(s.social_proof_enabled,true);
+  operationSettings.socialCount=Math.max(0,Number(s.social_proof_count)||0);
+  operationSettings.socialSuffix=s.social_proof_suffix||"pedidos esta semana";
+  operationSettings.deliveryTransferOnly=parseSettingBool(s.delivery_transfer_only,false);
+  operationSettings.rainEnabled=parseSettingBool(s.rain_surcharge_enabled,false);
+  operationSettings.rainAmount=Math.max(0,Number(s.rain_surcharge_amount)||10);
+  operationSettings.rainMessage=s.rain_surcharge_message||"Debido a la lluvia, se aplica temporalmente un cargo adicional al envío. Este ajuste reconoce las condiciones adicionales de reparto y el mayor cuidado requerido durante el traslado. Gracias por tu comprensión.";
+  try{
+    operationSettings.weekly=s.weekly_schedule?JSON.parse(s.weekly_schedule):defaultWeeklySchedule();
+  }catch{
+    operationSettings.weekly=defaultWeeklySchedule();
+  }
+
+  if(document.getElementById("manualStoreClosed")){
+    manualStoreClosed.checked=operationSettings.manualClosed;
+    manualCloseReason.value=operationSettings.manualReason;
+    renderStoreMessageEditor();
+    deliveryBadgeEnabled.checked=operationSettings.deliveryEnabled;
+    deliveryBadgeText.value=operationSettings.deliveryText;
+    socialProofEnabled.checked=operationSettings.socialEnabled;
+    socialProofCount.value=operationSettings.socialCount;
+    socialProofSuffix.value=operationSettings.socialSuffix;
+    deliveryTransferOnly.checked=operationSettings.deliveryTransferOnly;
+    rainSurchargeEnabled.checked=operationSettings.rainEnabled;
+    rainSurchargeAmount.value=operationSettings.rainAmount;
+    rainSurchargeMessage.value=operationSettings.rainMessage;
+    renderWeeklySchedule();
+    previewOperationStatus();
+    updateMarketingPreview();
+    previewPaymentRestriction();
+    previewRainSurcharge();
+  }
+adminFormLoaded('operation',liveGuard.version);}
+
+function renderWeeklySchedule(){
+  const schedule=operationSettings.weekly||defaultWeeklySchedule();
+  weeklySchedule.innerHTML=DAY_CONFIG.map(([key,label])=>{
+    const d=schedule[key]||{enabled:false,open:"12:00",close:"21:00"};
+    return `<div class="day-row" data-day="${key}">
+      <div class="day-name">${label}</div>
+      <label class="day-enabled"><input class="day-check" type="checkbox" ${d.enabled?"checked":""}> Laboral</label>
+      <input class="day-open" type="time" value="${escapeAttr(d.open||"12:00")}" aria-label="Apertura ${label}">
+      <input class="day-close" type="time" value="${escapeAttr(d.close||"21:00")}" aria-label="Cierre ${label}">
+    </div>`;
+  }).join("");
+  weeklySchedule.querySelectorAll(".day-check").forEach(ch=>ch.addEventListener("change",e=>{
+    const row=e.target.closest(".day-row");
+    row.querySelector(".day-open").disabled=!e.target.checked;
+    row.querySelector(".day-close").disabled=!e.target.checked;
+  }));
+  weeklySchedule.querySelectorAll(".day-row").forEach(row=>{
+    const checked=row.querySelector(".day-check").checked;
+    row.querySelector(".day-open").disabled=!checked;
+    row.querySelector(".day-close").disabled=!checked;
+  });
+}
+
+function collectWeeklySchedule(){
+  const result={};
+  document.querySelectorAll("#weeklySchedule .day-row").forEach(row=>{
+    result[row.dataset.day]={
+      enabled:row.querySelector(".day-check").checked,
+      open:row.querySelector(".day-open").value||"12:00",
+      close:row.querySelector(".day-close").value||"21:00"
+    };
+  });
+  return result;
+}
+
+function copyMondaySchedule(){
+  const mon=document.querySelector('#weeklySchedule .day-row[data-day="mon"]');
+  if(!mon)return;
+  const open=mon.querySelector(".day-open").value;
+  const close=mon.querySelector(".day-close").value;
+  document.querySelectorAll("#weeklySchedule .day-row").forEach(row=>{
+    if(row.querySelector(".day-check").checked){
+      row.querySelector(".day-open").value=open;
+      row.querySelector(".day-close").value=close;
+    }
+  });
+}
+
+function previewOperationStatus(){
+  if(!document.getElementById("operationLiveStatus"))return;
+  const closed=manualStoreClosed.checked;
+  operationLiveStatus.className=`store-live-status ${closed?"closed":"open"}`;
+  operationLiveStatus.innerHTML=`<span class="status-dot"></span><span>${closed?"CERRADA manualmente":"Disponible según horario semanal"}</span>`;
+}
+
+function updateMarketingPreview(){
+  if(document.getElementById("deliveryBadgePreview"))deliveryBadgePreview.textContent=deliveryBadgeText.value.trim()||"Envío en menos de 20 min";
+  if(document.getElementById("socialProofPreviewCount"))socialProofPreviewCount.textContent=Math.max(0,Number(socialProofCount.value)||0);
+  if(document.getElementById("socialProofPreviewSuffix"))socialProofPreviewSuffix.textContent=socialProofSuffix.value.trim()||"pedidos esta semana";
+}
+
+async function saveOperationSettings(){
+  operationMessage.innerHTML="";
+  try{
+    const result=await auditedStoreChange(manualStoreClosed.checked,manualStoreClosed.checked?"Cierre manual desde Operación":"Reapertura manual desde Operación",storeControlState?.manual_closed,null);
+    if(storeHistoryAllowed())await loadStoreHistory();
+    operationSettings.manualClosed=manualStoreClosed.checked;
+    previewOperationStatus();
+    showMessage("operationMessage",result.changed?"Estado operativo guardado y registrado en el historial.":"La tienda ya tenía ese estado.");
+  }catch(e){showMessage("operationMessage",e.message,false)}
+}
+
+async function closeStoreNow(){
+  manualStoreClosed.checked=true;
+  await saveOperationSettings();
+}
+
+async function openStoreNow(){
+  manualStoreClosed.checked=false;
+  await saveOperationSettings();
+}
+
+async function saveWeeklySchedule(){
+  scheduleMessage.innerHTML="";
+  try{
+    operationSettings.weekly=collectWeeklySchedule();
+    await saveSetting("weekly_schedule",JSON.stringify(operationSettings.weekly));
+    showMessage("scheduleMessage","Horario semanal guardado correctamente.");
+  }catch(e){showMessage("scheduleMessage",e.message,false)}
+}
+
+async function saveMarketingSettings(){
+  marketingMessage.innerHTML="";
+  try{
+    const count=Math.max(0,Math.floor(Number(socialProofCount.value)||0));
+    await Promise.all([
+      saveSetting("delivery_badge_enabled",deliveryBadgeEnabled.checked),
+      saveSetting("delivery_badge_text",deliveryBadgeText.value.trim()||"Envío en menos de 20 min"),
+      saveSetting("social_proof_enabled",socialProofEnabled.checked),
+      saveSetting("social_proof_count",count),
+      saveSetting("social_proof_suffix",socialProofSuffix.value.trim()||"pedidos esta semana")
+    ]);
+    updateMarketingPreview();
+    showMessage("marketingMessage","Mensajes comerciales guardados.");
+  }catch(e){showMessage("marketingMessage",e.message,false)}
+}
+
+function previewPaymentRestriction(){
+  const toggle=document.getElementById("deliveryTransferOnly");
+  const preview=document.getElementById("paymentRestrictionPreview");
+  if(!toggle||!preview)return;
+  preview.innerHTML=toggle.checked
+    ? "<strong>Activado:</strong> envío a domicilio = solo transferencia. Pasar a recoger = efectivo o transferencia."
+    : "<strong>Desactivado:</strong> tanto envío a domicilio como pasar a recoger permiten efectivo o transferencia.";
+}
+
+async function savePaymentRestriction(){
+  const box=document.getElementById("paymentRestrictionMessage");
+  if(box)box.innerHTML="";
+  try{
+    const enabled=document.getElementById("deliveryTransferOnly").checked;
+    await saveSetting("delivery_transfer_only",enabled);
+    operationSettings.deliveryTransferOnly=enabled;
+    previewPaymentRestriction();
+    showMessage("paymentRestrictionMessage",enabled
+      ?"Restricción activada: los envíos a domicilio solo aceptarán transferencia."
+      :"Restricción desactivada: efectivo y transferencia disponibles en ambas modalidades.");
+  }catch(e){
+    showMessage("paymentRestrictionMessage","No se pudo guardar la configuración de pago: "+e.message,false);
+  }
+}
+
+function previewRainSurcharge(){
+  const el=document.getElementById("rainSurchargePreview");
+  if(!el||!document.getElementById("rainSurchargeEnabled"))return;
+  const enabled=rainSurchargeEnabled.checked;
+  const amount=Math.max(0,Number(rainSurchargeAmount.value)||0);
+  const msg=rainSurchargeMessage.value.trim()||"Debido a la lluvia, se aplica temporalmente un cargo adicional al envío.";
+  el.innerHTML=enabled
+    ? `<strong>Vista para el cliente:</strong><br>🌧️ ${escapeHtml(msg)} Recargo temporal: <strong>${formatMoney(amount)}</strong>.`
+    : "El aviso está desactivado. No se cobra ningún recargo por lluvia.";
+}
+
+async function saveRainSurchargeSettings(){
+  rainSurchargeAdminMessage.innerHTML="";
+  try{
+    const amount=Math.max(0,Number(rainSurchargeAmount.value)||0);
+    const message=rainSurchargeMessage.value.trim()||"Debido a la lluvia, se aplica temporalmente un cargo adicional al envío. Este ajuste reconoce las condiciones adicionales de reparto y el mayor cuidado requerido durante el traslado. Gracias por tu comprensión.";
+    await Promise.all([
+      saveSetting("rain_surcharge_enabled",rainSurchargeEnabled.checked),
+      saveSetting("rain_surcharge_amount",amount),
+      saveSetting("rain_surcharge_message",message)
+    ]);
+    operationSettings.rainEnabled=rainSurchargeEnabled.checked;
+    operationSettings.rainAmount=amount;
+    operationSettings.rainMessage=message;
+    previewRainSurcharge();
+    showMessage("rainSurchargeAdminMessage",rainSurchargeEnabled.checked
+      ? `Recargo por lluvia activado: +${formatMoney(amount)} en todas las zonas.`
+      : "Recargo por lluvia desactivado.");
+  }catch(e){
+    showMessage("rainSurchargeAdminMessage","No se pudo guardar el recargo por lluvia: "+e.message,false);
+  }
+}
+
+async function syncSocialProofFromOrders(){
+  marketingMessage.innerHTML="";
+  try{
+    const since=new Date(Date.now()-7*86400000).toISOString();
+    const {data,error}=await db.from("orders").select("id,order_status,created_at").gte("created_at",since);
+    if(error)throw error;
+    const count=(data||[]).filter(o=>o.order_status!=="cancelado").length;
+    socialProofCount.value=count;
+    socialProofSuffix.value="pedidos esta semana";
+    updateMarketingPreview();
+    await saveMarketingSettings();
+  }catch(e){showMessage("marketingMessage","No se pudo calcular el número real: "+e.message,false)}
+}
+
+document.addEventListener("input",e=>{
+  if(["deliveryBadgeText","socialProofCount","socialProofSuffix"].includes(e.target?.id))updateMarketingPreview();
+});
+
+
+let batchSettings={
+  enabled:false,
+  duration:30,
+  freshMinutes:5,
+  label:"Próxima hornada estimada",
+  finishedMessage:"¡Recién horneados!",
+  endTime:""
+};
+let batchAdminInterval=null;
+
+async function loadBatchSettings(){const liveGuard=adminFormLoadGuard('batch');if(!liveGuard)return;
+  const keys=["batch_timer_enabled","batch_duration_minutes","batch_fresh_minutes","batch_label","batch_finished_message","batch_end_time"];
+  const {data,error}=await db.from("settings").select("key,value").in("key",keys);
+  if(error){
+    console.error(error);
+    if(document.getElementById("batchMessage"))showMessage("batchMessage","No se pudo cargar la configuración de hornada.",false);
+    return;
+  }
+  if(!liveGuard())return;const s={};(data||[]).forEach(r=>s[r.key]=r.value);
+  batchSettings.enabled=String(s.batch_timer_enabled||"false")==="true";
+  batchSettings.duration=Math.max(5,Math.min(180,Number(s.batch_duration_minutes)||30));
+  batchSettings.freshMinutes=Math.max(1,Math.min(60,Number(s.batch_fresh_minutes)||5));
+  batchSettings.label=s.batch_label||"Próxima hornada estimada";
+  batchSettings.finishedMessage=s.batch_finished_message||"¡Recién horneados!";
+  batchSettings.endTime=s.batch_end_time||"";
+
+  if(document.getElementById("batchEnabled")){
+    batchEnabled.checked=batchSettings.enabled;
+    batchDuration.value=batchSettings.duration;
+    batchFreshMinutes.value=batchSettings.freshMinutes;
+    batchLabel.value=batchSettings.label;
+    batchFinishedMessage.value=batchSettings.finishedMessage;
+  }
+  startBatchAdminClock();
+adminFormLoaded('batch',liveGuard.version);}
+
+function readBatchForm(){
+  batchSettings.enabled=Boolean(batchEnabled.checked);
+  batchSettings.duration=Math.max(5,Math.min(180,Number(batchDuration.value)||30));
+  batchSettings.freshMinutes=Math.max(1,Math.min(60,Number(batchFreshMinutes.value)||5));
+  batchSettings.label=batchLabel.value.trim()||"Próxima hornada estimada";
+  batchSettings.finishedMessage=batchFinishedMessage.value.trim()||"¡Recién horneados!";
+}
+
+async function saveBatchBase(){
+  readBatchForm();
+  const pairs={
+    batch_timer_enabled:batchSettings.enabled,
+    batch_duration_minutes:batchSettings.duration,
+    batch_fresh_minutes:batchSettings.freshMinutes,
+    batch_label:batchSettings.label,
+    batch_finished_message:batchSettings.finishedMessage
+  };
+  await Promise.all(Object.entries(pairs).map(([k,v])=>saveSetting(k,v)));
+}
+
+async function saveBatchPreferences(){
+  batchMessage.innerHTML="";
+  try{
+    await saveBatchBase();
+    showMessage("batchMessage","Preferencias de hornada guardadas.");
+    startBatchAdminClock();
+  }catch(e){showMessage("batchMessage",e.message,false)}
+}
+
+async function startBatch(){
+  batchMessage.innerHTML="";
+  try{
+    readBatchForm();
+    batchSettings.enabled=true;
+    batchEnabled.checked=true;
+    const end=new Date(Date.now()+batchSettings.duration*60000).toISOString();
+    batchSettings.endTime=end;
+    await saveBatchBase();
+    await saveSetting("batch_end_time",end);
+    showMessage("batchMessage",`Hornada iniciada por ${batchSettings.duration} minutos.`);
+    startBatchAdminClock();
+  }catch(e){showMessage("batchMessage",e.message,false)}
+}
+
+async function markBatchFresh(){
+  batchMessage.innerHTML="";
+  try{
+    readBatchForm();
+    batchSettings.enabled=true;
+    batchEnabled.checked=true;
+    const now=new Date().toISOString();
+    batchSettings.endTime=now;
+    await saveBatchBase();
+    await saveSetting("batch_end_time",now);
+    showMessage("batchMessage","El menú mostrará “¡Recién horneados!”.");
+    startBatchAdminClock();
+  }catch(e){showMessage("batchMessage",e.message,false)}
+}
+
+async function disableBatch(){
+  if(!confirm("¿Ocultar el aviso de hornada del menú?"))return;
+  batchMessage.innerHTML="";
+  try{
+    batchSettings.enabled=false;
+    batchSettings.endTime="";
+    batchEnabled.checked=false;
+    await saveSetting("batch_timer_enabled","false");
+    await saveSetting("batch_end_time","");
+    showMessage("batchMessage","Aviso de hornada desactivado.");
+    startBatchAdminClock();
+  }catch(e){showMessage("batchMessage",e.message,false)}
+}
+
+function batchAdminState(){
+  if(!batchSettings.enabled)return{type:"off",time:"--:--",text:"El aviso está desactivado."};
+  if(!batchSettings.endTime)return{type:"waiting",time:"--:--",text:"Activa una nueva hornada para iniciar el contador."};
+  const endMs=new Date(batchSettings.endTime).getTime();
+  if(!Number.isFinite(endMs))return{type:"waiting",time:"--:--",text:"No hay una hora de hornada válida."};
+  const now=Date.now();
+  const remaining=endMs-now;
+  if(remaining>0){
+    const totalSeconds=Math.ceil(remaining/1000);
+    const min=Math.floor(totalSeconds/60);
+    const sec=totalSeconds%60;
+    return{type:"countdown",time:`${String(min).padStart(2,"0")}:${String(sec).padStart(2,"0")}`,text:batchSettings.label};
+  }
+  const freshUntil=endMs+batchSettings.freshMinutes*60000;
+  if(now<freshUntil)return{type:"fresh",time:"00:00",text:batchSettings.finishedMessage};
+  return{type:"ended",time:"--:--",text:"La ventana de recién horneados terminó. Inicia la siguiente hornada cuando corresponda."};
+}
+
+function renderBatchAdminClock(){
+  if(!document.getElementById("batchAdminTime"))return;
+  const state=batchAdminState();
+  batchAdminTime.textContent=state.time;
+  batchAdminText.textContent=state.text;
+  batchAdminTime.style.color=state.type==="fresh"?"#8cffb1":"#fff";
+}
+
+function startBatchAdminClock(){
+  if(batchAdminInterval)clearInterval(batchAdminInterval);
+  renderBatchAdminClock();
+  batchAdminInterval=setInterval(renderBatchAdminClock,1000);
+}
+
+
+function allowedOrderStatuses(o){
+  if(adminRole!=='owner'){const status=o.order_status||'nuevo';const next={pendiente_confirmacion:['confirmado','cancelado'],nuevo:['confirmado','cancelado'],confirmado:['preparando','cancelado'],preparando:['listo','cancelado'],listo:[...(o.delivery_type==='delivery'?['en_reparto']:[]),'entregado','cancelado'],en_reparto:['entregado','cancelado']};return [status,...(next[status]||[])];}
+  if(o.order_status==="pendiente_confirmacion")return ["pendiente_confirmacion","confirmado","cancelado"];
+  if(o.order_status==="cancelado")return ["cancelado","confirmado"];
+  return ["nuevo","confirmado","preparando","listo",...(o.delivery_type==='delivery'?["en_reparto"]:[]),"entregado","cancelado"];
+}
+let ordersLoadingPromise=null,ordersReloadRequested=false;
+async function loadOrders(){
   if(ordersLoadingPromise){ordersReloadRequested=true;return ordersLoadingPromise;}
   ordersLoadingPromise=(async()=>{
     try{
