@@ -54,6 +54,10 @@ const { PGlite } = require('@electric-sql/pglite');
 
   assert.equal(await window.PasteHotMultiStore.setupAdmin(), true);
   assert.equal(window.document.querySelector('#pastehotStoreBar select').value, selected);
+  assert.equal(await window.PasteHotMultiStore.setupAdmin(), true);
+  assert.equal(window.document.querySelectorAll('#pastehotStoreBar').length, 1, 'reinitializing the admin must replace, not duplicate, the store selector bar');
+  assert.equal(window.document.querySelectorAll('#pastehotStoreSelect').length, 1, 'only one store selector may be present');
+  assert.equal(window.document.querySelectorAll('#pastehotManageStores').length, 1, 'only one store management button may be present');
   await window.db.from('products').select('*');
   const insert = { name: 'Paste de prueba' };
   await window.db.from('products').insert(insert).select('id').single();

@@ -200,7 +200,9 @@
     bar.innerHTML = isPublic
       ? `<div class="ph-store-left"><button type="button" id="phPublicStoreTrigger" class="ph-store-trigger" aria-haspopup="dialog" aria-expanded="false" aria-label="Cambiar sucursal. Sucursal ${safe(selected.name)}"><span class="ph-store-mark"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="10" r="2.3" stroke="currentColor" stroke-width="1.8"/></svg></span><span class="ph-store-copy"><small>Sucursal</small><strong>${safe(selected.name)}</strong></span><svg class="ph-store-chevron" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>${isDemo ? '<span aria-label="Modo demo">Vista de prueba</span>' : ''}</div>`
       : `<div class="ph-store-left"><label for="pastehotStoreSelect">Administras</label><select id="pastehotStoreSelect" aria-label="Seleccionar sucursal">${storeOptions(selected.id, options)}</select>${isDemo ? '<span aria-label="Modo demo">Vista de prueba</span>' : ''}</div>${canManage ? '<button type="button" id="pastehotManageStores">Sucursales</button>' : ''}`;
-    if (isPublic) document.body.prepend(bar);
+    const existingBar = document.getElementById('pastehotStoreBar');
+    if (existingBar) existingBar.replaceWith(bar);
+    else if (isPublic) document.body.prepend(bar);
     else {
       const admin = document.getElementById('adminScreen');
       if (!admin) return;
