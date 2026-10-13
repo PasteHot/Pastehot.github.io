@@ -43,6 +43,13 @@
 
   function demoReportRpc(name,a){
     if(!access().allowed)return {data:null,error:{message:'NO_AUTORIZADO'}};
+    if(name==='pastehot_delete_orders'){
+      if(state.role!=='owner'||state.delegated)return {data:null,error:{message:'NO_AUTORIZADO'}};
+      const selected=new Set((a.p_order_ids||[]).map(String)),removed=tables.orders.filter(o=>selected.has(String(o.id)));
+      tables.orders=tables.orders.filter(o=>!selected.has(String(o.id)));
+      removed.forEach(order=>emit('orders',order,'DELETE'));
+      return {data:{deleted_count:removed.length,inventory_changed:false},error:null};
+    }
     if(name==='pastehot_order_page'){
       const q=String(a.p_search||'').toLowerCase().replace(/[\s-]/g,'');
       const rows=tables.orders.filter(o=>(!a.p_store_id||o.store_id===a.p_store_id)&&(state.role==='owner'||Date.parse(o.created_at)>Date.now()-48*3600000)&&(!a.p_from||o.created_at>=a.p_from)&&(!q||[o.order_code,o.id].some(v=>String(v||'').toLowerCase().replace(/[\s-]/g,'').includes(q)))&&(!a.p_before_time||o.created_at<a.p_before_time||(o.created_at===a.p_before_time&&o.id<a.p_before_id))).sort((x,y)=>y.created_at.localeCompare(x.created_at)||y.id.localeCompare(x.id));return {data:{rows:rows.slice(0,50).map(o=>({...o})),has_more:rows.length>50},error:null};
@@ -124,7 +131,7 @@
     async rpc(name,args={}){
       if(state.offline)return {data:null,error:{message:'Sin conexión de prueba'}};
       if(['pastehot_store_state','pastehot_store_history','pastehot_set_store_closed'].includes(name))return demoStoreRpc(name,args);
-      if(['pastehot_order_page','pastehot_sales_summary'].includes(name))return demoReportRpc(name,args);
+      if(['pastehot_order_page','pastehot_sales_summary','pastehot_delete_orders'].includes(name))return demoReportRpc(name,args);
       if(['pastehot_pos_current_shift','pastehot_pos_open_shift','pastehot_pos_close_shift','pastehot_pos_create_sale','pastehot_pos_cancel_sale','pastehot_pos_report'].includes(name))return demoPosRpc(name,args);
       if(name==='pastehot_admin_state')return {data:access(),error:null};
       if(name==='pastehot_list_store_team'){if(!access().allowed)return {data:null,error:{message:'NO_AUTORIZADO'}};return {data:state.members.filter(m=>state.role!=='manager'||m.role==='staff'||m.user_id===currentUser()).map(m=>({...m,current:m.user_id===currentUser()})),error:null};}
