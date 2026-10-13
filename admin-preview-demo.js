@@ -11,6 +11,10 @@
   const tables={products:[['Paste de papa','Pastes salados',25],['Paste de carne','Pastes salados',30],['Paste de piña','Pastes dulces',25],['Paste de calabaza','Pastes de temporada',30],['Agua de jamaica','Bebidas',20]].map(([name,category,price],i)=>({id:uuid(i+1),store_id:primaryStore,name,category,price,image_url:'favicon.png',description:'Producto ficticio para probar el administrador.',available:true,track_stock:true,stock:20,low_stock_threshold:3,sort_order:i,created_at:new Date(now).toISOString()})),orders:[],delivery_zones:[],settings:Object.entries(settings).map(([key,value],i)=>({id:uuid(100+i),key,value}))};
   function fakeOrder(n){return {id:uuid(200+n),store_id:primaryStore,order_code:'PRUEBA-'+String(n).padStart(3,'0'),customer_name:'Cliente de prueba '+n,customer_phone:'9990000000',delivery_type:'pickup',payment_method:'cash',order_status:'pendiente_confirmacion',created_at:new Date(now+n*1000).toISOString(),items:[{product_id:uuid(1),name:'Paste de papa',quantity:2,price:25,subtotal:50}],subtotal:50,total:50,delivery_fee:0,notes:'Pedido ficticio: no preparar ni cobrar.',inventory_applied:false,inventory_restored:false};}
   tables.orders=[fakeOrder(1),{...fakeOrder(2),order_status:'entregado'},{...fakeOrder(3),order_status:'cancelado'},...[ [4,'Ana de prueba','9991111001','Francisco de Montejo','cash'],[5,'Ana de prueba','9991111001','Francisco de Montejo','transfer'],[6,'Luis de prueba','9991111002','Chuburná','cash'],[7,'Luis de prueba','9991111002','Chuburná','cash'],[8,'Marta de prueba','9991111003','Las Américas','transfer'],[9,'Marta de prueba','9991111003','Las Américas','cash'] ].map(([n,name,phone,zone,payment])=>({...fakeOrder(n),order_code:'PRUEBA-'+String(n).padStart(3,'0'),customer_name:name,customer_phone:phone,delivery_type:'delivery',delivery_zone_id:'zone-'+zone.toLowerCase().replaceAll(' ','-'),delivery_zone_name:zone,payment_method:payment,subtotal:50,delivery_fee:20,total:70,order_status:'entregado',items:[{product_id:uuid(1),name:'Paste de papa',category:'Pastes salados',quantity:2,price:25,subtotal:50}]}))];tables.delivery_zones=['Francisco de Montejo','Chuburná','Las Américas'].map((name,i)=>({id:'zone-'+i,name,enabled:true,fee:20}));
+  const demoClosedAt=new Date(now-30*60*1000).toISOString(),demoOpenedAt=new Date(now-60*60*1000).toISOString(),demoShiftId=uuid(410);
+  state.posShifts.push({id:demoShiftId,store_id:primaryStore,opened_by:staff,opened_by_name:'Empleado de prueba',opening_cash:200,opened_at:demoOpenedAt,closed_by:owner,closed_by_name:'Propietario principal',closing_cash:250,expected_cash:250,cash_difference:0,closed_at:demoClosedAt});
+  tables.orders.push({id:uuid(411),store_id:primaryStore,order_code:'PV-DEMO-0411',customer_name:'Venta de prueba POS',customer_phone:'',delivery_type:'point_of_sale',payment_method:'cash',payment_status:'paid',order_status:'entregado',created_at:new Date(now-45*60*1000).toISOString(),items:[{product_id:uuid(1),name:'Paste de papa',category:'Pastes salados',quantity:2,price:25,subtotal:50,stock_tracked:true}],subtotal:50,total:50,delivery_fee:0,inventory_applied:true,inventory_restored:false,sale_channel:'point_of_sale',cashier_id:staff,cashier_name:'Empleado de prueba',register_shift_id:demoShiftId,cash_received:50,cash_change:0});
+  state.posShifts.push({id:uuid(412),store_id:primaryStore,opened_by:staff,opened_by_name:'Empleado de prueba',opening_cash:100,opened_at:new Date(now-3*60*60*1000).toISOString(),closed_by:owner,closed_by_name:'Propietario principal',closing_cash:100,expected_cash:100,cash_difference:0,closed_at:new Date(now-2.5*60*60*1000).toISOString()});
   function emit(table,row,type='INSERT'){if(state.offline)return;for(const c of state.channels)for(const h of c.handlers)if(h.kind==='postgres_changes'&&h.filter.table===table)h.fn({eventType:type,new:row,old:{id:row.id}});}
   function access(){const member=state.members.find(m=>m.user_id===currentUser()),session=state.sessions.find(s=>s.user_id===currentUser());const enabled=!!member?.enabled;if(enabled&&session)session.status='approved';return {primary_owner:!!member?.primary_owner,direct_access:true,allowed:!!enabled,role:state.role,status:enabled?session?.status:'disabled',enforced:state.enforced,members:state.role==='owner'?state.members.map(m=>({...m,current:m.user_id===currentUser()})):state.role==='manager'?state.members.filter(m=>m.role==='staff'&&m.user_id!==currentUser()).map(m=>({...m,current:false})):[],sessions:state.sessions.filter(s=>state.role==='owner'||s.status==='approved').map(s=>({...s,primary_owner:s.user_id===owner,member_enabled:state.members.find(m=>m.user_id===s.user_id)?.enabled!==false,current:s.user_id===currentUser()}))};}
 
@@ -18,6 +22,12 @@
   function demoStoreRpc(name,args){
     if(!access().allowed)return {data:null,error:{message:'NO_AUTORIZADO'}};
     if(name==='pastehot_store_state')return {data:storeState(),error:null};
+    if(name==='pastehot_delete_store_events'){
+      if(state.role!=='owner'||state.delegated)return {data:null,error:{message:'NO_AUTORIZADO'}};
+      const selected=new Set((args.p_event_ids||[]).map(String)),before=state.storeEvents.length;
+      state.storeEvents=state.storeEvents.filter(e=>!selected.has(String(e.id)));
+      return {data:{deleted_count:before-state.storeEvents.length},error:null};
+    }
     if(name==='pastehot_store_history'){
       if(!['owner','manager'].includes(state.role))return {data:null,error:{message:'NO_AUTORIZADO'}};
       const day=value=>new Intl.DateTimeFormat('en-CA',{timeZone:'America/Merida',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value));
@@ -46,9 +56,11 @@
     if(name==='pastehot_delete_orders'){
       if(state.role!=='owner'||state.delegated)return {data:null,error:{message:'NO_AUTORIZADO'}};
       const selected=new Set((a.p_order_ids||[]).map(String)),removed=tables.orders.filter(o=>selected.has(String(o.id)));
+      const affected=new Set(removed.filter(o=>o.sale_channel==='point_of_sale'&&o.register_shift_id).map(o=>String(o.register_shift_id)));
       tables.orders=tables.orders.filter(o=>!selected.has(String(o.id)));
+      for(const shift of state.posShifts.filter(s=>affected.has(String(s.id))&&s.closed_at)){const remaining=tables.orders.filter(o=>String(o.register_shift_id)===String(shift.id)&&o.sale_channel==='point_of_sale'&&o.order_status!=='cancelado');shift.expected_cash=Number(shift.opening_cash)+remaining.filter(o=>o.payment_method==='cash').reduce((sum,o)=>sum+Number(o.total||0),0);shift.cash_difference=Number(shift.closing_cash)-shift.expected_cash;}
       removed.forEach(order=>emit('orders',order,'DELETE'));
-      return {data:{deleted_count:removed.length,inventory_changed:false},error:null};
+      return {data:{deleted_count:removed.length,inventory_changed:false,updated_closed_shifts:affected.size},error:null};
     }
     if(name==='pastehot_order_page'){
       const q=String(a.p_search||'').toLowerCase().replace(/[\s-]/g,'');
@@ -70,6 +82,15 @@
     if(!access().allowed)return {data:null,error:{message:'NO_AUTORIZADO'}};
     const store=a.p_store_id||primaryStore,actor=state.members.find(m=>m.user_id===currentUser())?.display_name||'Propietario';
     const active=()=>state.posShifts.find(s=>s.store_id===store&&!s.closed_at)||null;
+    if(name==='pastehot_delete_cash_shifts'){
+      if(state.role!=='owner'||state.delegated)return {data:null,error:{message:'NO_AUTORIZADO'}};
+      const ids=new Set((a.p_shift_ids||[]).map(String)),selected=state.posShifts.filter(s=>ids.has(String(s.id)));
+      if(selected.length!==ids.size)return {data:null,error:{message:'TURNO_NO_ENCONTRADO'}};
+      if(selected.some(s=>!s.closed_at))return {data:null,error:{message:'TURNO_ABIERTO'}};
+      if(tables.orders.some(o=>ids.has(String(o.register_shift_id))))return {data:null,error:{message:'TURNO_CON_VENTAS'}};
+      state.posShifts=state.posShifts.filter(s=>!ids.has(String(s.id)));
+      return {data:{deleted_count:selected.length},error:null};
+    }
     if(name==='pastehot_pos_current_shift')return {data:active(),error:null};
     if(name==='pastehot_pos_open_shift'){
       if(active())return {data:null,error:{message:'CAJA_YA_ABIERTA'}};
@@ -104,7 +125,7 @@
       const group=(list,key,label)=>[...new Set(list.map(o=>o[key]))].map(v=>({[label]:v,orders:list.filter(o=>o[key]===v).length,total:list.filter(o=>o[key]===v).reduce((sum,o)=>sum+Number(o.total||0),0)}));
       const channels=[...new Set(orders.map(o=>o.sale_channel==='point_of_sale'?'Punto de venta':'Digital'))].map(channel=>{const rows=orders.filter(o=>(o.sale_channel==='point_of_sale'?'Punto de venta':'Digital')===channel);return {channel,orders:rows.length,total:rows.reduce((sum,o)=>sum+Number(o.total||0),0)}});
       const pos=orders.filter(o=>o.sale_channel==='point_of_sale'),payments=group(pos,'payment_method','method').map(x=>({...x,method:({cash:'Efectivo',transfer:'Transferencia',card:'Tarjeta'})[x.method]||x.method}));
-      const shifts=state.posShifts.filter(s=>s.store_id===store&&s.opened_at<a.p_to&&(!a.p_from||s.opened_at>=a.p_from)).map(s=>{const sales=pos.filter(o=>o.register_shift_id===s.id);return {...s,sales_count:sales.length,sales_total:sales.reduce((sum,o)=>sum+Number(o.total||0),0),cash_sales:sales.filter(o=>o.payment_method==='cash').reduce((sum,o)=>sum+Number(o.total||0),0),transfer_sales:sales.filter(o=>o.payment_method==='transfer').reduce((sum,o)=>sum+Number(o.total||0),0),card_sales:sales.filter(o=>o.payment_method==='card').reduce((sum,o)=>sum+Number(o.total||0),0)}});
+      const shifts=state.posShifts.filter(s=>s.store_id===store&&s.opened_at<a.p_to&&(!a.p_from||s.opened_at>=a.p_from)).map(s=>{const allSales=tables.orders.filter(o=>o.store_id===store&&o.sale_channel==='point_of_sale'&&o.register_shift_id===s.id),sales=allSales.filter(o=>o.order_status!=='cancelado');return {...s,sales_count:sales.length,sales_total:sales.reduce((sum,o)=>sum+Number(o.total||0),0),canceled_count:allSales.filter(o=>o.order_status==='cancelado').length,canceled_total:allSales.filter(o=>o.order_status==='cancelado').reduce((sum,o)=>sum+Number(o.total||0),0),cash_sales:sales.filter(o=>o.payment_method==='cash').reduce((sum,o)=>sum+Number(o.total||0),0),transfer_sales:sales.filter(o=>o.payment_method==='transfer').reduce((sum,o)=>sum+Number(o.total||0),0),card_sales:sales.filter(o=>o.payment_method==='card').reduce((sum,o)=>sum+Number(o.total||0),0)}});
       return {data:{channels,payments,shifts},error:null};
     }
     return {data:null,error:null};
@@ -130,9 +151,9 @@
     channel(){const c={handlers:[],on(kind,filter,fn){c.handlers.push({kind,filter,fn});return c},subscribe(fn){c.status=fn;state.channels.push(c);setTimeout(()=>fn(state.offline?'CHANNEL_ERROR':'SUBSCRIBED'),0);return c}};return c},removeChannel(c){state.channels=state.channels.filter(x=>x!==c);return Promise.resolve();},
     async rpc(name,args={}){
       if(state.offline)return {data:null,error:{message:'Sin conexión de prueba'}};
-      if(['pastehot_store_state','pastehot_store_history','pastehot_set_store_closed'].includes(name))return demoStoreRpc(name,args);
+      if(['pastehot_store_state','pastehot_store_history','pastehot_delete_store_events','pastehot_set_store_closed'].includes(name))return demoStoreRpc(name,args);
       if(['pastehot_order_page','pastehot_sales_summary','pastehot_delete_orders'].includes(name))return demoReportRpc(name,args);
-      if(['pastehot_pos_current_shift','pastehot_pos_open_shift','pastehot_pos_close_shift','pastehot_pos_create_sale','pastehot_pos_cancel_sale','pastehot_pos_report'].includes(name))return demoPosRpc(name,args);
+      if(['pastehot_pos_current_shift','pastehot_pos_open_shift','pastehot_pos_close_shift','pastehot_pos_create_sale','pastehot_pos_cancel_sale','pastehot_pos_report','pastehot_delete_cash_shifts'].includes(name))return demoPosRpc(name,args);
       if(name==='pastehot_admin_state')return {data:access(),error:null};
       if(name==='pastehot_list_store_team'){if(!access().allowed)return {data:null,error:{message:'NO_AUTORIZADO'}};return {data:state.members.filter(m=>state.role!=='manager'||m.role==='staff'||m.user_id===currentUser()).map(m=>({...m,current:m.user_id===currentUser()})),error:null};}
       if(name==='pastehot_manager_staff_accounts')return state.role==='manager'?{data:state.members.filter(m=>m.role==='staff'&&m.user_id!==currentUser()).map(m=>({...m,current:false})),error:null}:{data:null,error:{message:'NO_AUTORIZADO'}};
