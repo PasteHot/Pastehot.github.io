@@ -750,6 +750,11 @@ function applyDesign(){
   if(settings.background_type==="image"&&settings.background_image)bg.style.backgroundImage=`url(${JSON.stringify(settings.background_image)})`;else bg.style.backgroundImage="none";
   bg.style.backgroundColor=settings.background_color||"#f4f4f4";
   const opacity=Math.max(0,Math.min(.75,Number(settings.background_overlay)||0)); overlay.style.background=`rgba(0,0,0,${opacity})`;
+  if(isPasteHotDeployPreview()&&new URLSearchParams(location.search).get("menu-background-preview")==="1"){
+    bg.style.backgroundImage='url("/pastehot-menu-background-concept.jpg")';
+    bg.style.backgroundColor="#fbf6ed";
+    overlay.style.background="rgba(255,252,246,.12)";
+  }
   const fontKey=settings.category_title_font||"Arial";
   document.documentElement.style.setProperty("--category-font",FONT_MAP[fontKey]||FONT_MAP.Arial);
   document.documentElement.style.setProperty("--category-size",`${Math.max(18,Math.min(52,Number(settings.category_title_size)||28))}px`);
