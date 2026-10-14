@@ -3,10 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#111111">
+<meta name="theme-color" content="#d71920">
 <title>PasteHot®</title>
 <meta name="application-name" content="PasteHot®">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="PasteHot">
 <meta name="description" content="Menú oficial de PasteHot® para consultar productos y realizar pedidos.">
+<link rel="manifest" href="/manifest.webmanifest">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://www.pastehot.com/">
 <link rel="icon" type="image/png" sizes="384x384" href="/favicon.png">
@@ -19,6 +22,7 @@
 <meta property="og:description" content="Menú oficial de PasteHot® para consultar productos y realizar pedidos.">
 <meta property="og:image" content="https://www.pastehot.com/favicon.png">
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","url":"https://www.pastehot.com/","name":"PasteHot®","alternateName":"PasteHot"}</script>
+<script src="install-prompt.js?v=1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="admin-multistore.js?v=3"></script>
 <style>
@@ -712,6 +716,7 @@ window.addEventListener("online",refreshPublicAfterWake);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")refreshPublicAfterWake()});
 
 async function init(){
+  await window.PasteHotInstallPrompt?.showBeforeStoreSelection?.();
   await window.PasteHotMultiStore?.setupPublic?.();
   const [pr,sr]=await Promise.all([
     db.from("products").select("*").order("sort_order",{ascending:true}).order("created_at",{ascending:true}),
