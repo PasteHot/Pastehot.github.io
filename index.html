@@ -194,7 +194,7 @@ button:disabled{cursor:not-allowed}
 .brand-footer-separator{font-size:14px;color:rgba(255,255,255,.52);font-weight:700}
 .registered-mark{font-size:.52em;line-height:0;vertical-align:super;margin-left:1px;font-weight:800}
 .registered-mark-small{font-size:.58em}
-.brand-footer-rule{width:42px;height:2px;margin:14px auto;background:var(--accent);border-radius:999px}
+.brand-footer-rule{display:flex;width:126px;height:2px;margin:14px auto;overflow:hidden;border-radius:999px;background:transparent}.brand-footer-rule span{display:block;flex:0 0 42px;height:100%}.brand-footer-rule .rule-orange{background:#f28c00}.brand-footer-rule .rule-white{background:#fff}.brand-footer-rule .rule-red{background:var(--accent)}
 .brand-footer-legal{margin:0 auto;max-width:900px;color:rgba(255,255,255,.58);font-size:10.5px;line-height:1.65;letter-spacing:.01em}.brand-footer-copyright{margin:10px auto 0;max-width:900px;color:rgba(255,255,255,.46);font-size:10px;line-height:1.55;letter-spacing:.01em}
 .brand-footer-site{display:inline-block;margin-top:8px;color:#fff;text-decoration:none;font-size:11px;font-weight:900;letter-spacing:.04em}
 .brand-footer-site:hover{text-decoration:underline}
@@ -267,7 +267,7 @@ button:disabled{cursor:not-allowed}
       <span class="brand-footer-separator">·</span>
       <span class="brand-footer-official">Menú digital oficial</span>
     </div>
-    <div class="brand-footer-rule"></div>
+    <div class="brand-footer-rule" aria-hidden="true"><span class="rule-orange"></span><span class="rule-white"></span><span class="rule-red"></span></div>
     <p class="brand-footer-legal">Precios, productos, horarios, promociones y tiempos de entrega sujetos a disponibilidad y cambios sin previo aviso.</p>
     <a class="brand-footer-site" href="https://www.pastehot.com" aria-label="Sitio oficial de PasteHot">www.pastehot.com</a>
     <p class="brand-footer-copyright">© <span id="footerYear"></span> PasteHot<span class="registered-mark registered-mark-small">®</span> es una marca registrada. Todos los derechos reservados.</p>
