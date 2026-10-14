@@ -934,6 +934,25 @@ function renderProductControls(controls,product){
   controls.append(make("−","minus"),qty,make("+","add",atStockLimit));
 }
 
+function playPasteAddSound(){
+  try{
+    const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+    if(!AudioContextClass)return;
+    const context=new AudioContextClass();
+    const oscillator=context.createOscillator(),gain=context.createGain();
+    const now=context.currentTime;
+    oscillator.type="sine";
+    oscillator.frequency.setValueAtTime(620,now);
+    oscillator.frequency.exponentialRampToValueAtTime(340,now+.1);
+    gain.gain.setValueAtTime(.0001,now);
+    gain.gain.exponentialRampToValueAtTime(.052,now+.008);
+    gain.gain.exponentialRampToValueAtTime(.0001,now+.13);
+    oscillator.connect(gain);gain.connect(context.destination);
+    oscillator.start(now);oscillator.stop(now+.14);
+    oscillator.onended=()=>context.close().catch(()=>{});
+    if(context.state==="suspended")context.resume().catch(()=>{});
+  }catch(_){}
+}
 function animatePasteFlight(sourceButton){
   if(!sourceButton||window.matchMedia?.("(prefers-reduced-motion: reduce)").matches)return;
   const card=sourceButton.closest(".product");
@@ -979,7 +998,7 @@ function addToCart(id,sourceButton=null){
   if(!p||!isAvailable(p))return;
   const current=cart[k]?.quantity||0;
   if(isStockTracked(p)&&current>=stockCount(p)){alert(stockLimitMessage(p));return}
-  if(sourceButton)animatePasteFlight(sourceButton);
+  if(sourceButton){playPasteAddSound();animatePasteFlight(sourceButton)}
   cart[k]={product:p,quantity:current+1};
   updateCart();saveCheckoutState();
 }
