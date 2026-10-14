@@ -112,12 +112,13 @@
 
   window.PasteHotInstallPrompt = {
     async showBeforeStoreSelection() {
-      if (isStandalone() || readChoice() === 'installed') {
+      const forcePreview = new URLSearchParams(window.location.search).get('install-preview') === '1';
+      if (!forcePreview && (isStandalone() || readChoice() === 'installed')) {
         saveChoice('installed');
         return;
       }
-      if (readChoice() || (!isIOS() && !isAndroid())) return;
-      if (isAndroid() && !installEvent) {
+      if (!forcePreview && (readChoice() || (!isIOS() && !isAndroid()))) return;
+      if (!forcePreview && isAndroid() && !installEvent) {
         await Promise.race([installEventReady, new Promise(resolve => setTimeout(resolve, 900))]);
       }
       openDialog();
