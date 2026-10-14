@@ -105,7 +105,12 @@ button:disabled{cursor:not-allowed}
 .product-body{padding:20px;display:flex;flex-direction:column;flex:1}
 .product.soldout .product-body{opacity:.5}
 .product-name{font-size:18px;font-weight:700;margin:0 0 9px;line-height:1.3;letter-spacing:-.015em;text-wrap:pretty;color:#24211f}
-.product-description{font-size:14px;font-weight:400;color:#60646a;line-height:1.6;min-height:40px;margin-top:2px;text-align:left;text-wrap:pretty;overflow-wrap:anywhere}
+.product-description{font-size:14px;font-weight:400;color:#60646a;line-height:1.6;min-height:0;margin-top:2px;text-align:left;text-wrap:pretty;overflow-wrap:anywhere}
+.product-description.is-collapsed{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
+.description-toggle{display:inline-flex;align-items:center;min-height:32px;margin:3px 0 4px;padding:3px 0;border:0;background:transparent;color:#ad151c;font-size:12px;font-weight:750;text-align:left;text-decoration:underline;text-decoration-color:rgba(173,21,28,.35);text-underline-offset:3px}
+.description-toggle:hover{text-decoration-color:currentColor}
+.description-toggle:focus-visible{outline:2px solid #171717;outline-offset:2px;border-radius:3px}
+.description-toggle[hidden]{display:none}
 .product-card-footer{margin-top:auto;display:flex;flex-direction:column}
 .product-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid #eeeae5}
 .product-price{font-size:20px;font-weight:400}
@@ -201,6 +206,10 @@ button:disabled{cursor:not-allowed}
 .add-controls button{background:var(--accent)}
 .category-btn:focus-visible,.add-controls button:focus-visible{outline:3px solid #171717;outline-offset:4px}
 @media(prefers-reduced-motion:reduce){.product,.product-image,.category-btn{transition:none}.category-btn:hover{transform:none}}
+
+/* Descripción expandible: resumen compacto y control accesible. */
+.product.description-open{z-index:2}
+@media(prefers-reduced-motion:reduce){.description-toggle{scroll-behavior:auto}}
 </style>
 </head>
 <body>
@@ -842,7 +851,32 @@ function createProduct(product){
 
   const body=document.createElement("div");body.className="product-body";
   const n=document.createElement("h3");n.className="product-name";n.textContent=product.name||"";
-  const d=document.createElement("div");d.className="product-description";d.textContent=product.description||"";
+  const d=document.createElement("div");d.className="product-description is-collapsed";d.textContent=product.description||"";
+  const descId="product-description-"+String(normalizeId(product.id)||"item").replace(/[^a-zA-Z0-9_-]/g,"-");
+  d.id=descId;
+  const descriptionToggle=document.createElement("button");
+  descriptionToggle.type="button";descriptionToggle.className="description-toggle";
+  descriptionToggle.textContent="Ver descripción";descriptionToggle.setAttribute("aria-expanded","false");descriptionToggle.setAttribute("aria-controls",descId);
+  if(!d.textContent.trim())descriptionToggle.hidden=true;
+  descriptionToggle.addEventListener("click",()=>{
+    const willOpen=descriptionToggle.getAttribute("aria-expanded")!=="true";
+    document.querySelectorAll(".description-toggle[aria-expanded='true']").forEach(openButton=>{
+      openButton.setAttribute("aria-expanded","false");
+      openButton.textContent="Ver descripción";
+      const openDescription=document.getElementById(openButton.getAttribute("aria-controls"));
+      openDescription?.classList.add("is-collapsed");
+      openButton.closest(".product")?.classList.remove("description-open");
+    });
+    if(willOpen){
+      d.classList.remove("is-collapsed");
+      descriptionToggle.setAttribute("aria-expanded","true");
+      descriptionToggle.textContent="Ocultar descripción";
+      card.classList.add("description-open");
+    }
+  });
+  requestAnimationFrame(()=>{
+    if(d.scrollHeight<=d.clientHeight+1)descriptionToggle.hidden=true;
+  });
   const closed=document.createElement("div");closed.className="store-closed-note";closed.textContent="Disponible cuando la tienda abra";
   const stockNote=document.createElement("div");
   stockNote.className="stock-inline-note";
@@ -856,7 +890,7 @@ function createProduct(product){
   bottom.append(price,controls);
   const footer=document.createElement("div");footer.className="product-card-footer";
   footer.append(closed,stockNote,bottom);
-  body.append(n,d,footer);
+  body.append(n,d,descriptionToggle,footer);
   card.append(wrap,body);
   return card;
 }
@@ -1165,6 +1199,36 @@ function closeImageLightbox(){
 imageLightboxClose.addEventListener("click",closeImageLightbox);
 imageLightbox.addEventListener("click",e=>{if(e.target===imageLightbox)closeImageLightbox()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&imageLightbox.classList.contains("open"))closeImageLightbox()});
+document.addEventListener("pointerdown",e=>{
+  const openButton=document.querySelector(".description-toggle[aria-expanded='true']");
+  if(!openButton)return;
+  const openCard=openButton.closest(".product");
+  const touchedCard=e.target.closest?.(".product");
+  if(touchedCard!==openCard){
+    openButton.setAttribute("aria-expanded","false");
+    openButton.textContent="Ver descripción";
+    document.getElementById(openButton.getAttribute("aria-controls"))?.classList.add("is-collapsed");
+    openCard?.classList.remove("description-open");
+  }
+});
+document.addEventListener("focusin",e=>{
+  const openButton=document.querySelector(".description-toggle[aria-expanded='true']");
+  if(openButton&&!openButton.closest(".product")?.contains(e.target)){
+    openButton.setAttribute("aria-expanded","false");
+    openButton.textContent="Ver descripción";
+    document.getElementById(openButton.getAttribute("aria-controls"))?.classList.add("is-collapsed");
+    openButton.closest(".product")?.classList.remove("description-open");
+  }
+});
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Escape")return;
+  const openButton=document.querySelector(".description-toggle[aria-expanded='true']");
+  if(openButton){
+    openButton.click();
+    openButton.focus();
+  }
+});
+
 
 
 function showOrderMessage(text,type){const el=document.getElementById("orderStatusMessage");el.className=`order-status-message show ${type}`;el.textContent=text}
