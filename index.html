@@ -121,9 +121,11 @@ button:disabled{cursor:not-allowed}
 
 .description-toggle:hover,.description-toggle:focus-visible{color:var(--accent);text-decoration-color:currentColor}
 @media(hover:hover) and (pointer:fine){.product:hover .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor;animation:descriptionShake .78s cubic-bezier(.22,.8,.32,1) both}}
-@media(hover:none){.product:active .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}
+@media(hover:hover) and (pointer:fine){.product:has(.add-controls:hover) .description-toggle:not([hidden]){color:#55514e;text-decoration-color:rgba(85,81,78,.4);animation:none}}
+@media(hover:none){.product:active:not(:has(.add-controls:active)) .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}
 .product.is-touching .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}}
 @media(hover:none){.product .description-toggle.is-shaking:not([hidden]){color:var(--accent);text-decoration-color:currentColor;animation:descriptionShake .78s cubic-bezier(.22,.8,.32,1) both}}
+@media(hover:none){.product:has(.add-controls:active) .description-toggle:not([hidden]){color:#55514e;text-decoration-color:rgba(85,81,78,.4);animation:none}}
 @media(prefers-reduced-motion:reduce){
   .product:hover .description-toggle:not([hidden]),.product .description-toggle.is-shaking:not([hidden]){animation:none}
 }
@@ -1286,6 +1288,7 @@ function shakeDescription(card){
 }
 document.addEventListener("touchstart",e=>{
   clearTouchHighlight();
+  if(e.target.closest?.(".add-controls"))return;
   const card=e.target.closest?.(".product");
   if(card){
     touchHighlightCard=card;
