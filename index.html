@@ -110,7 +110,8 @@ button:disabled{cursor:not-allowed}
 .description-toggle{display:inline-flex;align-items:center;min-height:32px;margin:3px 0 4px;padding:3px 0;border:0;background:transparent;color:#55514e;font-size:13px;font-weight:650;text-align:left;text-decoration:underline;text-decoration-color:rgba(85,81,78,.4);text-underline-offset:3px}
 .description-toggle:hover,.description-toggle:focus-visible{color:var(--accent);text-decoration-color:currentColor}
 @media(hover:hover) and (pointer:fine){.product:hover .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}}
-@media(hover:none){.product:active .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}}
+@media(hover:none){.product:active .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}
+.product.is-touching .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}}
 .description-toggle:focus-visible{outline:2px solid #171717;outline-offset:2px;border-radius:3px}
 .description-toggle[hidden]{display:none}
 .product-card-footer{margin-top:auto;display:flex;flex-direction:column}
@@ -182,7 +183,7 @@ button:disabled{cursor:not-allowed}
 .cart-closed-warning.show{display:block}
 
 @media(max-width:900px){.products{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:650px){.profile-zone{margin-bottom:12px}.profile-shell{width:104px;height:104px;border-width:4px}.page{width:94%;padding-top:18px}.brand-card{padding:15px}.products{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.product{border-radius:16px}.product-body{padding:14px}.product-name{font-size:16px}.product-description{font-size:14px;min-height:36px}.product-price{font-size:17px}.add-controls button{width:36px;height:36px;font-size:21px}.cart-button{width:58px;height:58px;right:16px;bottom:16px}.cart-box{padding:19px}.category-section{scroll-margin-top:75px}}
+@media(max-width:650px){.profile-zone{margin-bottom:12px}.profile-shell{width:104px;height:104px;border-width:4px}.page{width:94%;padding-top:18px}.brand-card{padding:15px}.products{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.product{border-radius:16px}.product-body{padding:14px}.product-name{font-size:16px;min-height:3.9em}.product-description{font-size:14px;min-height:36px}.product-price{font-size:17px}.add-controls button{width:36px;height:36px;font-size:21px}.cart-button{width:58px;height:58px;right:16px;bottom:16px}.cart-box{padding:19px}.category-section{scroll-margin-top:75px}}
 @media(max-width:390px){.products{grid-template-columns:1fr}}
 
 /* Pie de marca */
@@ -1213,6 +1214,22 @@ document.addEventListener("pointerdown",e=>{
     openCard?.classList.remove("description-open");
   }
 });
+let touchHighlightCard=null;
+function clearTouchHighlight(){
+  touchHighlightCard?.classList.remove("is-touching");
+  touchHighlightCard=null;
+}
+document.addEventListener("touchstart",e=>{
+  clearTouchHighlight();
+  const card=e.target.closest?.(".product");
+  if(card){
+    touchHighlightCard=card;
+    card.classList.add("is-touching");
+  }
+},{passive:true});
+document.addEventListener("touchend",clearTouchHighlight,{passive:true});
+document.addEventListener("touchcancel",clearTouchHighlight,{passive:true});
+
 document.addEventListener("focusin",e=>{
   const openButton=document.querySelector(".description-toggle[aria-expanded='true']");
   if(openButton&&!openButton.closest(".product")?.contains(e.target)){
