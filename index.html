@@ -939,18 +939,33 @@ function playPasteAddSound(){
     const AudioContextClass=window.AudioContext||window.webkitAudioContext;
     if(!AudioContextClass)return;
     const context=new AudioContextClass();
-    const oscillator=context.createOscillator(),gain=context.createGain();
-    const now=context.currentTime;
-    oscillator.type="sine";
-    oscillator.frequency.setValueAtTime(620,now);
-    oscillator.frequency.exponentialRampToValueAtTime(340,now+.1);
-    gain.gain.setValueAtTime(.0001,now);
-    gain.gain.exponentialRampToValueAtTime(.052,now+.008);
-    gain.gain.exponentialRampToValueAtTime(.0001,now+.13);
-    oscillator.connect(gain);gain.connect(context.destination);
-    oscillator.start(now);oscillator.stop(now+.14);
-    oscillator.onended=()=>context.close().catch(()=>{});
-    if(context.state==="suspended")context.resume().catch(()=>{});
+    const play=()=>{
+      const now=context.currentTime;
+      const oscillator=context.createOscillator(),toneGain=context.createGain();
+      oscillator.type="triangle";
+      oscillator.frequency.setValueAtTime(560,now);
+      oscillator.frequency.exponentialRampToValueAtTime(315,now+.16);
+      toneGain.gain.setValueAtTime(.0001,now);
+      toneGain.gain.exponentialRampToValueAtTime(.095,now+.01);
+      toneGain.gain.exponentialRampToValueAtTime(.0001,now+.19);
+      oscillator.connect(toneGain);toneGain.connect(context.destination);
+      const bufferLength=Math.floor(context.sampleRate*.05);
+      const buffer=context.createBuffer(1,bufferLength,context.sampleRate);
+      const samples=buffer.getChannelData(0);
+      for(let i=0;i<bufferLength;i++)samples[i]=(Math.random()*2-1)*Math.pow(1-i/bufferLength,2);
+      const noise=context.createBufferSource(),filter=context.createBiquadFilter(),noiseGain=context.createGain();
+      noise.buffer=buffer;
+      filter.type="lowpass";filter.frequency.setValueAtTime(1500,now);
+      noiseGain.gain.setValueAtTime(.0001,now);
+      noiseGain.gain.exponentialRampToValueAtTime(.045,now+.004);
+      noiseGain.gain.exponentialRampToValueAtTime(.0001,now+.055);
+      noise.connect(filter);filter.connect(noiseGain);noiseGain.connect(context.destination);
+      oscillator.onended=()=>context.close().catch(()=>{});
+      oscillator.start(now);oscillator.stop(now+.2);
+      noise.start(now);noise.stop(now+.05);
+    };
+    if(context.state==="suspended")context.resume().then(play).catch(()=>context.close().catch(()=>{}));
+    else play();
   }catch(_){}
 }
 function animatePasteFlight(sourceButton){
