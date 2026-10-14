@@ -108,10 +108,25 @@ button:disabled{cursor:not-allowed}
 .product-description{font-size:14px;font-weight:400;color:#60646a;line-height:1.6;min-height:0;margin-top:2px;text-align:left;text-wrap:pretty;overflow-wrap:anywhere}
 .product-description.is-collapsed{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
 .description-toggle{display:inline-flex;align-items:center;min-height:32px;margin:3px 0 4px;padding:3px 0;border:0;background:transparent;color:#55514e;font-size:13px;font-weight:650;text-align:left;text-decoration:underline;text-decoration-color:rgba(85,81,78,.4);text-underline-offset:3px}
+@keyframes descriptionShake{
+  0%,100%{transform:translateX(0)}
+  12%{transform:translateX(-3px)}
+  24%{transform:translateX(2.4px)}
+  36%{transform:translateX(-1.8px)}
+  48%{transform:translateX(1.3px)}
+  60%{transform:translateX(-.9px)}
+  72%{transform:translateX(.55px)}
+  84%{transform:translateX(-.25px)}
+}
+
 .description-toggle:hover,.description-toggle:focus-visible{color:var(--accent);text-decoration-color:currentColor}
-@media(hover:hover) and (pointer:fine){.product:hover .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}}
+@media(hover:hover) and (pointer:fine){.product:hover .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor;animation:descriptionShake .78s cubic-bezier(.22,.8,.32,1) both}}
 @media(hover:none){.product:active .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}
 .product.is-touching .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}}
+@media(hover:none){.product .description-toggle.is-shaking:not([hidden]){color:var(--accent);text-decoration-color:currentColor;animation:descriptionShake .78s cubic-bezier(.22,.8,.32,1) both}}
+@media(prefers-reduced-motion:reduce){
+  .product:hover .description-toggle:not([hidden]),.product .description-toggle.is-shaking:not([hidden]){animation:none}
+}
 .description-toggle:focus-visible{outline:2px solid #171717;outline-offset:2px;border-radius:3px}
 .description-toggle[hidden]{display:none}
 .product-card-footer{margin-top:auto;display:flex;flex-direction:column}
@@ -1215,9 +1230,24 @@ document.addEventListener("pointerdown",e=>{
   }
 });
 let touchHighlightCard=null;
+let touchShakeButton=null;
+let touchShakeTimer=null;
 function clearTouchHighlight(){
   touchHighlightCard?.classList.remove("is-touching");
   touchHighlightCard=null;
+}
+function shakeDescription(card){
+  const button=card.querySelector(".description-toggle:not([hidden])");
+  if(!button)return;
+  clearTimeout(touchShakeTimer);
+  touchShakeButton?.classList.remove("is-shaking");
+  touchShakeButton=button;
+  void button.offsetWidth;
+  button.classList.add("is-shaking");
+  touchShakeTimer=setTimeout(()=>{
+    button.classList.remove("is-shaking");
+    if(touchShakeButton===button)touchShakeButton=null;
+  },800);
 }
 document.addEventListener("touchstart",e=>{
   clearTouchHighlight();
@@ -1225,6 +1255,7 @@ document.addEventListener("touchstart",e=>{
   if(card){
     touchHighlightCard=card;
     card.classList.add("is-touching");
+    shakeDescription(card);
   }
 },{passive:true});
 document.addEventListener("touchend",clearTouchHighlight,{passive:true});
