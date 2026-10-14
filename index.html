@@ -105,7 +105,14 @@ button:disabled{cursor:not-allowed}
 .product-body{padding:20px;display:flex;flex-direction:column;flex:1}
 .product.soldout .product-body{opacity:.5}
 .product-name{font-size:18px;font-weight:700;margin:0 0 9px;line-height:1.3;letter-spacing:-.015em;text-wrap:pretty;color:#24211f}
-.product-description{font-size:14px;font-weight:400;color:#60646a;line-height:1.6;min-height:40px;margin-top:2px;text-align:left;text-wrap:pretty;overflow-wrap:anywhere}
+.product-description{font-size:14px;font-weight:400;color:#60646a;line-height:1.6;min-height:0;margin-top:2px;text-align:left;text-wrap:pretty;overflow-wrap:anywhere}
+.product-description.is-collapsed{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
+.description-toggle{display:inline-flex;align-items:center;min-height:32px;margin:3px 0 4px;padding:3px 0;border:0;background:transparent;color:#55514e;font-size:13px;font-weight:650;text-align:left;text-decoration:underline;text-decoration-color:rgba(85,81,78,.4);text-underline-offset:3px}
+.description-toggle:hover,.description-toggle:focus-visible{color:var(--accent);text-decoration-color:currentColor}
+@media(hover:hover) and (pointer:fine){.product:hover .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}}
+@media(hover:none){.product:active .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}}
+.description-toggle:focus-visible{outline:2px solid #171717;outline-offset:2px;border-radius:3px}
+.description-toggle[hidden]{display:none}
 .product-card-footer{margin-top:auto;display:flex;flex-direction:column}
 .product-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid #eeeae5}
 .product-price{font-size:20px;font-weight:400}
@@ -187,7 +194,7 @@ button:disabled{cursor:not-allowed}
 .brand-footer-separator{font-size:14px;color:rgba(255,255,255,.52);font-weight:700}
 .registered-mark{font-size:.52em;line-height:0;vertical-align:super;margin-left:1px;font-weight:800}
 .registered-mark-small{font-size:.58em}
-.brand-footer-rule{width:42px;height:2px;margin:14px auto;background:var(--accent);border-radius:999px}
+.brand-footer-rule{display:flex;width:126px;height:2px;margin:14px auto;overflow:hidden;border-radius:999px;background:transparent}.brand-footer-rule span{display:block;flex:0 0 42px;height:100%}.brand-footer-rule .rule-orange{background:#f28c00}.brand-footer-rule .rule-white{background:#fff}.brand-footer-rule .rule-red{background:var(--accent)}
 .brand-footer-legal{margin:0 auto;max-width:900px;color:rgba(255,255,255,.58);font-size:10.5px;line-height:1.65;letter-spacing:.01em}.brand-footer-copyright{margin:10px auto 0;max-width:900px;color:rgba(255,255,255,.46);font-size:10px;line-height:1.55;letter-spacing:.01em}
 .brand-footer-site{display:inline-block;margin-top:8px;color:#fff;text-decoration:none;font-size:11px;font-weight:900;letter-spacing:.04em}
 .brand-footer-site:hover{text-decoration:underline}
@@ -201,6 +208,10 @@ button:disabled{cursor:not-allowed}
 .add-controls button{background:var(--accent)}
 .category-btn:focus-visible,.add-controls button:focus-visible{outline:3px solid #171717;outline-offset:4px}
 @media(prefers-reduced-motion:reduce){.product,.product-image,.category-btn{transition:none}.category-btn:hover{transform:none}}
+
+/* Descripción expandible: resumen compacto y control accesible. */
+.product.description-open{z-index:2}
+@media(prefers-reduced-motion:reduce){.description-toggle{scroll-behavior:auto}}
 </style>
 </head>
 <body>
@@ -256,7 +267,7 @@ button:disabled{cursor:not-allowed}
       <span class="brand-footer-separator">·</span>
       <span class="brand-footer-official">Menú digital oficial</span>
     </div>
-    <div class="brand-footer-rule"></div>
+    <div class="brand-footer-rule" aria-hidden="true"><span class="rule-orange"></span><span class="rule-white"></span><span class="rule-red"></span></div>
     <p class="brand-footer-legal">Precios, productos, horarios, promociones y tiempos de entrega sujetos a disponibilidad y cambios sin previo aviso.</p>
     <a class="brand-footer-site" href="https://www.pastehot.com" aria-label="Sitio oficial de PasteHot">www.pastehot.com</a>
     <p class="brand-footer-copyright">© <span id="footerYear"></span> PasteHot<span class="registered-mark registered-mark-small">®</span> es una marca registrada. Todos los derechos reservados.</p>
@@ -842,7 +853,32 @@ function createProduct(product){
 
   const body=document.createElement("div");body.className="product-body";
   const n=document.createElement("h3");n.className="product-name";n.textContent=product.name||"";
-  const d=document.createElement("div");d.className="product-description";d.textContent=product.description||"";
+  const d=document.createElement("div");d.className="product-description is-collapsed";d.textContent=product.description||"";
+  const descId="product-description-"+String(normalizeId(product.id)||"item").replace(/[^a-zA-Z0-9_-]/g,"-");
+  d.id=descId;
+  const descriptionToggle=document.createElement("button");
+  descriptionToggle.type="button";descriptionToggle.className="description-toggle";
+  descriptionToggle.textContent="Ver descripción";descriptionToggle.setAttribute("aria-expanded","false");descriptionToggle.setAttribute("aria-controls",descId);
+  if(!d.textContent.trim())descriptionToggle.hidden=true;
+  descriptionToggle.addEventListener("click",()=>{
+    const willOpen=descriptionToggle.getAttribute("aria-expanded")!=="true";
+    document.querySelectorAll(".description-toggle[aria-expanded='true']").forEach(openButton=>{
+      openButton.setAttribute("aria-expanded","false");
+      openButton.textContent="Ver descripción";
+      const openDescription=document.getElementById(openButton.getAttribute("aria-controls"));
+      openDescription?.classList.add("is-collapsed");
+      openButton.closest(".product")?.classList.remove("description-open");
+    });
+    if(willOpen){
+      d.classList.remove("is-collapsed");
+      descriptionToggle.setAttribute("aria-expanded","true");
+      descriptionToggle.textContent="Ocultar descripción";
+      card.classList.add("description-open");
+    }
+  });
+  requestAnimationFrame(()=>{
+    if(d.scrollHeight<=d.clientHeight+1)descriptionToggle.hidden=true;
+  });
   const closed=document.createElement("div");closed.className="store-closed-note";closed.textContent="Disponible cuando la tienda abra";
   const stockNote=document.createElement("div");
   stockNote.className="stock-inline-note";
@@ -856,7 +892,7 @@ function createProduct(product){
   bottom.append(price,controls);
   const footer=document.createElement("div");footer.className="product-card-footer";
   footer.append(closed,stockNote,bottom);
-  body.append(n,d,footer);
+  body.append(n,d,descriptionToggle,footer);
   card.append(wrap,body);
   return card;
 }
@@ -1165,6 +1201,36 @@ function closeImageLightbox(){
 imageLightboxClose.addEventListener("click",closeImageLightbox);
 imageLightbox.addEventListener("click",e=>{if(e.target===imageLightbox)closeImageLightbox()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&imageLightbox.classList.contains("open"))closeImageLightbox()});
+document.addEventListener("pointerdown",e=>{
+  const openButton=document.querySelector(".description-toggle[aria-expanded='true']");
+  if(!openButton)return;
+  const openCard=openButton.closest(".product");
+  const touchedCard=e.target.closest?.(".product");
+  if(touchedCard!==openCard){
+    openButton.setAttribute("aria-expanded","false");
+    openButton.textContent="Ver descripción";
+    document.getElementById(openButton.getAttribute("aria-controls"))?.classList.add("is-collapsed");
+    openCard?.classList.remove("description-open");
+  }
+});
+document.addEventListener("focusin",e=>{
+  const openButton=document.querySelector(".description-toggle[aria-expanded='true']");
+  if(openButton&&!openButton.closest(".product")?.contains(e.target)){
+    openButton.setAttribute("aria-expanded","false");
+    openButton.textContent="Ver descripción";
+    document.getElementById(openButton.getAttribute("aria-controls"))?.classList.add("is-collapsed");
+    openButton.closest(".product")?.classList.remove("description-open");
+  }
+});
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Escape")return;
+  const openButton=document.querySelector(".description-toggle[aria-expanded='true']");
+  if(openButton){
+    openButton.click();
+    openButton.focus();
+  }
+});
+
 
 
 function showOrderMessage(text,type){const el=document.getElementById("orderStatusMessage");el.className=`order-status-message show ${type}`;el.textContent=text}
