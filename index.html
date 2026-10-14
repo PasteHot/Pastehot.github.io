@@ -109,6 +109,8 @@ button:disabled{cursor:not-allowed}
 .product-description.is-collapsed{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
 .description-toggle{display:inline-flex;align-items:center;min-height:32px;margin:3px 0 4px;padding:3px 0;border:0;background:transparent;color:#55514e;font-size:12px;font-weight:650;text-align:left;text-decoration:underline;text-decoration-color:rgba(85,81,78,.4);text-underline-offset:3px}
 .description-toggle:hover,.description-toggle:focus-visible{color:var(--accent);text-decoration-color:currentColor}
+@media(hover:hover) and (pointer:fine){.product:hover .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}}
+@media(hover:none){.product:active .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}}
 .description-toggle:focus-visible{outline:2px solid #171717;outline-offset:2px;border-radius:3px}
 .description-toggle[hidden]{display:none}
 .product-card-footer{margin-top:auto;display:flex;flex-direction:column}
