@@ -112,7 +112,8 @@
 
   window.PasteHotInstallPrompt = {
     async showBeforeStoreSelection() {
-      const forcePreview = new URLSearchParams(window.location.search).get('install-preview') === '1';
+      const isDeployPreview = window.location.hostname.startsWith('deploy-preview-') && window.location.hostname.endsWith('.netlify.app');
+      const forcePreview = isDeployPreview && new URLSearchParams(window.location.search).get('install-preview') === '1';
       if (!forcePreview && (isStandalone() || readChoice() === 'installed')) {
         saveChoice('installed');
         return;
