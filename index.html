@@ -1288,7 +1288,12 @@ function shakeDescription(card){
 }
 document.addEventListener("touchstart",e=>{
   clearTouchHighlight();
-  if(e.target.closest?.(".add-controls"))return;
+  if(e.target.closest?.(".add-controls")){
+    clearTimeout(touchShakeTimer);
+    touchShakeButton?.classList.remove("is-shaking");
+    touchShakeButton=null;
+    return;
+  }
   const card=e.target.closest?.(".product");
   if(card){
     touchHighlightCard=card;
