@@ -946,7 +946,7 @@ function playPasteAddSound(){
       oscillator.frequency.setValueAtTime(560,now);
       oscillator.frequency.exponentialRampToValueAtTime(315,now+.16);
       toneGain.gain.setValueAtTime(.0001,now);
-      toneGain.gain.exponentialRampToValueAtTime(.095,now+.01);
+      toneGain.gain.exponentialRampToValueAtTime(.21,now+.01);
       toneGain.gain.exponentialRampToValueAtTime(.0001,now+.19);
       oscillator.connect(toneGain);toneGain.connect(context.destination);
       const bufferLength=Math.floor(context.sampleRate*.05);
@@ -957,7 +957,7 @@ function playPasteAddSound(){
       noise.buffer=buffer;
       filter.type="lowpass";filter.frequency.setValueAtTime(1500,now);
       noiseGain.gain.setValueAtTime(.0001,now);
-      noiseGain.gain.exponentialRampToValueAtTime(.045,now+.004);
+      noiseGain.gain.exponentialRampToValueAtTime(.085,now+.004);
       noiseGain.gain.exponentialRampToValueAtTime(.0001,now+.055);
       noise.connect(filter);filter.connect(noiseGain);noiseGain.connect(context.destination);
       oscillator.onended=()=>context.close().catch(()=>{});
