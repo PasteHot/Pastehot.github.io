@@ -940,7 +940,7 @@ function playPasteAddSound(){
     if(!AudioContextClass)return;
     const context=new AudioContextClass();
     const play=()=>{
-      const now=context.currentTime,duration=.45;
+      const now=context.currentTime,duration=.4;
       const whistle=context.createOscillator(),envelope=context.createGain();
       const limiter=context.createDynamicsCompressor(),output=context.createGain();
       whistle.type="sine";
@@ -996,10 +996,10 @@ function animatePasteFlight(sourceButton){
     frames.push({offset:t,transform:`translate3d(${x}px,${y}px,0) scale(${scale})`,opacity});
   }
   const glowFrames=frames.map(frame=>({...frame,opacity:Number(frame.opacity)*.28}));
-  const glowAnimation=glow.animate(glowFrames,{duration:450,delay:30,easing:"linear",fill:"forwards"});
+  const glowAnimation=glow.animate(glowFrames,{duration:400,delay:25,easing:"linear",fill:"forwards"});
   glowAnimation.onfinish=()=>glow.remove();
   glowAnimation.oncancel=()=>glow.remove();
-  const animation=flight.animate(frames,{duration:450,easing:"linear",fill:"forwards"});
+  const animation=flight.animate(frames,{duration:400,easing:"linear",fill:"forwards"});
   animation.onfinish=()=>flight.remove();
   animation.oncancel=()=>flight.remove();
 }
