@@ -954,11 +954,9 @@ function unlockPasteAudio(){
 document.addEventListener("pointerdown",e=>{
   if(e.target.closest?.('#menu [data-cart-action="add"]'))unlockPasteAudio();
 },{capture:true,passive:true});
-if(!window.PointerEvent){
-  document.addEventListener("touchstart",e=>{
-    if(e.target.closest?.('#menu [data-cart-action="add"]'))unlockPasteAudio();
-  },{capture:true,passive:true});
-}
+document.addEventListener("touchstart",e=>{
+  if(e.target.closest?.('#menu [data-cart-action="add"]'))unlockPasteAudio();
+},{capture:true,passive:true});
 function playPasteAddSound(){
   try{
     const context=ensurePasteAudioContext();
