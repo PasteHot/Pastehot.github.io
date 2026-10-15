@@ -121,11 +121,11 @@ button:disabled{cursor:not-allowed}
 
 .description-toggle:hover,.description-toggle:focus-visible{color:var(--accent);text-decoration-color:currentColor}
 @media(hover:hover) and (pointer:fine){.product:hover .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor;animation:descriptionShake .78s cubic-bezier(.22,.8,.32,1) both}}
-@media(hover:hover) and (pointer:fine){.product:has(.add-controls:hover) .description-toggle:not([hidden]){color:#55514e;text-decoration-color:rgba(85,81,78,.4);animation:none}}
+@media(hover:hover) and (pointer:fine){.product:has(.product-bottom:hover) .description-toggle:not([hidden]){color:#55514e;text-decoration-color:rgba(85,81,78,.4);animation:none}}
 @media(hover:none){.product:active:not(:has(.add-controls:active)) .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}
 .product.is-touching .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}}
 @media(hover:none){.product .description-toggle.is-shaking:not([hidden]){color:var(--accent);text-decoration-color:currentColor;animation:descriptionShake .78s cubic-bezier(.22,.8,.32,1) both}}
-@media(hover:none){.product:has(.add-controls:active) .description-toggle:not([hidden]){color:#55514e;text-decoration-color:rgba(85,81,78,.4);animation:none}}
+@media(hover:none){.product:has(.product-bottom:active) .description-toggle:not([hidden]){color:#55514e;text-decoration-color:rgba(85,81,78,.4);animation:none}}
 @media(prefers-reduced-motion:reduce){
   .product:hover .description-toggle:not([hidden]),.product .description-toggle.is-shaking:not([hidden]){animation:none}
 }
@@ -1327,18 +1327,16 @@ function shakeDescription(card){
 document.addEventListener("touchstart",e=>{
   clearTouchHighlight();
   const card=e.target.closest?.(".product");
-  const controls=card?.querySelector(".add-controls");
+  const bottom=card?.querySelector(".product-bottom");
   const finger=e.changedTouches?.[0]||e.touches?.[0];
-  const buttons=controls?.querySelectorAll("button");
-  const margin=48;
-  const nearQuantityButton=Boolean(
-    buttons&&finger&&Array.from(buttons).some(button=>{
-      const rect=button.getBoundingClientRect();
-      return finger.clientX>=rect.left-margin&&finger.clientX<=rect.right+margin&&
-        finger.clientY>=rect.top-margin&&finger.clientY<=rect.bottom+margin;
-    })
+  const rect=bottom?.getBoundingClientRect();
+  const inProductBottom=Boolean(
+    e.target.closest?.(".product-bottom")||
+    (rect&&finger&&
+      finger.clientX>=rect.left&&finger.clientX<=rect.right&&
+      finger.clientY>=rect.top&&finger.clientY<=rect.bottom)
   );
-  if(nearQuantityButton){
+  if(inProductBottom){
     clearTimeout(touchShakeTimer);
     touchShakeButton?.classList.remove("is-shaking");
     touchShakeButton=null;
