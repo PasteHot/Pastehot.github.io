@@ -968,7 +968,7 @@ function playPasteAddSound(){
       whistle.onended=()=>{whistle.disconnect();envelope.disconnect();limiter.disconnect();output.disconnect()};
       whistle.start(now);whistle.stop(now+duration+.01);
     };
-    if(context.state==="suspended"){
+    if(context.state!=="running"){
       const resumed=context.resume();
       if(context.state==="running")play();
       else resumed.then(play).catch(()=>{});
