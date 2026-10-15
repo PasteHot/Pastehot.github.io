@@ -940,37 +940,25 @@ function playPasteAddSound(){
     if(!AudioContextClass)return;
     const context=new AudioContextClass();
     const play=()=>{
-      const duration=.69,sampleRate=context.sampleRate,length=Math.ceil(sampleRate*duration);
-      const buffer=context.createBuffer(1,length,sampleRate),samples=buffer.getChannelData(0);
-      let peak=0;
-      const note=(time,start,frequency,life,amplitude)=>{
-        const elapsed=time-start;
-        if(elapsed<0||elapsed>life)return 0;
-        const attack=Math.min(1,elapsed/.006);
-        const release=Math.min(1,(life-elapsed)/.035);
-        const envelope=attack*release*Math.exp(-elapsed*5);
-        return (Math.sin(2*Math.PI*frequency*elapsed)+.16*Math.sin(4*Math.PI*frequency*elapsed))*envelope*amplitude;
-      };
-      for(let i=0;i<length;i++){
-        const time=i/sampleRate;
-        const pop=time<.12?Math.sin(2*Math.PI*300*time)*Math.exp(-time*27)*.55:0;
-        const value=pop+note(time,.38,587,.28,.72)+note(time,.47,784,.2,.68);
-        samples[i]=value;
-        peak=Math.max(peak,Math.abs(value));
-      }
-      const normalization=peak?Math.min(1,.98/peak):1;
-      for(let i=0;i<length;i++)samples[i]*=normalization;
-      const source=context.createBufferSource(),limiter=context.createDynamicsCompressor(),output=context.createGain();
-      source.buffer=buffer;
-      limiter.threshold.setValueAtTime(-.7,context.currentTime);
-      limiter.knee.setValueAtTime(0,context.currentTime);
-      limiter.ratio.setValueAtTime(20,context.currentTime);
-      limiter.attack.setValueAtTime(.002,context.currentTime);
-      limiter.release.setValueAtTime(.06,context.currentTime);
-      output.gain.setValueAtTime(1,context.currentTime);
-      source.connect(limiter);limiter.connect(output);output.connect(context.destination);
-      source.onended=()=>context.close().catch(()=>{});
-      source.start();
+      const now=context.currentTime,duration=.64;
+      const whistle=context.createOscillator(),envelope=context.createGain();
+      const limiter=context.createDynamicsCompressor(),output=context.createGain();
+      whistle.type="sine";
+      whistle.frequency.setValueAtTime(440,now);
+      whistle.frequency.exponentialRampToValueAtTime(1450,now+duration);
+      envelope.gain.setValueAtTime(.0001,now);
+      envelope.gain.exponentialRampToValueAtTime(.9,now+.045);
+      envelope.gain.setValueAtTime(.9,now+duration-.13);
+      envelope.gain.exponentialRampToValueAtTime(.0001,now+duration);
+      limiter.threshold.setValueAtTime(-.7,now);
+      limiter.knee.setValueAtTime(0,now);
+      limiter.ratio.setValueAtTime(20,now);
+      limiter.attack.setValueAtTime(.002,now);
+      limiter.release.setValueAtTime(.06,now);
+      output.gain.setValueAtTime(1,now);
+      whistle.connect(envelope);envelope.connect(limiter);limiter.connect(output);output.connect(context.destination);
+      whistle.onended=()=>context.close().catch(()=>{});
+      whistle.start(now);whistle.stop(now+duration+.01);
     };
     if(context.state==="suspended")context.resume().then(play).catch(()=>context.close().catch(()=>{}));
     else play();
