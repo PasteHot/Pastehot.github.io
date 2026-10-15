@@ -238,6 +238,12 @@ button:disabled{cursor:not-allowed}
 /* Descripción expandible: resumen compacto y control accesible. */
 .product.description-open{z-index:2}
 @media(prefers-reduced-motion:reduce){.description-toggle{scroll-behavior:auto}}
+.add-controls button{position:relative;background:transparent;color:transparent;font-size:0}
+.add-controls button::before{content:"";position:absolute;left:50%;top:50%;width:19px;height:19px;transform:translate(-50%,-50%);border-radius:50%;background:var(--accent)}
+.add-controls .control-symbol{position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;line-height:1}
+.add-controls button:active{transform:none}
+.add-controls button:active::before{transform:translate(-50%,-50%) scale(.94)}
+@media(max-width:650px){.add-controls button::before{width:18px;height:18px}.add-controls .control-symbol{font-size:11px}}
 </style>
 </head>
 <body>
@@ -929,7 +935,8 @@ function renderProductControls(controls,product){
   const storeOpen=isStoreOpen();
   const atStockLimit=isStockTracked(product)&&q>=stockCount(product);
   const make=(txt,action,disabled=false)=>{
-    const b=document.createElement("button");b.type="button";b.textContent=txt;b.disabled=disabled;
+    const b=document.createElement("button");b.type="button";b.disabled=disabled;
+    const symbol=document.createElement("span");symbol.className="control-symbol";symbol.textContent=txt;b.appendChild(symbol);
     if(action){b.dataset.cartAction=action;b.dataset.productId=key}
     return b;
   };
