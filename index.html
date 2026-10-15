@@ -940,39 +940,49 @@ function renderProductControls(controls,product){
 }
 
 let pasteAudioContext=null;
+function ensurePasteAudioContext(){
+  const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+  if(!AudioContextClass)return null;
+  if(!pasteAudioContext||pasteAudioContext.state==="closed")pasteAudioContext=new AudioContextClass();
+  return pasteAudioContext;
+}
+function unlockPasteAudio(){
+  const context=ensurePasteAudioContext();
+  if(!context||context.state==="running")return;
+  try{context.resume().catch(()=>{})}catch(_){}
+}
+document.addEventListener("pointerdown",e=>{
+  if(e.target.closest?.('#menu [data-cart-action="add"]'))unlockPasteAudio();
+},{capture:true,passive:true});
+if(!window.PointerEvent){
+  document.addEventListener("touchstart",e=>{
+    if(e.target.closest?.('#menu [data-cart-action="add"]'))unlockPasteAudio();
+  },{capture:true,passive:true});
+}
 function playPasteAddSound(){
   try{
-    const AudioContextClass=window.AudioContext||window.webkitAudioContext;
-    if(!AudioContextClass)return;
-    if(!pasteAudioContext||pasteAudioContext.state==="closed")pasteAudioContext=new AudioContextClass();
-    const context=pasteAudioContext;
-    const play=()=>{
-      if(context.state!=="running")return;
-      const now=context.currentTime,duration=.32;
-      const whistle=context.createOscillator(),envelope=context.createGain();
-      const limiter=context.createDynamicsCompressor(),output=context.createGain();
-      whistle.type="sine";
-      whistle.frequency.setValueAtTime(440,now);
-      whistle.frequency.exponentialRampToValueAtTime(1450,now+duration);
-      envelope.gain.setValueAtTime(.0001,now);
-      envelope.gain.exponentialRampToValueAtTime(.9,now+.035);
-      envelope.gain.setValueAtTime(.9,now+duration-.1);
-      envelope.gain.exponentialRampToValueAtTime(.0001,now+duration);
-      limiter.threshold.setValueAtTime(-.7,now);
-      limiter.knee.setValueAtTime(0,now);
-      limiter.ratio.setValueAtTime(20,now);
-      limiter.attack.setValueAtTime(.002,now);
-      limiter.release.setValueAtTime(.06,now);
-      output.gain.setValueAtTime(1,now);
-      whistle.connect(envelope);envelope.connect(limiter);limiter.connect(output);output.connect(context.destination);
-      whistle.onended=()=>{whistle.disconnect();envelope.disconnect();limiter.disconnect();output.disconnect()};
-      whistle.start(now);whistle.stop(now+duration+.01);
-    };
-    if(context.state!=="running"){
-      const resumed=context.resume();
-      if(context.state==="running")play();
-      else resumed.then(play).catch(()=>{});
-    }else play();
+    const context=ensurePasteAudioContext();
+    if(!context)return;
+    if(context.state!=="running")context.resume().catch(()=>{});
+    const now=context.currentTime,duration=.32;
+    const whistle=context.createOscillator(),envelope=context.createGain();
+    const limiter=context.createDynamicsCompressor(),output=context.createGain();
+    whistle.type="sine";
+    whistle.frequency.setValueAtTime(440,now);
+    whistle.frequency.exponentialRampToValueAtTime(1450,now+duration);
+    envelope.gain.setValueAtTime(.0001,now);
+    envelope.gain.exponentialRampToValueAtTime(.9,now+.035);
+    envelope.gain.setValueAtTime(.9,now+duration-.1);
+    envelope.gain.exponentialRampToValueAtTime(.0001,now+duration);
+    limiter.threshold.setValueAtTime(-.7,now);
+    limiter.knee.setValueAtTime(0,now);
+    limiter.ratio.setValueAtTime(20,now);
+    limiter.attack.setValueAtTime(.002,now);
+    limiter.release.setValueAtTime(.06,now);
+    output.gain.setValueAtTime(1,now);
+    whistle.connect(envelope);envelope.connect(limiter);limiter.connect(output);output.connect(context.destination);
+    whistle.onended=()=>{whistle.disconnect();envelope.disconnect();limiter.disconnect();output.disconnect()};
+    whistle.start(now);whistle.stop(now+duration+.01);
   }catch(_){}
 }
 function animatePasteFlight(sourceButton){
