@@ -1326,13 +1326,23 @@ function shakeDescription(card){
 }
 document.addEventListener("touchstart",e=>{
   clearTouchHighlight();
-  if(e.target.closest?.(".add-controls")){
+  const card=e.target.closest?.(".product");
+  const controls=card?.querySelector(".add-controls");
+  const finger=e.changedTouches?.[0]||e.touches?.[0];
+  const rect=controls?.getBoundingClientRect();
+  const margin=36;
+  const nearControls=Boolean(
+    e.target.closest?.(".add-controls")||
+    (rect&&finger&&
+      finger.clientX>=rect.left-margin&&finger.clientX<=rect.right+margin&&
+      finger.clientY>=rect.top-margin&&finger.clientY<=rect.bottom+margin)
+  );
+  if(nearControls){
     clearTimeout(touchShakeTimer);
     touchShakeButton?.classList.remove("is-shaking");
     touchShakeButton=null;
     return;
   }
-  const card=e.target.closest?.(".product");
   if(card){
     touchHighlightCard=card;
     card.classList.add("is-touching");
