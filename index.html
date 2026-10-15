@@ -108,10 +108,27 @@ button:disabled{cursor:not-allowed}
 .product-description{font-size:14px;font-weight:400;color:#60646a;line-height:1.6;min-height:0;margin-top:2px;text-align:left;text-wrap:pretty;overflow-wrap:anywhere}
 .product-description.is-collapsed{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
 .description-toggle{display:inline-flex;align-items:center;min-height:32px;margin:3px 0 4px;padding:3px 0;border:0;background:transparent;color:#55514e;font-size:13px;font-weight:650;text-align:left;text-decoration:underline;text-decoration-color:rgba(85,81,78,.4);text-underline-offset:3px}
+@keyframes descriptionShake{
+  0%,100%{transform:translateX(0)}
+  12%{transform:translateX(-3px)}
+  24%{transform:translateX(2.4px)}
+  36%{transform:translateX(-1.8px)}
+  48%{transform:translateX(1.3px)}
+  60%{transform:translateX(-.9px)}
+  72%{transform:translateX(.55px)}
+  84%{transform:translateX(-.25px)}
+}
+
 .description-toggle:hover,.description-toggle:focus-visible{color:var(--accent);text-decoration-color:currentColor}
-@media(hover:hover) and (pointer:fine){.product:hover .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}}
-@media(hover:none){.product:active .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}
+@media(hover:hover) and (pointer:fine){.product:hover .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor;animation:descriptionShake .78s cubic-bezier(.22,.8,.32,1) both}}
+@media(hover:hover) and (pointer:fine){.product:has(.product-bottom:hover) .description-toggle:not([hidden]){color:#55514e;text-decoration-color:rgba(85,81,78,.4);animation:none}}
+@media(hover:none){.product:active:not(:has(.add-controls:active)) .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}
 .product.is-touching .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}}
+@media(hover:none){.product .description-toggle.is-shaking:not([hidden]){color:var(--accent);text-decoration-color:currentColor;animation:descriptionShake .78s cubic-bezier(.22,.8,.32,1) both}}
+@media(hover:none){.product:has(.product-bottom:active) .description-toggle:not([hidden]){color:#55514e;text-decoration-color:rgba(85,81,78,.4);animation:none}}
+@media(prefers-reduced-motion:reduce){
+  .product:hover .description-toggle:not([hidden]),.product .description-toggle.is-shaking:not([hidden]){animation:none}
+}
 .description-toggle:focus-visible{outline:2px solid #171717;outline-offset:2px;border-radius:3px}
 .description-toggle[hidden]{display:none}
 .product-card-footer{margin-top:auto;display:flex;flex-direction:column}
@@ -121,6 +138,9 @@ button:disabled{cursor:not-allowed}
 .add-controls button{border:none;width:38px;height:38px;border-radius:50%;background:#111;color:#fff;font-size:23px;font-weight:800;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0}
 .add-controls button:active{transform:scale(.94)}
 .add-controls button:disabled{opacity:.35}
+.paste-flight{position:fixed;left:0;top:0;z-index:160;width:34px;height:34px;pointer-events:none;will-change:transform,opacity;transform-origin:center;filter:drop-shadow(0 2px 2px rgba(72,37,10,.22))}
+.paste-flight svg{display:block;width:100%;height:100%}
+.paste-flight-glow{position:fixed;left:0;top:0;z-index:159;width:34px;height:34px;border-radius:50%;pointer-events:none;will-change:transform,opacity;transform-origin:center;background:radial-gradient(circle,rgba(249,185,91,.34) 0%,rgba(232,157,62,.16) 46%,rgba(232,157,62,0) 76%);filter:blur(5px)}
 .add-controls .quantity{min-width:22px;text-align:center;font-size:17px;font-weight:900}
 
 .cart-button{position:fixed;right:22px;bottom:22px;z-index:100;width:64px;height:64px;border:0;border-radius:50%;background:#111;color:#fff;box-shadow:0 10px 34px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center}
@@ -914,12 +934,82 @@ function renderProductControls(controls,product){
   controls.append(make("−","minus"),qty,make("+","add",atStockLimit));
 }
 
-function addToCart(id){
+function playPasteAddSound(){
+  try{
+    const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+    if(!AudioContextClass)return;
+    const context=new AudioContextClass();
+    const play=()=>{
+      const now=context.currentTime,duration=.4;
+      const whistle=context.createOscillator(),envelope=context.createGain();
+      const limiter=context.createDynamicsCompressor(),output=context.createGain();
+      whistle.type="sine";
+      whistle.frequency.setValueAtTime(440,now);
+      whistle.frequency.exponentialRampToValueAtTime(1450,now+duration);
+      envelope.gain.setValueAtTime(.0001,now);
+      envelope.gain.exponentialRampToValueAtTime(.9,now+.045);
+      envelope.gain.setValueAtTime(.9,now+duration-.13);
+      envelope.gain.exponentialRampToValueAtTime(.0001,now+duration);
+      limiter.threshold.setValueAtTime(-.7,now);
+      limiter.knee.setValueAtTime(0,now);
+      limiter.ratio.setValueAtTime(20,now);
+      limiter.attack.setValueAtTime(.002,now);
+      limiter.release.setValueAtTime(.06,now);
+      output.gain.setValueAtTime(1,now);
+      whistle.connect(envelope);envelope.connect(limiter);limiter.connect(output);output.connect(context.destination);
+      whistle.onended=()=>context.close().catch(()=>{});
+      whistle.start(now);whistle.stop(now+duration+.01);
+    };
+    if(context.state==="suspended")context.resume().then(play).catch(()=>context.close().catch(()=>{}));
+    else play();
+  }catch(_){}
+}
+function animatePasteFlight(sourceButton){
+  if(!sourceButton||window.matchMedia?.("(prefers-reduced-motion: reduce)").matches)return;
+  const card=sourceButton.closest(".product");
+  const image=card?.querySelector(".product-image-wrap");
+  if(!image||typeof Element.prototype.animate!=="function")return;
+  const imageRect=image.getBoundingClientRect(),buttonRect=sourceButton.getBoundingClientRect();
+  if(!imageRect.width||!buttonRect.width)return;
+  const size=34;
+  const startX=imageRect.left+imageRect.width/2-size/2;
+  const startY=imageRect.bottom-size/2;
+  const endX=buttonRect.left+buttonRect.width/2-size/2;
+  const endY=buttonRect.top+buttonRect.height/2-size/2;
+  const controlX=(startX+endX)/2+Math.min(22,Math.max(-22,(endX-startX)*.08));
+  const controlY=Math.min(startY,endY)-Math.min(74,Math.max(38,Math.abs(endX-startX)*.18));
+  const flight=document.createElement("span");
+  flight.className="paste-flight";
+  flight.setAttribute("aria-hidden","true");
+  flight.innerHTML='<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><path d="M4.2 20.8C4.1 13.7 9.2 6.5 15 4.8c4.4-1.3 8.3 1.6 8.9 5.8.7 5.1-4.2 10.1-10.1 12.5-4.4 1.8-8.1 1-9.6-2.3Z" fill="#e8a347" stroke="#9d552a" stroke-width="1.5" stroke-linejoin="round"/><path d="M7.1 20.7c3.1 1.1 7.1.1 10.4-2.2 3.2-2.2 5.1-5.3 4.4-8.1" fill="none" stroke="#ffd98e" stroke-width="1.25" stroke-linecap="round"/><path d="m18.7 6.1.2 2m2.2-.2-.5 1.8m1.7.6-1.1 1.4m.9 1.7-1.5 1.1m.2 1.9-1.7.7" fill="none" stroke="#9d552a" stroke-width="1.15" stroke-linecap="round"/></svg>';
+  const glow=document.createElement("span");
+  glow.className="paste-flight-glow";
+  glow.setAttribute("aria-hidden","true");
+  document.body.append(glow,flight);
+  const frames=[];
+  for(let i=0;i<=12;i++){
+    const t=i/12,u=1-t;
+    const x=u*u*startX+2*u*t*controlX+t*t*endX;
+    const y=u*u*startY+2*u*t*controlY+t*t*endY;
+    const opacity=t<.24?.04+.92*(t/.24):t>.77?.96*(1-(t-.77)/.23):.96;
+    const scale=t<.24?.58+.42*(t/.24):t>.77?1-(t-.77)/.23*.76:1;
+    frames.push({offset:t,transform:`translate3d(${x}px,${y}px,0) scale(${scale})`,opacity});
+  }
+  const glowFrames=frames.map(frame=>({...frame,opacity:Number(frame.opacity)*.28}));
+  const glowAnimation=glow.animate(glowFrames,{duration:400,delay:25,easing:"linear",fill:"forwards"});
+  glowAnimation.onfinish=()=>glow.remove();
+  glowAnimation.oncancel=()=>glow.remove();
+  const animation=flight.animate(frames,{duration:400,easing:"linear",fill:"forwards"});
+  animation.onfinish=()=>flight.remove();
+  animation.oncancel=()=>flight.remove();
+}
+function addToCart(id,sourceButton=null){
   if(blockClosedAction())return;
   const k=normalizeId(id),p=findProductById(k);
   if(!p||!isAvailable(p))return;
   const current=cart[k]?.quantity||0;
   if(isStockTracked(p)&&current>=stockCount(p)){alert(stockLimitMessage(p));return}
+  if(sourceButton){playPasteAddSound();animatePasteFlight(sourceButton)}
   cart[k]={product:p,quantity:current+1};
   updateCart();saveCheckoutState();
 }
@@ -935,7 +1025,7 @@ function changeQuantity(id,amount){
   }
   updateCart();saveCheckoutState();
 }
-document.getElementById("menu").addEventListener("click",e=>{const b=e.target.closest("[data-cart-action]");if(!b)return;b.dataset.cartAction==="add"?addToCart(b.dataset.productId):changeQuantity(b.dataset.productId,-1)});
+document.getElementById("menu").addEventListener("click",e=>{const b=e.target.closest("[data-cart-action]");if(!b)return;b.dataset.cartAction==="add"?addToCart(b.dataset.productId,b):changeQuantity(b.dataset.productId,-1)});
 document.getElementById("cartItems").addEventListener("click",e=>{const b=e.target.closest("[data-cart-action]");if(!b)return;b.dataset.cartAction==="add"?addToCart(b.dataset.productId):changeQuantity(b.dataset.productId,-1)});
 function updateProductCard(id){
   const card=[...document.querySelectorAll(".product[data-product-id]")].find(x=>x.dataset.productId===normalizeId(id));
@@ -1215,16 +1305,47 @@ document.addEventListener("pointerdown",e=>{
   }
 });
 let touchHighlightCard=null;
+let touchShakeButton=null;
+let touchShakeTimer=null;
 function clearTouchHighlight(){
   touchHighlightCard?.classList.remove("is-touching");
   touchHighlightCard=null;
 }
+function shakeDescription(card){
+  const button=card.querySelector(".description-toggle:not([hidden])");
+  if(!button)return;
+  clearTimeout(touchShakeTimer);
+  touchShakeButton?.classList.remove("is-shaking");
+  touchShakeButton=button;
+  void button.offsetWidth;
+  button.classList.add("is-shaking");
+  touchShakeTimer=setTimeout(()=>{
+    button.classList.remove("is-shaking");
+    if(touchShakeButton===button)touchShakeButton=null;
+  },800);
+}
 document.addEventListener("touchstart",e=>{
   clearTouchHighlight();
   const card=e.target.closest?.(".product");
+  const bottom=card?.querySelector(".product-bottom");
+  const finger=e.changedTouches?.[0]||e.touches?.[0];
+  const rect=bottom?.getBoundingClientRect();
+  const inProductBottom=Boolean(
+    e.target.closest?.(".product-bottom")||
+    (rect&&finger&&
+      finger.clientX>=rect.left&&finger.clientX<=rect.right&&
+      finger.clientY>=rect.top&&finger.clientY<=rect.bottom)
+  );
+  if(inProductBottom){
+    clearTimeout(touchShakeTimer);
+    touchShakeButton?.classList.remove("is-shaking");
+    touchShakeButton=null;
+    return;
+  }
   if(card){
     touchHighlightCard=card;
     card.classList.add("is-touching");
+    shakeDescription(card);
   }
 },{passive:true});
 document.addEventListener("touchend",clearTouchHighlight,{passive:true});
