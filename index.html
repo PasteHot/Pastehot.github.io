@@ -110,31 +110,36 @@ button:disabled{cursor:not-allowed}
 .description-toggle{display:inline-flex;align-items:center;min-height:32px;margin:3px 0 4px;padding:3px 0;border:0;background:transparent;color:#55514e;font-size:13px;font-weight:650;text-align:left;text-decoration:underline;text-decoration-color:rgba(85,81,78,.4);text-underline-offset:3px}
 @keyframes descriptionShake{
   0%,100%{transform:translateX(0)}
-  12%{transform:translateX(-3px)}
-  24%{transform:translateX(2.4px)}
-  36%{transform:translateX(-1.8px)}
-  48%{transform:translateX(1.3px)}
-  60%{transform:translateX(-.9px)}
-  72%{transform:translateX(.55px)}
-  84%{transform:translateX(-.25px)}
+  12%{transform:translateX(-4.5px)}
+  24%{transform:translateX(3.6px)}
+  36%{transform:translateX(-2.7px)}
+  48%{transform:translateX(1.9px)}
+  60%{transform:translateX(-1.3px)}
+  72%{transform:translateX(.75px)}
+  84%{transform:translateX(-.3px)}
+}
+@keyframes descriptionShakeReduced{
+  0%,100%{transform:translateX(0)}
+  35%{transform:translateX(-2px)}
+  70%{transform:translateX(1px)}
 }
 
-.description-toggle:hover,.description-toggle:focus-visible{color:var(--accent);text-decoration-color:currentColor}
-@media(hover:hover) and (pointer:fine){.product:hover .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor;animation:descriptionShake .78s cubic-bezier(.22,.8,.32,1) both}}
+@media(hover:hover) and (pointer:fine){.description-toggle:hover,.description-toggle:focus-visible{color:var(--accent);text-decoration-color:currentColor}}
+@media(hover:hover) and (pointer:fine){.product:hover .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor;animation:descriptionShake .62s cubic-bezier(.22,.8,.32,1) both}}
 @media(hover:hover) and (pointer:fine){.product:has(.product-bottom:hover) .description-toggle:not([hidden]){color:#55514e;text-decoration-color:rgba(85,81,78,.4);animation:none}}
 @media(hover:none){.product:active:not(:has(.add-controls:active)) .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}
 .product.is-touching .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}}
-@media(hover:none){.product .description-toggle.is-shaking:not([hidden]){color:var(--accent);text-decoration-color:currentColor;animation:descriptionShake .78s cubic-bezier(.22,.8,.32,1) both}}
+@media(hover:none){.product .description-toggle.is-shaking:not([hidden]){color:var(--accent);text-decoration-color:currentColor;animation:descriptionShake .62s cubic-bezier(.22,.8,.32,1) both}}
 @media(hover:none){.product:has(.product-bottom:active) .description-toggle:not([hidden]){color:#55514e;text-decoration-color:rgba(85,81,78,.4);animation:none}}
 @media(prefers-reduced-motion:reduce){
-  .product:hover .description-toggle:not([hidden]),.product .description-toggle.is-shaking:not([hidden]){animation:none}
+  .product:hover .description-toggle:not([hidden]),.product .description-toggle.is-shaking:not([hidden]){animation:descriptionShakeReduced .34s ease-out both}
 }
 .description-toggle:focus-visible{outline:2px solid #171717;outline-offset:2px;border-radius:3px}
 .description-toggle[hidden]{display:none}
 .product-card-footer{margin-top:auto;display:flex;flex-direction:column}
 .product-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid #eeeae5}
 .product-price{font-size:20px;font-weight:400}
-.add-controls{display:flex;align-items:center;justify-content:flex-end;gap:7px;min-width:42px}
+.add-controls{display:flex;align-items:center;justify-content:flex-end;gap:4px;min-width:42px}
 .add-controls button{border:none;width:38px;height:38px;border-radius:50%;background:#111;color:#fff;font-size:23px;font-weight:800;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0}
 .add-controls button:active{transform:scale(.94)}
 .add-controls button:disabled{opacity:.35}
@@ -233,7 +238,13 @@ button:disabled{cursor:not-allowed}
 /* Descripción expandible: resumen compacto y control accesible. */
 .product.description-open{z-index:2}
 @media(prefers-reduced-motion:reduce){.description-toggle{scroll-behavior:auto}}
-</style>
+.add-controls button{position:relative;background:transparent;color:transparent;font-size:0}
+.add-controls button::before{content:"";position:absolute;left:50%;top:50%;width:25px;height:25px;transform:translate(-50%,-50%);border-radius:50%;background:var(--accent)}
+.add-controls .control-symbol{position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:800;line-height:1}
+.add-controls button:active{transform:none}
+.add-controls button:active::before{transform:translate(-50%,-50%) scale(.94)}
+@media(max-width:650px){.add-controls button::before{width:23px;height:23px}.add-controls .control-symbol{font-size:14px}}
+.product.description-just-closed .description-toggle:not([hidden]){color:#55514e;text-decoration-color:rgba(85,81,78,.4);animation:none}</style>
 </head>
 <body>
 <!-- rama de mejoras octubre 2026 -->
@@ -849,6 +860,7 @@ function createProduct(product){
   const card=document.createElement("article");
   card.className="product"+(isAvailable(product)?"":" soldout")+(!isStoreOpen()?" store-closed":"");
   card.dataset.productId=normalizeId(product.id);
+  card.addEventListener("pointerleave",()=>card.classList.remove("description-just-closed"));
 
   const wrap=document.createElement("div");
   wrap.className="product-image-wrap";
@@ -888,13 +900,16 @@ function createProduct(product){
       openButton.textContent="Ver descripción";
       const openDescription=document.getElementById(openButton.getAttribute("aria-controls"));
       openDescription?.classList.add("is-collapsed");
-      openButton.closest(".product")?.classList.remove("description-open");
+      const closedCard=openButton.closest(".product");
+      closedCard?.classList.remove("description-open");
+      closedCard?.classList.add("description-just-closed");
     });
     if(willOpen){
       d.classList.remove("is-collapsed");
       descriptionToggle.setAttribute("aria-expanded","true");
       descriptionToggle.textContent="Ocultar descripción";
       card.classList.add("description-open");
+      card.classList.remove("description-just-closed");
     }
   });
   requestAnimationFrame(()=>{
@@ -924,7 +939,8 @@ function renderProductControls(controls,product){
   const storeOpen=isStoreOpen();
   const atStockLimit=isStockTracked(product)&&q>=stockCount(product);
   const make=(txt,action,disabled=false)=>{
-    const b=document.createElement("button");b.type="button";b.textContent=txt;b.disabled=disabled;
+    const b=document.createElement("button");b.type="button";b.disabled=disabled;
+    const symbol=document.createElement("span");symbol.className="control-symbol";symbol.textContent=txt;b.appendChild(symbol);
     if(action){b.dataset.cartAction=action;b.dataset.productId=key}
     return b;
   };
@@ -934,41 +950,55 @@ function renderProductControls(controls,product){
   controls.append(make("−","minus"),qty,make("+","add",atStockLimit));
 }
 
+let pasteAudioContext=null;
+function ensurePasteAudioContext(){
+  const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+  if(!AudioContextClass)return null;
+  if(!pasteAudioContext||pasteAudioContext.state==="closed")pasteAudioContext=new AudioContextClass();
+  return pasteAudioContext;
+}
+function unlockPasteAudio(){
+  const context=ensurePasteAudioContext();
+  if(!context||context.state==="running")return;
+  try{context.resume().catch(()=>{})}catch(_){}
+}
+document.addEventListener("pointerdown",e=>{
+  if(e.target.closest?.('#menu [data-cart-action="add"]'))unlockPasteAudio();
+},{capture:true,passive:true});
+document.addEventListener("touchstart",e=>{
+  if(e.target.closest?.('#menu [data-cart-action="add"]'))unlockPasteAudio();
+},{capture:true,passive:true});
 function playPasteAddSound(){
   try{
-    const AudioContextClass=window.AudioContext||window.webkitAudioContext;
-    if(!AudioContextClass)return;
-    const context=new AudioContextClass();
-    const play=()=>{
-      const now=context.currentTime,duration=.4;
-      const whistle=context.createOscillator(),envelope=context.createGain();
-      const limiter=context.createDynamicsCompressor(),output=context.createGain();
-      whistle.type="sine";
-      whistle.frequency.setValueAtTime(440,now);
-      whistle.frequency.exponentialRampToValueAtTime(1450,now+duration);
-      envelope.gain.setValueAtTime(.0001,now);
-      envelope.gain.exponentialRampToValueAtTime(.9,now+.045);
-      envelope.gain.setValueAtTime(.9,now+duration-.13);
-      envelope.gain.exponentialRampToValueAtTime(.0001,now+duration);
-      limiter.threshold.setValueAtTime(-.7,now);
-      limiter.knee.setValueAtTime(0,now);
-      limiter.ratio.setValueAtTime(20,now);
-      limiter.attack.setValueAtTime(.002,now);
-      limiter.release.setValueAtTime(.06,now);
-      output.gain.setValueAtTime(1,now);
-      whistle.connect(envelope);envelope.connect(limiter);limiter.connect(output);output.connect(context.destination);
-      whistle.onended=()=>context.close().catch(()=>{});
-      whistle.start(now);whistle.stop(now+duration+.01);
-    };
-    if(context.state==="suspended")context.resume().then(play).catch(()=>context.close().catch(()=>{}));
-    else play();
+    const context=ensurePasteAudioContext();
+    if(!context)return;
+    if(context.state!=="running")context.resume().catch(()=>{});
+    const now=context.currentTime,duration=.32;
+    const whistle=context.createOscillator(),envelope=context.createGain();
+    const limiter=context.createDynamicsCompressor(),output=context.createGain();
+    whistle.type="sine";
+    whistle.frequency.setValueAtTime(440,now);
+    whistle.frequency.exponentialRampToValueAtTime(1450,now+duration);
+    envelope.gain.setValueAtTime(.0001,now);
+    envelope.gain.exponentialRampToValueAtTime(.9,now+.035);
+    envelope.gain.setValueAtTime(.9,now+duration-.1);
+    envelope.gain.exponentialRampToValueAtTime(.0001,now+duration);
+    limiter.threshold.setValueAtTime(-.7,now);
+    limiter.knee.setValueAtTime(0,now);
+    limiter.ratio.setValueAtTime(20,now);
+    limiter.attack.setValueAtTime(.002,now);
+    limiter.release.setValueAtTime(.06,now);
+    output.gain.setValueAtTime(1,now);
+    whistle.connect(envelope);envelope.connect(limiter);limiter.connect(output);output.connect(context.destination);
+    whistle.onended=()=>{whistle.disconnect();envelope.disconnect();limiter.disconnect();output.disconnect()};
+    whistle.start(now);whistle.stop(now+duration+.01);
   }catch(_){}
 }
 function animatePasteFlight(sourceButton){
-  if(!sourceButton||window.matchMedia?.("(prefers-reduced-motion: reduce)").matches)return;
+  if(!sourceButton)return;
   const card=sourceButton.closest(".product");
   const image=card?.querySelector(".product-image-wrap");
-  if(!image||typeof Element.prototype.animate!=="function")return;
+  if(!image)return;
   const imageRect=image.getBoundingClientRect(),buttonRect=sourceButton.getBoundingClientRect();
   if(!imageRect.width||!buttonRect.width)return;
   const size=34;
@@ -995,13 +1025,32 @@ function animatePasteFlight(sourceButton){
     const scale=t<.24?.58+.42*(t/.24):t>.77?1-(t-.77)/.23*.76:1;
     frames.push({offset:t,transform:`translate3d(${x}px,${y}px,0) scale(${scale})`,opacity});
   }
-  const glowFrames=frames.map(frame=>({...frame,opacity:Number(frame.opacity)*.28}));
-  const glowAnimation=glow.animate(glowFrames,{duration:400,delay:25,easing:"linear",fill:"forwards"});
-  glowAnimation.onfinish=()=>glow.remove();
-  glowAnimation.oncancel=()=>glow.remove();
-  const animation=flight.animate(frames,{duration:400,easing:"linear",fill:"forwards"});
-  animation.onfinish=()=>flight.remove();
-  animation.oncancel=()=>flight.remove();
+  const reducedMotion=window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  const duration=reducedMotion?260:400;
+  const runFlight=(element,isGlow=false)=>{
+    if(typeof element.animate==="function"){
+      const keyframes=isGlow?frames.map(frame=>({...frame,opacity:Number(frame.opacity)*.28})):frames;
+      const animation=element.animate(keyframes,{duration,delay:isGlow?25:0,easing:"linear",fill:"forwards"});
+      animation.onfinish=()=>element.remove();
+      animation.oncancel=()=>element.remove();
+      return;
+    }
+    let startedAt=null;
+    const step=now=>{
+      if(startedAt===null)startedAt=now;
+      const t=Math.min(1,(now-startedAt)/duration),u=1-t;
+      const x=u*u*startX+2*u*t*controlX+t*t*endX;
+      const y=u*u*startY+2*u*t*controlY+t*t*endY;
+      const opacity=t<.24?.04+.92*(t/.24):t>.77?.96*(1-(t-.77)/.23):.96;
+      const scale=t<.24?.58+.42*(t/.24):t>.77?1-(t-.77)/.23*.76:1;
+      element.style.transform=`translate3d(${x}px,${y}px,0) scale(${scale})`;
+      element.style.opacity=String(isGlow?opacity*.28:opacity);
+      if(t<1)requestAnimationFrame(step);else element.remove();
+    };
+    requestAnimationFrame(step);
+  };
+  runFlight(glow,true);
+  runFlight(flight,false);
 }
 function addToCart(id,sourceButton=null){
   if(blockClosedAction())return;
@@ -1293,15 +1342,17 @@ imageLightboxClose.addEventListener("click",closeImageLightbox);
 imageLightbox.addEventListener("click",e=>{if(e.target===imageLightbox)closeImageLightbox()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&imageLightbox.classList.contains("open"))closeImageLightbox()});
 document.addEventListener("pointerdown",e=>{
+  const touchedCard=e.target.closest?.(".product");
+  touchedCard?.classList.remove("description-just-closed");
   const openButton=document.querySelector(".description-toggle[aria-expanded='true']");
   if(!openButton)return;
   const openCard=openButton.closest(".product");
-  const touchedCard=e.target.closest?.(".product");
   if(touchedCard!==openCard){
     openButton.setAttribute("aria-expanded","false");
     openButton.textContent="Ver descripción";
     document.getElementById(openButton.getAttribute("aria-controls"))?.classList.add("is-collapsed");
     openCard?.classList.remove("description-open");
+    openCard?.classList.add("description-just-closed");
   }
 });
 let touchHighlightCard=null;
@@ -1343,9 +1394,23 @@ document.addEventListener("touchstart",e=>{
     return;
   }
   if(card){
+    card.classList.remove("description-just-closed");
     touchHighlightCard=card;
     card.classList.add("is-touching");
     shakeDescription(card);
+  }
+},{passive:true});
+document.addEventListener("touchmove",e=>{
+  const card=touchHighlightCard;
+  if(!card)return;
+  const bottom=card.querySelector(".product-bottom");
+  const finger=e.changedTouches?.[0]||e.touches?.[0];
+  const rect=bottom?.getBoundingClientRect();
+  if(rect&&finger&&finger.clientX>=rect.left&&finger.clientX<=rect.right&&finger.clientY>=rect.top&&finger.clientY<=rect.bottom){
+    clearTouchHighlight();
+    clearTimeout(touchShakeTimer);
+    touchShakeButton?.classList.remove("is-shaking");
+    touchShakeButton=null;
   }
 },{passive:true});
 document.addEventListener("touchend",clearTouchHighlight,{passive:true});
@@ -1357,7 +1422,9 @@ document.addEventListener("focusin",e=>{
     openButton.setAttribute("aria-expanded","false");
     openButton.textContent="Ver descripción";
     document.getElementById(openButton.getAttribute("aria-controls"))?.classList.add("is-collapsed");
-    openButton.closest(".product")?.classList.remove("description-open");
+    const closedCard=openButton.closest(".product");
+    closedCard?.classList.remove("description-open");
+    closedCard?.classList.add("description-just-closed");
   }
 });
 document.addEventListener("keydown",e=>{
