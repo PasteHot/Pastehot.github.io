@@ -124,15 +124,15 @@ button:disabled{cursor:not-allowed}
   70%{transform:translateX(1px)}
 }
 
-.description-toggle:hover,.description-toggle:focus-visible{color:var(--accent);text-decoration-color:currentColor}
-@media(hover:hover) and (pointer:fine){.product:hover .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor;animation:descriptionShake .78s cubic-bezier(.22,.8,.32,1) both}}
+@media(hover:hover) and (pointer:fine){.description-toggle:hover,.description-toggle:focus-visible{color:var(--accent);text-decoration-color:currentColor}}
+@media(hover:hover) and (pointer:fine){.product:hover .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor;animation:descriptionShake .62s cubic-bezier(.22,.8,.32,1) both}}
 @media(hover:hover) and (pointer:fine){.product:has(.product-bottom:hover) .description-toggle:not([hidden]){color:#55514e;text-decoration-color:rgba(85,81,78,.4);animation:none}}
 @media(hover:none){.product:active:not(:has(.add-controls:active)) .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}
 .product.is-touching .description-toggle:not([hidden]){color:var(--accent);text-decoration-color:currentColor}}
-@media(hover:none){.product .description-toggle.is-shaking:not([hidden]){color:var(--accent);text-decoration-color:currentColor;animation:descriptionShake .78s cubic-bezier(.22,.8,.32,1) both}}
+@media(hover:none){.product .description-toggle.is-shaking:not([hidden]){color:var(--accent);text-decoration-color:currentColor;animation:descriptionShake .62s cubic-bezier(.22,.8,.32,1) both}}
 @media(hover:none){.product:has(.product-bottom:active) .description-toggle:not([hidden]){color:#55514e;text-decoration-color:rgba(85,81,78,.4);animation:none}}
 @media(prefers-reduced-motion:reduce){
-  .product:hover .description-toggle:not([hidden]),.product .description-toggle.is-shaking:not([hidden]){animation:descriptionShakeReduced .42s ease-out both}
+  .product:hover .description-toggle:not([hidden]),.product .description-toggle.is-shaking:not([hidden]){animation:descriptionShakeReduced .34s ease-out both}
 }
 .description-toggle:focus-visible{outline:2px solid #171717;outline-offset:2px;border-radius:3px}
 .description-toggle[hidden]{display:none}
@@ -244,7 +244,7 @@ button:disabled{cursor:not-allowed}
 .add-controls button:active{transform:none}
 .add-controls button:active::before{transform:translate(-50%,-50%) scale(.94)}
 @media(max-width:650px){.add-controls button::before{width:18px;height:18px}.add-controls .control-symbol{font-size:11px}}
-</style>
+.product.description-just-closed .description-toggle:not([hidden]){color:#55514e;text-decoration-color:rgba(85,81,78,.4);animation:none}</style>
 </head>
 <body>
 <!-- rama de mejoras octubre 2026 -->
@@ -860,6 +860,7 @@ function createProduct(product){
   const card=document.createElement("article");
   card.className="product"+(isAvailable(product)?"":" soldout")+(!isStoreOpen()?" store-closed":"");
   card.dataset.productId=normalizeId(product.id);
+  card.addEventListener("pointerleave",()=>card.classList.remove("description-just-closed"));
 
   const wrap=document.createElement("div");
   wrap.className="product-image-wrap";
@@ -899,13 +900,16 @@ function createProduct(product){
       openButton.textContent="Ver descripción";
       const openDescription=document.getElementById(openButton.getAttribute("aria-controls"));
       openDescription?.classList.add("is-collapsed");
-      openButton.closest(".product")?.classList.remove("description-open");
+      const closedCard=openButton.closest(".product");
+      closedCard?.classList.remove("description-open");
+      closedCard?.classList.add("description-just-closed");
     });
     if(willOpen){
       d.classList.remove("is-collapsed");
       descriptionToggle.setAttribute("aria-expanded","true");
       descriptionToggle.textContent="Ocultar descripción";
       card.classList.add("description-open");
+      card.classList.remove("description-just-closed");
     }
   });
   requestAnimationFrame(()=>{
@@ -1338,15 +1342,17 @@ imageLightboxClose.addEventListener("click",closeImageLightbox);
 imageLightbox.addEventListener("click",e=>{if(e.target===imageLightbox)closeImageLightbox()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape"&&imageLightbox.classList.contains("open"))closeImageLightbox()});
 document.addEventListener("pointerdown",e=>{
+  const touchedCard=e.target.closest?.(".product");
+  touchedCard?.classList.remove("description-just-closed");
   const openButton=document.querySelector(".description-toggle[aria-expanded='true']");
   if(!openButton)return;
   const openCard=openButton.closest(".product");
-  const touchedCard=e.target.closest?.(".product");
   if(touchedCard!==openCard){
     openButton.setAttribute("aria-expanded","false");
     openButton.textContent="Ver descripción";
     document.getElementById(openButton.getAttribute("aria-controls"))?.classList.add("is-collapsed");
     openCard?.classList.remove("description-open");
+    openCard?.classList.add("description-just-closed");
   }
 });
 let touchHighlightCard=null;
@@ -1388,6 +1394,7 @@ document.addEventListener("touchstart",e=>{
     return;
   }
   if(card){
+    card.classList.remove("description-just-closed");
     touchHighlightCard=card;
     card.classList.add("is-touching");
     shakeDescription(card);
@@ -1415,7 +1422,9 @@ document.addEventListener("focusin",e=>{
     openButton.setAttribute("aria-expanded","false");
     openButton.textContent="Ver descripción";
     document.getElementById(openButton.getAttribute("aria-controls"))?.classList.add("is-collapsed");
-    openButton.closest(".product")?.classList.remove("description-open");
+    const closedCard=openButton.closest(".product");
+    closedCard?.classList.remove("description-open");
+    closedCard?.classList.add("description-just-closed");
   }
 });
 document.addEventListener("keydown",e=>{
