@@ -139,7 +139,7 @@ button:disabled{cursor:not-allowed}
 .product-card-footer{margin-top:auto;display:flex;flex-direction:column}
 .product-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid #eeeae5}
 .product-price{font-size:20px;font-weight:400}
-.add-controls{display:flex;align-items:center;justify-content:flex-end;gap:7px;min-width:42px}
+.add-controls{display:flex;align-items:center;justify-content:flex-end;gap:4px;min-width:42px}
 .add-controls button{border:none;width:38px;height:38px;border-radius:50%;background:#111;color:#fff;font-size:23px;font-weight:800;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0}
 .add-controls button:active{transform:scale(.94)}
 .add-controls button:disabled{opacity:.35}
@@ -239,11 +239,11 @@ button:disabled{cursor:not-allowed}
 .product.description-open{z-index:2}
 @media(prefers-reduced-motion:reduce){.description-toggle{scroll-behavior:auto}}
 .add-controls button{position:relative;background:transparent;color:transparent;font-size:0}
-.add-controls button::before{content:"";position:absolute;left:50%;top:50%;width:19px;height:19px;transform:translate(-50%,-50%);border-radius:50%;background:var(--accent)}
-.add-controls .control-symbol{position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;line-height:1}
+.add-controls button::before{content:"";position:absolute;left:50%;top:50%;width:25px;height:25px;transform:translate(-50%,-50%);border-radius:50%;background:var(--accent)}
+.add-controls .control-symbol{position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:800;line-height:1}
 .add-controls button:active{transform:none}
 .add-controls button:active::before{transform:translate(-50%,-50%) scale(.94)}
-@media(max-width:650px){.add-controls button::before{width:18px;height:18px}.add-controls .control-symbol{font-size:11px}}
+@media(max-width:650px){.add-controls button::before{width:23px;height:23px}.add-controls .control-symbol{font-size:14px}}
 .product.description-just-closed .description-toggle:not([hidden]){color:#55514e;text-decoration-color:rgba(85,81,78,.4);animation:none}</style>
 </head>
 <body>
